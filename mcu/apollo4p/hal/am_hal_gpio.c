@@ -377,7 +377,7 @@ am_hal_gpio_interrupt_control(am_hal_gpio_int_channel_e eChannel,
                               am_hal_gpio_int_ctrl_e eControl,
                               void *pGpioIntMaskOrNumber)
 {
-    uint32_t ui32Gpionum, ui32RegAddr, ui32Idx, ui32Msk;
+    uint32_t ui32Gpionum = 0, ui32RegAddr = 0, ui32Idx = 0, ui32Msk = 0;
     uint32_t ui32FuncRet = AM_HAL_STATUS_SUCCESS;
     am_hal_gpio_mask_t *pGpioIntMask = (am_hal_gpio_mask_t*)pGpioIntMaskOrNumber;
 
