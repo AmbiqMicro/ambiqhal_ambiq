@@ -1,0 +1,4 @@
+name: hal_ambiq
+build:
+  cmake: .
+  kconfig-ext: True
