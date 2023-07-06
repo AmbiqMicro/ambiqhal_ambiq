@@ -29,3 +29,7 @@ endif()
 if(CONFIG_AMBIQ_HAL_USE_TIMER)
     zephyr_sources(hal/am_hal_timer.c)
 endif()
+
+if(CONFIG_AMBIQ_HAL_USE_WDT)
+    zephyr_sources(hal/am_hal_wdt.c)
+endif()
