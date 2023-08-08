@@ -72,7 +72,7 @@
 #define REG_FPIO_BASEADDR                       (0x40010800UL)
 #define REG_GPIO_BASEADDR                       (0x40010000UL)
 #define REG_GPU_BASEADDR                        (0x40090000UL)
-#define REG_IOM_BASEADDR                        (0x40005000UL)
+#define REG_IOM_BASEADDR                        (0x40050000UL)
 #define REG_IOSLAVE_BASEADDR                    (0x40034000UL)
 #define REG_MCUCTRL_BASEADDR                    (0x40020000UL)
 #define REG_MRAM_BASEADDR                       (0x40014000UL)
