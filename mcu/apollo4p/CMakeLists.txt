@@ -34,7 +34,7 @@ if(CONFIG_AMBIQ_HAL_USE_WDT)
     zephyr_sources(hal/am_hal_wdt.c)
 endif()
 
-if(CONFIG_AMBIQ_HAL_USE_I2C)
+if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPI)
     zephyr_sources(hal/mcu/am_hal_iom.c)
     zephyr_sources(hal/mcu/am_hal_cmdq.c)
     zephyr_sources(hal/mcu/am_hal_fault.c)
