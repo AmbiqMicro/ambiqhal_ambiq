@@ -39,3 +39,8 @@ if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPI)
     zephyr_library_sources(hal/mcu/am_hal_cmdq.c)
     zephyr_library_sources(hal/mcu/am_hal_fault.c)
 endif()
+
+if(CONFIG_AMBIQ_HAL_USE_MSPI)
+    zephyr_library_sources(hal/mcu/am_hal_mspi.c)
+    zephyr_library_sources(hal/mcu/am_hal_cmdq.c)
+endif()
