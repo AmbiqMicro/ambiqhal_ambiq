@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_SOC_APOLLO4P)
+if(CONFIG_SOC_APOLLO4P OR CONFIG_SOC_APOLLO4P_BLUE)
     zephyr_include_directories(apollo4p)
     add_subdirectory(apollo4p)
 endif()
