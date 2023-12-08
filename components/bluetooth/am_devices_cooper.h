@@ -61,40 +61,6 @@ extern "C"
 //! Type definitions.
 //
 //*****************************************************************************
-#define am_devices_cooper_buffer(A)                                                  \
-    union                                                                     \
-    {                                                                         \
-        uint32_t words[(A + 3) >> 2];                                         \
-        uint8_t bytes[A];                                                     \
-    }
-
-//*****************************************************************************
-//
-//! Print Errors.
-//
-//*****************************************************************************
-#define PRINT_ERRORS(x)                                                       \
-    if (x)                                                                    \
-    {                                                                         \
-        am_util_debug_printf("%s. Line %d ERROR: 0x%08x\n",                   \
-                             __FILE__, __LINE__, (x));                        \
-        while (1);                                                            \
-    }
-
-#define WHILE_TIMEOUT_MS(expr, limit, timeout)                                    \
-        {                                                                         \
-            uint32_t ui32Timeout = 0;                                             \
-            while (expr)                                                          \
-            {                                                                     \
-                if (ui32Timeout == (limit * 1000))                                \
-                {                                                                 \
-                    timeout = 1;                                                  \
-                    break;                                                        \
-                }                                                                 \
-                am_util_delay_us(1);                                              \
-                ui32Timeout++;                                                    \
-            }                                                                     \
-        }
 
 #define UINT16_TO_BYTE0(n)        ((uint8_t) (n))
 #define UINT16_TO_BYTE1(n)        ((uint8_t) ((n) >> 8))
@@ -147,106 +113,6 @@ typedef enum
     AM_DEVICES_COOPER_STATUS_TIMEOUT,
     AM_DEVICES_COOPER_STATUS_INVALID_OPERATION,
 } am_devices_cooper_status_t;
-
-#define AM_DEVICES_COOPER_QFN_PART            0
-
-#if defined(AM_DEVICES_COOPER_QFN_PART) && (AM_DEVICES_COOPER_QFN_PART > 0)
-
-#if defined(AM_PART_APOLLO4L)
-#define AM_DEVICES_COOPER_IRQ_PIN             74
-#define AM_DEVICES_COOPER_RESET_PIN           77
-#define AM_DEVICES_COOPER_CLKREQ_PIN          75
-#define AM_DEVICES_COOPER_32M_OSCEN_PIN       46
-#define AM_DEVICES_COOPER_SPI_CS              91
-#define g_AM_DEVICES_COOPER_SPI_CS            g_AM_BSP_GPIO_IOM4_CS
-#else
-#define AM_DEVICES_COOPER_IRQ_PIN             73
-#define AM_DEVICES_COOPER_RESET_PIN           57
-#define AM_DEVICES_COOPER_CLKREQ_PIN          64
-#define AM_DEVICES_COOPER_STATUS_PIN          66
-#define AM_DEVICES_COOPER_32M_OSCEN_PIN       67
-#define AM_DEVICES_COOPER_SPI_CS              72 //!< BGA&SIP share the same CS pin(NCE72) on the QFN shiled board
-#define g_AM_DEVICES_COOPER_SPI_CS            g_AM_BSP_GPIO_IOM2_CS
-#endif
-
-#else
-#define AM_DEVICES_COOPER_32M_CLK             46
-#if defined(AM_PART_APOLLO4L) || defined(APOLLO4P_BLUE_KXR)
-#define AM_DEVICES_COOPER_SPI_CS              54
-#define AM_DEVICES_COOPER_32K_CLK             4
-#define AM_DEVICES_COOPER_CLKREQ_PIN          52
-#else
-#define AM_DEVICES_COOPER_SPI_CS              43
-#define AM_DEVICES_COOPER_32K_CLK             45
-#define AM_DEVICES_COOPER_CLKREQ_PIN          40
-#endif
-
-#if defined(AM_PART_APOLLO4L) || defined(APOLLO4P_BLUE_KXR)
-
-#define AM_DEVICES_COOPER_IRQ_PIN             53
-#define AM_DEVICES_COOPER_RESET_PIN           55
-#define AM_DEVICES_COOPER_SWDIO               97
-#define AM_DEVICES_COOPER_SWCLK               98
-#else
-
-#define AM_DEVICES_COOPER_IRQ_PIN             39
-#define AM_DEVICES_COOPER_CLKACK_PIN          41
-#define AM_DEVICES_COOPER_RESET_PIN           42
-#define AM_DEVICES_COOPER_STATUS_PIN          44
-#define AM_DEVICES_COOPER_SWDIO               97
-#define AM_DEVICES_COOPER_SWCLK               98
-
-#endif
-
-#endif
-
-
-//*****************************************************************************
-//
-//! Configurable buffer sizes.
-//
-//*****************************************************************************
-#define AM_DEVICES_COOPER_MAX_TX_PACKET       524 //!<  the max packet of SBL to controller is 512 plus 12 bytes header
-#define AM_DEVICES_COOPER_MAX_RX_PACKET       258 //!<  255 data + 3 header
-
-//*****************************************************************************
-//
-//! SPI configuration.
-//
-//*****************************************************************************
-#if (AM_DEVICES_COOPER_QFN_PART)
-#if defined(AM_PART_APOLLO4L)
-#define SPI_MODULE           4
-#else
-#define SPI_MODULE           2
-#endif
-#define AM_COOPER_IRQn       GPIO0_405F_IRQn
-#define am_cooper_irq_isr    am_gpio0_405f_isr
-//
-//! we need to slow down SPI clock for fly-wire case in between
-//! Apollo3/3p/4 EB/EVBB and Cooper QFN part. 8MHz is chosen conservatively.
-//
-#define COOPER_IOM_FREQ         AM_HAL_IOM_8MHZ
-#else
-#define SPI_MODULE           4
-#define AM_COOPER_IRQn       GPIO0_203F_IRQn
-#define am_cooper_irq_isr    am_gpio0_203f_isr
-#define COOPER_IOM_FREQ         AM_HAL_IOM_24MHZ
-#endif
-
-//
-//! Take over the interrupt handler for whichever IOM we're using.
-//
-#define cooper_iom_isr                                                          \
-    am_iom_isr1(SPI_MODULE)
-#define am_iom_isr1(n)                                                        \
-    am_iom_isr(n)
-#define am_iom_isr(n)                                                         \
-    am_iomaster ## n ## _isr
-
-#define IOM_INTERRUPT1(n)       AM_HAL_INTERRUPT_IOMASTER ## n
-#define IOM_INTERRUPT(n)        IOM_INTERRUPT1(n)
-#define COOPER_IOM_IRQn         ((IRQn_Type)(IOMSTR0_IRQn + SPI_MODULE))
 
 //
 //! Definition of the tag associated to each parameters
@@ -370,34 +236,6 @@ enum PARAM_ID
 //! device name
 #define NVDS_PARAMETER_DEVICE_NAME      PARAM_ID_DEVICE_NAME, 0x06, 0x06, 0x43, 0x6F, 0x6F, 0x70, 0x65, 0x72
 #define NVDS_PARAMETER_EXT_32K_CLK_SOURCE PARAM_ID_32K_CLK_SOURCE, 0x06, 0x01, 0x01
-
-//*****************************************************************************
-//
-//! @name HCIPacketTypes.
-//! @brief
-//! @{
-//
-//*****************************************************************************
-#define AM_DEVICES_COOPER_RAW                      0x0
-#define AM_DEVICES_COOPER_CMD                      0x1
-#define AM_DEVICES_COOPER_ACL                      0x2
-#define AM_DEVICES_COOPER_EVT                      0x4
-
-//! @} HCIPacketTypes.
-
-//
-//! access types
-//
-typedef enum
-{
-    //! 8 bit access types
-    RD_8_Bit                   = 8,
-    //! 16 bit access types
-    RD_16_Bit                  = 16,
-    //! 32 bit access types
-    RD_32_Bit                  = 32
-
-}eMemAccess_type;
 
 #define HCI_VSC_CMD_HEADER_LENGTH                    4
 
@@ -541,27 +379,6 @@ typedef enum
 //! LE Coded PHY 500 Kbps selection
 #define NVDS_PARAMETER_LE_CODED_PHY_500   PARAM_ID_LE_CODED_PHY_500, 0x06, 0x01, 0x00
 
-//*****************************************************************************
-//
-//! SBL Defines
-//
-//*****************************************************************************
-#define USE_SPI_PIN                     19
-
-//
-//! Slave interrupt pin is connected here
-//
-#define BOOTLOADER_HANDSHAKE_PIN        42
-
-//
-//! This pin is connected to RESET pin of slave
-//
-#define DRIVE_SLAVE_RESET_PIN           17
-
-//
-//! This pin is connected to the 'Override' pin of slave
-//
-#define DRIVE_SLAVE_OVERRIDE_PIN        4
 
 #define AM_DEVICES_COOPER_SBL_UPDATE_STATE_INIT                     0x00
 #define AM_DEVICES_COOPER_SBL_UPDATE_STATE_HELLO                    0x01
@@ -636,6 +453,10 @@ typedef enum
 #define AM_DEVICES_COOPER_SBL_INFO1_PATCH_SIZE                      0x80
 #define AM_DEVICES_COOPER_SBL_INFO1_PATCH_SIZE_MAX                  0x100
 
+#define AM_DEVICES_COOPER_STATE_STARTUP                             0x00000000
+#define AM_DEVICES_COOPER_STATE_INITIALIZED                         0x00000001
+#define AM_DEVICES_COOPER_STATE_INITIALIZE_FAIL                     0x00000002
+
 //! Signatures for the image downloads
 #define COOPER_INFO0_UPDATE_SIGN   0xB35D18C9
 //! Signatures for the image downloads
@@ -669,7 +490,6 @@ typedef struct
     uint32_t    ui32TotalPackets;
     uint32_t    ui32ImageType;
     uint32_t    ui32ErrorCounter;
-    void*       pHandle; // cooper_device handle
     uint32_t*   pWorkBuf;
 
     uint32_t    ui32CooperFWImageVersion;
@@ -677,30 +497,10 @@ typedef struct
     uint32_t    ui32CooperVerRollBackConfig; //Version 2
     uint32_t    ui32copperChipIdWord0;  //Version 2
     uint32_t    ui32copperChipIdWord1;  //Version 2
+
+    uint32_t    ui32RxPacketLength;
+    bool        bRxCrcCheckPass;
 } am_devices_cooper_sbl_update_state_t;
-
-//
-//!
-//
-typedef struct
-{
-    uint32_t                     crc32;   //!< First word
-    uint16_t                     msgType; //!< am_secboot_wired_msgtype_e
-    uint16_t                     length;
-} am_secboot_wired_msghdr_t;
-
-
-//
-//!
-//
-typedef struct
-{
-    uint32_t                      length  : 16;
-    uint32_t                      resv    : 14;
-    uint32_t                      bEnd    : 1;
-    uint32_t                      bStart  : 1;
-} am_secboot_ios_pkthdr_t;
-
 
 //
 //! Message types
@@ -836,10 +636,41 @@ typedef struct
     uint32_t    value;
 } am_sbl_info0_patch_data_t;
 
+//
+//! BLE controller function callback
+//
+typedef struct
+{   
+    /**
+     *************************************************************************************
+     * @brief Starts a data transmission via IOM
+     *
+     * @param[in]  data        Pointer to the TX buffer
+     * @param[in]  size        Size of the transmission
+     * @return                 Status of data transmission, 0 is success.
+     *************************************************************************************
+     */
+    int (*write)(uint8_t *data, uint16_t len);
+
+    /**
+     *************************************************************************************
+     * @brief Reset the BLE controller via RESET GPIO.
+     *
+     *************************************************************************************
+     */
+    void (*reset)(void);
+} am_devices_cooper_callback_t;
+
+//
+//! NVDS data which needs to set to BLE controller
+//
+extern uint8_t am_devices_cooper_nvds[];
+
 //*****************************************************************************
 //
-//! @brief Update Image
-//! @return uint32_t
+//! @brief Update Image.
+//!
+//! @return 0 is success
 //
 //*****************************************************************************
 uint32_t am_devices_cooper_update_image(void);
@@ -847,12 +678,9 @@ uint32_t am_devices_cooper_update_image(void);
 //*****************************************************************************
 //
 //! @brief Initialize the Image Update state machine
-//! @param pHandle
-//! @param pWorkbuf
-//! @return 0 is success
 //
 //*****************************************************************************
-uint32_t am_devices_cooper_image_update_init(void* pHandle, uint32_t* pWorkbuf);
+void am_devices_cooper_image_update_init(void);
 
 //*****************************************************************************
 //
@@ -887,92 +715,14 @@ bool am_devices_cooper_get_info1_patch(am_devices_cooper_sbl_update_data_t *pInf
 //*****************************************************************************
 bool am_devices_cooper_get_info0_patch(am_devices_cooper_sbl_update_data_t *pInfo0Image);
 
-//
-//!
-//
-typedef struct
-{
-    uint32_t* pNBTxnBuf;
-    uint32_t ui32NBTxnBufLength;
-} am_devices_cooper_config_t;
-
-//
-//!
-//
-typedef void (*am_devices_cooper_callback_t)(void* pCallbackCtxt);
-
-//
-//!
-//
-typedef struct
-{
-    uint32_t                     ui32Module;
-    uint32_t                     ui32CS;
-    uint32_t                     ui32CSDuration;
-    uint32_t                     ui32Firmver;
-    am_devices_cooper_callback_t pfnCallback;
-    void*                        pCallbackCtxt;
-    void*                        pBleHandle;
-    bool                         bOccupied;
-    bool                         bBusy;
-    bool                         bNeedCallback;
-    volatile bool                bDMAComplete;
-    bool                         bWakingUp;
-} am_devices_cooper_t;
-
-//
-//!
-//
-#define AM_DEVICES_COOPER_MAX_DEVICE_NUM 1
-
-//*****************************************************************************
-//
-//! @brief Set up pins for Cooper.
-//!
-//! This function configures SPI, IRQ, SCK pins for Cooper
-//
-//*****************************************************************************
-extern void am_devices_cooper_pins_enable(void);
-
-//*****************************************************************************
-//
-//! @brief Disable pins for Cooper.
-//!
-//! This function configures SPI, IRQ, SCK pins for Cooper
-//
-//*****************************************************************************
-extern void am_devices_cooper_pins_disable(void);
-
 //*****************************************************************************
 //
 //! @brief Initialize the BLE controller driver.
 //!
-//! @param ui32Module   - BLE Controller Module#
-//! @param pDevConfig   - BLE Controller device structure describing the target.
-//! @param ppHandle     - BLE Controller device state structure.
-//! @param ppBleHandle  - BLE Controller device handler.
-//!
-//! @note This function should be called before any other am_devices_cooper
-//! functions. It is used to set tell the other functions how to communicate
-//! with the BLE controller hardware.
-//!
-//! @return Status.
+//! @param cb pointer of BLE Controller callback
 //
 //*****************************************************************************
-extern uint32_t am_devices_cooper_init(uint32_t ui32Module, am_devices_cooper_config_t* pDevConfig, void** ppHandle, void** ppBleHandle);
-
-//*****************************************************************************
-//
-//! @brief De-Initialize the BLE controller driver.
-//!
-//! @param pHandle  - BLE Controller device handler.
-//!
-//! This function reverses the initialization
-//!
-//! @return Status.
-//
-//*****************************************************************************
-extern uint32_t am_devices_cooper_term(void* pHandle);
+uint32_t am_devices_cooper_init(am_devices_cooper_callback_t *cb);
 
 //*****************************************************************************
 //
@@ -985,119 +735,40 @@ extern void am_devices_cooper_reset(void);
 
 //*****************************************************************************
 //
-//! @brief Enable the IOM bus
-//!
-//! This function enables IOM module before any HCI operation take effect
-//!
-//! @param pHandle  - BLE Controller device handler.
-//!
-//! @return Status.
-//
-//*****************************************************************************
-extern uint32_t am_devices_cooper_bus_enable(void* pHandle);
-
-//*****************************************************************************
-//
-//! @brief Disable the IOM bus
-//!
-//! This function disables IOM module after HCI operation done to save power
-//!
-//! @param pHandle  - BLE Controller device handler.
-//!
-//! @return Status.
-//
-//*****************************************************************************
-extern uint32_t am_devices_cooper_bus_disable(void* pHandle);
-
-//*****************************************************************************
-//
-//! @brief Execute HCI blocking read from the BLE controller
-//!
-//! @param pHandle      - BLE Controller device handler.
-//! @param pui32Data    - Buffer to store the received data from the BLE controller
-//! @param pui32BytesReceived - Actually received number of bytes
-//!
-//! @return 32-bit status
-//
-//*****************************************************************************
-extern uint32_t am_devices_cooper_blocking_read(void* pHandle, uint32_t* pui32Data, uint32_t* pui32BytesReceived);
-
-//*****************************************************************************
-//
-//! @brief Execute HCI blocking write to the BLE controller
-//!
-//! @param pHandle      - BLE Controller device handler.
-//! @param ui8Type      - HCI packet type.
-//! @param pui32Data    - Buffer to write the data from
-//! @param ui32NumBytes - Number of bytes to write
-//! @param bWaitReady
-//!     - True  means need to loop for the controller ready,
-//!     - False will return and wait for the IRQ interrupt
-//!
-//! @return 32-bit status
-//
-//*****************************************************************************
-extern uint32_t am_devices_cooper_blocking_write(void* pHandle, uint8_t ui8Type, uint32_t* pui32Data, uint32_t ui32NumBytes, bool bWaitReady);
-
-//*****************************************************************************
-//
-//! @brief Send HCI raw command to the BLE controller
-//! @note This function should only be used in non-IRQ-interrupt mode, and
-//!        used to to send raw packet
-//!
-//! @param pHandle          - BLE Controller device handler.
-//! @param pui32Cmd         - Buffer to write the command from
-//! @param ui32Length       - Length of the command including the header
-//! @param pui32Response    - Buffer to store the response from the BLE controller
-//! @param pui32BytesReceived - Actually received number of bytes
-//!
-//! @return 32-bit status
-//
-//*****************************************************************************
-extern uint32_t am_devices_cooper_command_write(void* pHandle, uint32_t* pui32Cmd, uint32_t ui32Length, uint32_t* pui32Response, uint32_t* pui32BytesReceived);
-
-//*****************************************************************************
-//
-//! @brief Check the state of the IRQ pin.
-//! @return Pin state
-//
-//*****************************************************************************
-extern uint32_t am_devices_cooper_irq_read(void);
-
-//*****************************************************************************
-//
-//! @brief Check the state of the CLKREQ pin.
-//! @return Pin state
-//
-//*****************************************************************************
-extern uint32_t am_devices_cooper_clkreq_read(void* pHandle);
-//*****************************************************************************
-//
-//! @brief Set the 32M crystal frequency based on the tested values at customer side.
-//!
-//! Set trim value smaller in case of negative frequency offset
-//!
-//! @param pHandle          - Pointer to device handle
-//! @param ui32TrimValue    - TrimValue : default is 0x1EC
-//!
-//! @note Refer to App Note Apollo4 Blue 32MHz Crystal Calibration
-//!
-//! @return  status from am_devices_cooper_status_t
-//
-//*****************************************************************************
-extern uint32_t am_devices_cooper_crystal_trim_set(void *pHandle, uint32_t ui32TrimValue);
-
-//*****************************************************************************
-//
 //! @brief Reset the BLE controller and check if there's request to update
-//!
-//! @param pHandle
-//! @param pDevConfig
 //!
 //! @return status from am_devices_cooper_status_t
 //
 //*****************************************************************************
-extern uint32_t am_devices_cooper_reset_with_sbl_check(void* pHandle, am_devices_cooper_config_t* pDevConfig);
+extern uint32_t am_devices_cooper_reset_with_sbl_check(void);
+
+//*****************************************************************************
+//
+//! @brief Process the received packet from BLE Controller in SBL handshake stage.
+//!
+//! @param pBuf pointer of received packet
+//! @param len  length of received packet
+//
+//*****************************************************************************
+void am_devices_cooper_handshake_recv(uint8_t* pBuf, uint16_t len);
+
+//*****************************************************************************
+//
+//! @brief Get the Cooper initialization state
+//!
+//! @return Cooper current initialization state
+//
+//*****************************************************************************
+uint32_t am_devices_cooper_get_initialize_state(void);
+
+//*****************************************************************************
+//
+//! @brief Set the Cooper initialization state
+//!
+//! @param state  Cooper current initialization state 
+//
+//*****************************************************************************
+void am_devices_cooper_set_initialize_state(uint32_t state);
 
 #ifdef __cplusplus
 }
@@ -1111,4 +782,3 @@ extern uint32_t am_devices_cooper_reset_with_sbl_check(void* pHandle, am_devices
 //! @}
 //
 //*****************************************************************************
-
