@@ -1,14 +1,14 @@
 //*****************************************************************************
 //
-//! @file am_sdk_version.h
+//! @file am_hal_status.h
 //!
-//! @brief Defines SDK version.
+//! @brief Global status return codes for HAL interface.
 //!
-//! @addtogroup ambiqsuite Ambiqsuite SDK
-//
-//! @defgroup hal mcu
-//! @ingroup ambiqsuite
+//! @addtogroup status3 Status - Global Status Return Codes.
+//! @ingroup apollo3_hal
 //! @{
+//
+//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -41,41 +41,44 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-#ifndef AM_SDK_VERSION_H
-#define AM_SDK_VERSION_H
+#ifndef AM_HAL_STATUS_H
+#define AM_HAL_STATUS_H
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-//*****************************************************************************
-//
-// Macros to define HAL SDK version.
-//
-//*****************************************************************************
-//
-// Define the current HAL version.
-//
-#ifndef AM_HAL_VERSION_MAJ
-#if defined(AM_PART_APOLLO3_API)
-#define AM_HAL_VERSION_MAJ      3
-#define AM_HAL_VERSION_MIN      1
-#define AM_HAL_VERSION_REV      1
-#elif defined(AM_PART_APOLLO4_API)
-#define AM_HAL_VERSION_MAJ      4
-#define AM_HAL_VERSION_MIN      4
-#define AM_HAL_VERSION_REV      0
-#else
-#warning Please define AM_HAL_VERSION_MAJ, AM_HAL_VERSION_MIN, AM_HAL_VERSION_REV
-#endif
-#endif // AM_HAL_VERSION_MAJ
+  //
+  //! Global Status Returns
+  //
+  typedef enum
+  {
+    AM_HAL_STATUS_SUCCESS,
+    AM_HAL_STATUS_FAIL,
+    AM_HAL_STATUS_INVALID_HANDLE,
+    AM_HAL_STATUS_IN_USE,
+    AM_HAL_STATUS_TIMEOUT,
+    AM_HAL_STATUS_OUT_OF_RANGE,
+    AM_HAL_STATUS_INVALID_ARG,
+    AM_HAL_STATUS_INVALID_OPERATION,
+    AM_HAL_STATUS_MEM_ERR,
+    AM_HAL_STATUS_HW_ERR,
+    AM_HAL_STATUS_MODULE_SPECIFIC_START = 0x08000000,
+  } am_hal_status_e;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // AM_SDK_VERSION_H
+#endif // AM_HAL_STATUS_H
+
+//*****************************************************************************
+//
+// End Doxygen group.
+//! @}
+//
+//*****************************************************************************

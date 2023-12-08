@@ -1,14 +1,18 @@
 //*****************************************************************************
 //
-//! @file am_sdk_version.h
+//! @file am_hal_debug.c
 //!
-//! @brief Defines SDK version.
+//! @brief Useful Functions for Debugging.
 //!
-//! @addtogroup ambiqsuite Ambiqsuite SDK
-//
-//! @defgroup hal mcu
-//! @ingroup ambiqsuite
+//! These functions and macros were created to assist with debugging. They are
+//! intended to be as unintrusive as possible and designed to be removed from
+//! the compilation of a project when they are no longer needed.
+//!
+//! @addtogroup haldebug3 Debug - HAL Debug/Assert Utilities
+//! @ingroup apollo3_hal
 //! @{
+//
+//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -41,41 +45,47 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-#ifndef AM_SDK_VERSION_H
-#define AM_SDK_VERSION_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#include <stdint.h>
+#include <stdbool.h>
+#include "am_mcu_apollo.h"
 
-//*****************************************************************************
-//
-// Macros to define HAL SDK version.
-//
-//*****************************************************************************
-//
-// Define the current HAL version.
-//
-#ifndef AM_HAL_VERSION_MAJ
-#if defined(AM_PART_APOLLO3_API)
-#define AM_HAL_VERSION_MAJ      3
-#define AM_HAL_VERSION_MIN      1
-#define AM_HAL_VERSION_REV      1
-#elif defined(AM_PART_APOLLO4_API)
-#define AM_HAL_VERSION_MAJ      4
-#define AM_HAL_VERSION_MIN      4
-#define AM_HAL_VERSION_REV      0
+#if defined (__IAR_SYSTEMS_ICC__)
+__weak void
 #else
-#warning Please define AM_HAL_VERSION_MAJ, AM_HAL_VERSION_MIN, AM_HAL_VERSION_REV
+void __attribute__((weak))
 #endif
-#endif // AM_HAL_VERSION_MAJ
-
-#ifdef __cplusplus
+//*****************************************************************************
+//
+//! @brief Default implementation of a failed ASSERT statement.
+//!
+//! @param pcFile is the name of the source file where the error occurred.
+//! @param ui32Line is the line number where the error occurred.
+//! @param pcMessage is an optional message describing the failure.
+//!
+//! This function is called by am_hal_debug_assert() macro when the supplied
+//! condition is not true. The implementation here simply halts the application
+//! for further analysis. Individual applications may define their own
+//! implementations of am_hal_debug_error() to provide more detailed feedback
+//! about the failed am_hal_debug_assert() statement.
+//!
+//! @note this function never returns
+//
+//*****************************************************************************
+am_hal_debug_error(const char *pcFile, uint32_t ui32Line, const char *pcMessage)
+{
+    //
+    // Halt for analysis.
+    //
+    while(1);
 }
-#endif
 
-#endif // AM_SDK_VERSION_H
+//*****************************************************************************
+//
+// End Doxygen group.
+//! @}
+//
+//*****************************************************************************

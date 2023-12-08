@@ -1,14 +1,12 @@
 //*****************************************************************************
 //
-//! @file am_sdk_version.h
+//  am_reg_macros_asm.h
+//! @file
 //!
-//! @brief Defines SDK version.
-//!
-//! @addtogroup ambiqsuite Ambiqsuite SDK
+//! @brief Inline assembly macros. Initially for critical section handling in
+//! protecting hardware registers.
 //
-//! @defgroup hal mcu
-//! @ingroup ambiqsuite
-//! @{
+//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -41,41 +39,22 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-#ifndef AM_SDK_VERSION_H
-#define AM_SDK_VERSION_H
+
+#ifndef AM_REG_MACROS_ASM_H
+#define AM_REG_MACROS_ASM_H
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-//*****************************************************************************
-//
-// Macros to define HAL SDK version.
-//
-//*****************************************************************************
-//
-// Define the current HAL version.
-//
-#ifndef AM_HAL_VERSION_MAJ
-#if defined(AM_PART_APOLLO3_API)
-#define AM_HAL_VERSION_MAJ      3
-#define AM_HAL_VERSION_MIN      1
-#define AM_HAL_VERSION_REV      1
-#elif defined(AM_PART_APOLLO4_API)
-#define AM_HAL_VERSION_MAJ      4
-#define AM_HAL_VERSION_MIN      4
-#define AM_HAL_VERSION_REV      0
-#else
-#warning Please define AM_HAL_VERSION_MAJ, AM_HAL_VERSION_MIN, AM_HAL_VERSION_REV
-#endif
-#endif // AM_HAL_VERSION_MAJ
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // AM_SDK_VERSION_H
+#endif // AM_REG_MACROS_ASM_H
+

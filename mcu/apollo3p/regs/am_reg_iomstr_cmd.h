@@ -1,14 +1,11 @@
 //*****************************************************************************
 //
-//! @file am_sdk_version.h
+//  am_reg_iomstr_cmd.h
+//! @file
 //!
-//! @brief Defines SDK version.
-//!
-//! @addtogroup ambiqsuite Ambiqsuite SDK
+//! @brief Register macros for the IOMSTR module
 //
-//! @defgroup hal mcu
-//! @ingroup ambiqsuite
-//! @{
+//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -41,41 +38,36 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-#ifndef AM_SDK_VERSION_H
-#define AM_SDK_VERSION_H
+#ifndef AM_REG_IOMSTR_CMD_H
+#define AM_REG_IOMSTR_CMD_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
+#if AM_PART_APOLLO2
 //*****************************************************************************
 //
-// Macros to define HAL SDK version.
+// IOMSTR_CMD - Command Register
 //
 //*****************************************************************************
-//
-// Define the current HAL version.
-//
-#ifndef AM_HAL_VERSION_MAJ
-#if defined(AM_PART_APOLLO3_API)
-#define AM_HAL_VERSION_MAJ      3
-#define AM_HAL_VERSION_MIN      1
-#define AM_HAL_VERSION_REV      1
-#elif defined(AM_PART_APOLLO4_API)
-#define AM_HAL_VERSION_MAJ      4
-#define AM_HAL_VERSION_MIN      4
-#define AM_HAL_VERSION_REV      0
-#else
-#warning Please define AM_HAL_VERSION_MAJ, AM_HAL_VERSION_MIN, AM_HAL_VERSION_REV
-#endif
-#endif // AM_HAL_VERSION_MAJ
+#define AM_REG_IOMSTR_CMD_CMD_POS_LENGTH             0x00000000
+#define AM_REG_IOMSTR_CMD_CMD_POS_OFFSET             0x00000008
+#define AM_REG_IOMSTR_CMD_CMD_POS_ADDRESS            0x00000010
+#define AM_REG_IOMSTR_CMD_CMD_POS_CHNL               0x00000010
+#define AM_REG_IOMSTR_CMD_CMD_POS_UPLNGTH            0x00000017
+#define AM_REG_IOMSTR_CMD_CMD_POS_10BIT              0x0000001A
+#define AM_REG_IOMSTR_CMD_CMD_POS_LSB                0x0000001B
+#define AM_REG_IOMSTR_CMD_CMD_POS_CONT               0x0000001C
+#define AM_REG_IOMSTR_CMD_CMD_POS_OPER               0x0000001D
+#define AM_REG_IOMSTR_CMD_CMD_MSK_LENGTH             0x000000FF
+#define AM_REG_IOMSTR_CMD_CMD_MSK_OFFSET             0x0000FF00
+#define AM_REG_IOMSTR_CMD_CMD_MSK_ADDRESS            0x00FF0000
+#define AM_REG_IOMSTR_CMD_CMD_MSK_CHNL               0x00070000
+#define AM_REG_IOMSTR_CMD_CMD_MSK_UPLNGTH            0x07800000
+#define AM_REG_IOMSTR_CMD_CMD_MSK_10BIT              0x04000000
+#define AM_REG_IOMSTR_CMD_CMD_MSK_LSB                0x08000000
+#define AM_REG_IOMSTR_CMD_CMD_MSK_CONT               0x10000000
+#define AM_REG_IOMSTR_CMD_CMD_MSK_OPER               0xE0000000
+#endif // AM_PART_APOLLO2
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif // AM_SDK_VERSION_H
+#endif // AM_REG_IOMSTR_CMD_H
