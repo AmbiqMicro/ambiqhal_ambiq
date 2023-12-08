@@ -7,4 +7,9 @@
 if(CONFIG_SOC_APOLLO4P OR CONFIG_SOC_APOLLO4P_BLUE)
     zephyr_include_directories(apollo4p)
     add_subdirectory(apollo4p)
+elseif(CONFIG_SOC_APOLLO3P OR CONFIG_SOC_APOLLO3P_BLUE)
+    zephyr_include_directories(apollo3p)
+    add_subdirectory(apollo3p)
 endif()
+
+
