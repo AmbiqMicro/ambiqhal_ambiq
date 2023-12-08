@@ -1,14 +1,12 @@
 //*****************************************************************************
 //
-//! @file am_sdk_version.h
+//  am_reg_m4.h
+//! @file
 //!
-//! @brief Defines SDK version.
-//!
-//! @addtogroup ambiqsuite Ambiqsuite SDK
+//! @brief A collection of a few CMSIS-style macros that are not automatically
+//!        generated in their respective core files.
 //
-//! @defgroup hal mcu
-//! @ingroup ambiqsuite
-//! @{
+//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -41,41 +39,51 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-#ifndef AM_SDK_VERSION_H
-#define AM_SDK_VERSION_H
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#ifndef AM_REG_CM4_H
+#define AM_REG_CM4_H
 
 //*****************************************************************************
 //
-// Macros to define HAL SDK version.
+// am_reg_itm.h
+// CMSIS-style defines.
 //
 //*****************************************************************************
-//
-// Define the current HAL version.
-//
-#ifndef AM_HAL_VERSION_MAJ
-#if defined(AM_PART_APOLLO3_API)
-#define AM_HAL_VERSION_MAJ      3
-#define AM_HAL_VERSION_MIN      1
-#define AM_HAL_VERSION_REV      1
-#elif defined(AM_PART_APOLLO4_API)
-#define AM_HAL_VERSION_MAJ      4
-#define AM_HAL_VERSION_MIN      4
-#define AM_HAL_VERSION_REV      0
-#else
-#warning Please define AM_HAL_VERSION_MAJ, AM_HAL_VERSION_MIN, AM_HAL_VERSION_REV
-#endif
-#endif // AM_HAL_VERSION_MAJ
+#define ITM_LAR_KEYVAL      0xC5ACCE55
 
-#ifdef __cplusplus
-}
+//*****************************************************************************
+//
+// am_reg_sysctrl.h
+// CMSIS-style defines.
+//
+//*****************************************************************************
+#define SCB_CPACR_CP11_Pos                  22
+#define SCB_CPACR_CP11_Msk                  0x00C00000
+#define SCB_CPACR_CP10_Pos                  20
+#define SCB_CPACR_CP10_Msk                  0x00300000
+
+//*****************************************************************************
+//
+// am_reg_tpiu.h
+// CMSIS-style defines.
+//
+//*****************************************************************************
+#define TPI_CSPSR_CWIDTH_1BIT      1
+#define TPI_SPPR_TXMODE_UART       2
+#define TPI_ITCTRL_Mode_NORMAL     0
+
+#ifndef TPI_ACPR_SWOSCALER_Pos
+//
+// In the CMSIS 5.6.0 version of core_cm4.h, the SWOSCALER field was no longer
+// defined, while the PRESCALER field was left intact even though previous CMSIS
+// versions PRESCALER as deprecated.  On the off chance that future versions
+// make a correction and remove PRESCALER, define SWOSCALER here (per 5.3.0).
+//
+#define TPI_ACPR_SWOSCALER_Pos              0U                                         /*!< TPI ACPR: SWOSCALER Position */
+#define TPI_ACPR_SWOSCALER_Msk             (0xFFFFUL /*<< TPI_ACPR_SWOSCALER_Pos*/)    /*!< TPI ACPR: SWOSCALER Mask */
 #endif
 
-#endif // AM_SDK_VERSION_H
+#endif // AM_REG_CM4_H

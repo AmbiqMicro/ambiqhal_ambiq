@@ -1,14 +1,10 @@
 //*****************************************************************************
 //
-//! @file am_sdk_version.h
+//! @file system_Apollo3.h
 //!
-//! @brief Defines SDK version.
-//!
-//! @addtogroup ambiqsuite Ambiqsuite SDK
+//! @brief Ambiq Micro Apollo3 MCU specific functions.
 //
-//! @defgroup hal mcu
-//! @ingroup ambiqsuite
-//! @{
+//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -41,41 +37,32 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-#ifndef AM_SDK_VERSION_H
-#define AM_SDK_VERSION_H
+
+#ifndef SYSTEM_APOLLO3_H
+#define SYSTEM_APOLLO3_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
+
+#include <stdint.h>
+
+extern uint32_t SystemCoreClock;     // System Clock Frequency (Core Clock)
 
 //*****************************************************************************
 //
-// Macros to define HAL SDK version.
+// External function definitions
 //
 //*****************************************************************************
-//
-// Define the current HAL version.
-//
-#ifndef AM_HAL_VERSION_MAJ
-#if defined(AM_PART_APOLLO3_API)
-#define AM_HAL_VERSION_MAJ      3
-#define AM_HAL_VERSION_MIN      1
-#define AM_HAL_VERSION_REV      1
-#elif defined(AM_PART_APOLLO4_API)
-#define AM_HAL_VERSION_MAJ      4
-#define AM_HAL_VERSION_MIN      4
-#define AM_HAL_VERSION_REV      0
-#else
-#warning Please define AM_HAL_VERSION_MAJ, AM_HAL_VERSION_MIN, AM_HAL_VERSION_REV
-#endif
-#endif // AM_HAL_VERSION_MAJ
+extern void SystemInit (void);
+extern void SystemCoreClockUpdate (void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // AM_SDK_VERSION_H
+#endif  // SYSTEM_APOLLO3_H
+
