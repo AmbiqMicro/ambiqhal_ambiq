@@ -1,14 +1,14 @@
 //*****************************************************************************
 //
-//! @file am_sdk_version.h
+//! @file am_hal_ble_patch_b0.h
 //!
-//! @brief Defines SDK version.
+//! @brief This is a Binary Patch for the BLE Core.
 //!
-//! @addtogroup ambiqsuite Ambiqsuite SDK
-//
-//! @defgroup hal mcu
-//! @ingroup ambiqsuite
+//! @addtogroup BLE3ppatch BLE_Patch - BLE Patch
+//! @ingroup apollo3p_hal
 //! @{
+//
+//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -29,6 +29,9 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
+// Third party software included in this distribution is subject to the
+// additional license terms as defined in the /docs/licenses directory.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -41,11 +44,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-#ifndef AM_SDK_VERSION_H
-#define AM_SDK_VERSION_H
+
+#ifndef AM_HAL_BLE_PATCH_B0_H
+#define AM_HAL_BLE_PATCH_B0_H
 
 #ifdef __cplusplus
 extern "C"
@@ -54,28 +58,48 @@ extern "C"
 
 //*****************************************************************************
 //
-// Macros to define HAL SDK version.
+//! Patch array pointer.
 //
 //*****************************************************************************
+extern am_hal_ble_patch_t **am_hal_ble_default_patches_b0;
+extern am_hal_ble_patch_t **am_hal_ble_default_copy_patches_b0;
+extern const uint32_t am_hal_ble_num_default_patches_b0;
+
+//*****************************************************************************
 //
-// Define the current HAL version.
+//! Pointers for specific patches.
 //
-#ifndef AM_HAL_VERSION_MAJ
-#if defined(AM_PART_APOLLO3_API)
-#define AM_HAL_VERSION_MAJ      3
-#define AM_HAL_VERSION_MIN      1
-#define AM_HAL_VERSION_REV      1
-#elif defined(AM_PART_APOLLO4_API)
-#define AM_HAL_VERSION_MAJ      4
-#define AM_HAL_VERSION_MIN      4
-#define AM_HAL_VERSION_REV      0
-#else
-#warning Please define AM_HAL_VERSION_MAJ, AM_HAL_VERSION_MIN, AM_HAL_VERSION_REV
-#endif
-#endif // AM_HAL_VERSION_MAJ
+//*****************************************************************************
+extern am_hal_ble_patch_t am_ble_performance_patch_b0;
+extern am_hal_ble_patch_t am_ble_nvds_patch_b0;
+
+//*****************************************************************************
+//
+//! Default patch structure.
+//
+//*****************************************************************************
+extern am_hal_ble_patch_t g_AMBLEDefaultPatchB0;
+
+//*****************************************************************************
+//
+//! Macros for accessing specific NVDS parameters.
+//
+//*****************************************************************************
+#define AM_HAL_BLE_NVDS_CLOCKDRIFT_OFFSET          30
+#define AM_HAL_BLE_NVDS_SLEEPCLOCKDRIFT_OFFSET     35
+#define AM_HAL_BLE_NVDS_CLOCKSOURCE_OFFSET         44
+#define AM_HAL_BLE_NVDS_SLEEPENABLE_OFFSET         85
+#define AM_HAL_BLE_NVDS_AGC_OFFSET                 125
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // AM_SDK_VERSION_H
+#endif // AM_HAL_BLE_PATCH_B0_H
+
+//*****************************************************************************
+//
+// End Doxygen group.
+//! @}
+//
+//*****************************************************************************
