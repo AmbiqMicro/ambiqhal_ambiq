@@ -11,5 +11,6 @@ if(CONFIG_AMBIQ_HAL)
         utils
         )
     add_subdirectory(mcu)
+    add_subdirectory(utils)
     add_subdirectory(components)
 endif()

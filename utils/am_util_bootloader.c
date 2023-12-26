@@ -27,7 +27,7 @@
 #define DPRINTF(x)
 #endif
 
-#if defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
+#if defined(CONFIG_SOC_SERIES_APOLLO3X)
 const am_hal_gpio_pincfg_t g_AM_HAL_GPIO_INPUT_ENABLE =
 {
   .uFuncSel             = AM_HAL_PIN_0_GPIO,
@@ -280,7 +280,7 @@ am_util_bootloader_flash_check(am_util_bootloader_image_t *psImage)
     //
     // Make sure the link address is in flash.
     //
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
     if (((AM_HAL_MRAM_ADDR != 0) && (ui32LinkAddress < AM_HAL_MRAM_ADDR)) ||
         (ui32LinkAddress >= (AM_HAL_MRAM_ADDR + sDevice.ui32FlashSize)))
 #else
@@ -307,7 +307,7 @@ am_util_bootloader_flash_check(am_util_bootloader_image_t *psImage)
         ui32ResetVector = (uint32_t) psImage->pui32ResetVector;
     }
 
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
     //
     // Make sure the stack is in SRAM.
     //
@@ -397,26 +397,22 @@ am_hal_bootloader_override_check(am_util_bootloader_image_t *psImage)
         //
         // Temporarily configure the override pin as an input.
         //
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
         am_hal_gpio_pinconfig(psImage->ui32OverrideGPIO, am_hal_gpio_pincfg_input);
-#else
-#if defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
+#elif defined(CONFIG_SOC_SERIES_APOLLO3X)
         am_hal_gpio_pinconfig(psImage->ui32OverrideGPIO, g_AM_HAL_GPIO_INPUT_ENABLE);
 #else
         am_hal_gpio_pin_config(psImage->ui32OverrideGPIO, AM_HAL_PIN_INPUT);
 #endif
-#endif
         //
         // If the override pin matches the specified polarity, force a failure.
         //
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
         am_hal_gpio_state_read(psImage->ui32OverrideGPIO, AM_HAL_GPIO_INPUT_READ, &ui32OverridePin );
-#else
-#if defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
+#elif defined(CONFIG_SOC_SERIES_APOLLO3X)
         am_hal_gpio_state_read(psImage->ui32OverrideGPIO, AM_HAL_GPIO_INPUT_READ, &ui32OverridePin );
 #else
         ui32OverridePin = am_hal_gpio_input_bit_read(psImage->ui32OverrideGPIO);
-#endif
 #endif
         if ( ui32OverridePin == (psImage->ui32OverridePolarity & 0x1) )
         {
@@ -424,14 +420,12 @@ am_hal_bootloader_override_check(am_util_bootloader_image_t *psImage)
             //
             // Make sure to disable the pin before continuing.
             //
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
             am_hal_gpio_pinconfig(psImage->ui32OverrideGPIO, am_hal_gpio_pincfg_disabled);
-#else
-#if defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
+#elif defined(CONFIG_SOC_SERIES_APOLLO3X)
             am_hal_gpio_pinconfig(psImage->ui32OverrideGPIO, g_AM_HAL_GPIO_INPUT_DISABLE);
 #else
             am_hal_gpio_pin_config(psImage->ui32OverrideGPIO, AM_HAL_PIN_DISABLE);
-#endif
 #endif
             return true;
         }
@@ -447,14 +441,12 @@ am_hal_bootloader_override_check(am_util_bootloader_image_t *psImage)
         // as it might interfere with the program we are (presumably) about to
         // boot.
         //
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
             am_hal_gpio_pinconfig(psImage->ui32OverrideGPIO, am_hal_gpio_pincfg_disabled);
-#else
-#if defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
+#elif defined(CONFIG_SOC_SERIES_APOLLO3X)
             am_hal_gpio_pinconfig(psImage->ui32OverrideGPIO, g_AM_HAL_GPIO_INPUT_DISABLE);
 #else
             am_hal_gpio_pin_config(psImage->ui32OverrideGPIO, AM_HAL_PIN_DISABLE);
-#endif
 #endif
     }
 
@@ -556,7 +548,7 @@ am_util_bootloader_flag_page_update(am_util_bootloader_image_t *psImage,
     // Start a critical section.
     //
     ui32Critical = am_hal_interrupt_master_disable();
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
     int rc = am_hal_mram_main_program(AM_HAL_MRAM_PROGRAM_KEY,
                               (uint32_t *) psImage,
                               pui32FlagPage,
@@ -642,7 +634,9 @@ am_util_bootloader_check_index(uint32_t index, uint32_t *pMask)
 void
 am_util_bootloader_erase_flash_page(uint32_t ui32Addr)
 {
-#if !defined(AM_PART_APOLLO4) && !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4L) && !defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
+    return;
+#else
     uint32_t ui32Critical;
     uint32_t ui32CurrentPage, ui32CurrentBlock;
     //
@@ -695,7 +689,7 @@ am_util_bootloader_write_flash_within_page(uint32_t ui32WriteAddr,
     //
     // Program the flash page with the data we just received.
     //
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) ||  defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
     am_hal_mram_main_program(AM_HAL_MRAM_PROGRAM_KEY, pui32ReadAddr,
                               (uint32_t *)ui32WriteAddr, ui32NumWords);
 #else
@@ -740,7 +734,7 @@ am_util_bootloader_program_flash_page(uint32_t ui32WriteAddr,
     //
     // Program the flash page with the data we just received.
     //
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
     am_hal_mram_main_program(AM_HAL_MRAM_PROGRAM_KEY, pui32ReadAddr,
                               (uint32_t *)ui32WriteAddr, ui32WordsInBuffer);
 #else

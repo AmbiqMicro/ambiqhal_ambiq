@@ -21,7 +21,6 @@
 //*****************************************************************************
 #include <string.h>
 #include "am_mcu_apollo.h"
-#include "am_bsp.h"
 #include "am_util.h"
 #include "am_util_multi_boot_private.h"
 #include "am_util_multi_boot.h"
@@ -29,6 +28,11 @@
 // Protection against NULL pointer
 #define FLASH_OPERATE(pFlash, func) ((pFlash)->func ? (pFlash)->func() : 0)
 
+#if defined(CONFIG_AM_HAL_FLASH_PAGE_SIZE)
+#define AM_HAL_FLASH_PAGE_SIZE  CONFIG_AM_HAL_FLASH_PAGE_SIZE
+#else
+#define AM_HAL_FLASH_PAGE_SIZE  1024
+#endif
 //*****************************************************************************
 //
 // Message buffers.
@@ -111,16 +115,16 @@ check_flash_address_range(uint32_t address, uint32_t size)
     if (g_intFlashSize == 0) // First call
     {
         // Get chip specific info
-#if defined(AM_PART_APOLLO3_API) || defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
+#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO4X) || defined(CONFIG_SOC_SERIES_APOLLO5X)
         am_hal_mcuctrl_info_get(AM_HAL_MCUCTRL_INFO_DEVICEID, &sDevice);
 #else
         am_hal_mcuctrl_device_info_get(&sDevice);
 #endif
 
-#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4L) &&!defined(AM_PART_APOLLO4P)
-        g_intFlashSize = sDevice.ui32FlashSize;
-#else
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
         g_intFlashSize = sDevice.ui32MRAMSize;
+#else
+        g_intFlashSize = sDevice.ui32FlashSize;
 #endif
     }
 
@@ -370,7 +374,7 @@ image_start_packet_read(am_util_bootloader_image_t *psImage, uint32_t *pui32Pack
     // This implementation uses the excess SRAM available in the system
     // CAUTION!!!: For this to work it is essential that the unused SRAM banks are
     // not powered down
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
+#if defined(CONFIG_SOC_SERIES_APOLLO4X)
     if ((sDevice.ui32DTCMSize - MAX_SRAM_USED) >= psImage->ui32NumBytes)
 #else
     if ((sDevice.ui32SRAMSize - MAX_SRAM_USED) >= psImage->ui32NumBytes)
@@ -874,7 +878,7 @@ am_util_multiboot_ota_handler(am_util_multiboot_ota_t *pOtaInfo, uint32_t *pTemp
     //
     // Perform a software reset.
     //
-#if (defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P) || defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P))
+#if defined(CONFIG_SOC_SERIES_APOLLO3X) || defined(CONFIG_SOC_SERIES_APOLLO4X)
     am_hal_reset_control(AM_HAL_RESET_CONTROL_SWPOI, 0);
 #else
     am_hal_reset_poi();
