@@ -708,7 +708,7 @@ am_hal_ble_patch_t am_ble_hw_patch =
 
 uint32_t am_hal_ble_patch_preload(void *pHandle)
 {
-    uint32_t *pRamCode;
+    uint32_t *pRamCode = NULL;
 
     if (APOLLO3_GE_B0)
     {
