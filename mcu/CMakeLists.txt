@@ -10,6 +10,9 @@ if(CONFIG_SOC_APOLLO4P OR CONFIG_SOC_APOLLO4P_BLUE)
 elseif(CONFIG_SOC_APOLLO3P OR CONFIG_SOC_APOLLO3P_BLUE)
     zephyr_include_directories(apollo3p)
     add_subdirectory(apollo3p)
+elseif(CONFIG_SOC_APOLLO3 OR CONFIG_SOC_APOLLO3_BLUE)
+    zephyr_include_directories(apollo3)
+    add_subdirectory(apollo3)
 endif()
 
 
