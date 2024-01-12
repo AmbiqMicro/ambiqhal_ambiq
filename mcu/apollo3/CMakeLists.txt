@@ -52,3 +52,7 @@ if(CONFIG_AMBIQ_HAL_USE_BLEIF)
     zephyr_library_sources(hal/am_hal_ble_patch.c)
     zephyr_library_sources(hal/am_hal_ble_patch_b0.c)
 endif()
+
+if(CONFIG_AMBIQ_HAL_USE_ADC)
+    zephyr_library_sources(hal/am_hal_adc.c)
+endif()
