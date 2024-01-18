@@ -25,6 +25,17 @@
 #include "am_mcu_apollo.h"
 #include "am_util_bootloader.h"
 
+#ifndef AM_HAL_FLASH_PAGE_SIZE
+// The flash page size of Apollo3x is 8KB, no flash page size concept for the
+// MRAM embedded SOC, e.g., Apollo4x. Use 1KB as the size for the required flash
+// operation functions declared in this file.
+#if (CONFIG_SOC_SERIES_APOLLO4X)
+#define AM_HAL_FLASH_PAGE_SIZE (1 * 1024)
+#else
+#define AM_HAL_FLASH_PAGE_SIZE (8 * 1024)
+#endif // CONFIG_SOC_SERIES_APOLLO4X
+#endif // AM_HAL_FLASH_PAGE_SIZE
+
 // All functions return 0 on success
 typedef int (*flash_read_func_t)(uint32_t ui32DestAddr, uint32_t *pSrc, uint32_t ui32Length);
 typedef int (*flash_write_func_t)(uint32_t ui32DestAddr, uint32_t *pSrc, uint32_t ui32Length);

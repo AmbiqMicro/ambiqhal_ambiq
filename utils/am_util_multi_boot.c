@@ -28,11 +28,6 @@
 // Protection against NULL pointer
 #define FLASH_OPERATE(pFlash, func) ((pFlash)->func ? (pFlash)->func() : 0)
 
-#if defined(CONFIG_AM_HAL_FLASH_PAGE_SIZE)
-#define AM_HAL_FLASH_PAGE_SIZE  CONFIG_AM_HAL_FLASH_PAGE_SIZE
-#else
-#define AM_HAL_FLASH_PAGE_SIZE  1024
-#endif
 //*****************************************************************************
 //
 // Message buffers.
