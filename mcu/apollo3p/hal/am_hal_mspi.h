@@ -262,6 +262,18 @@ extern "C"
     uint8_t                     ui8DQSDelay;
   } am_hal_mspi_dqs_t;
 
+  //
+  //! MSPI Timing Scan
+  //
+  typedef struct
+  {
+      bool            bTxNeg;
+      bool            bRxNeg;
+      bool            bRxCap;
+      uint8_t         ui8Turnaround;
+      uint8_t         ui8WriteLatency;
+  } am_hal_mspi_timing_scan_t;
+
   typedef struct
   {
     bool                        bLoop;
@@ -345,10 +357,14 @@ extern "C"
     //! Raw CQ transaction
     //! Pass am_hal_mspi_cq_raw_t * as pConfig
     AM_HAL_MSPI_REQ_CQ_RAW,
+    //! Alter the ISIZE of the CFG register
+    AM_HAL_MSPI_REQ_ISIZE_SET,
     //! Alter the ASIZE of the CFG register
     AM_HAL_MSPI_REQ_ASIZE_SET,
     // Set writlatncy when write date to nand flash
     AM_HAL_MSPI_REQ_NAND_FLASH_SET_WLAT,
+    //! Set the timing parameters
+    AM_HAL_MSPI_REQ_TIMING_SCAN,
 
     AM_HAL_MSPI_REQ_MAX
 

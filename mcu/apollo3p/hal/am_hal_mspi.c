@@ -2276,26 +2276,31 @@ uint32_t am_hal_mspi_control(void *pHandle,
             }
             break;
         }
+
+        case AM_HAL_MSPI_REQ_ISIZE_SET:
+        {
+            am_hal_mspi_instr_e *eInstr = (am_hal_mspi_instr_e *)pConfig;
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+            if (!pConfig)
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+            MSPIn(pMSPIState->ui32Module)->CFG_b.ISIZE = *eInstr;
+            break;
+        }
+
         case AM_HAL_MSPI_REQ_ASIZE_SET:
         {
-            uint8_t olen, nlen;
-
-            nlen = *((uint8_t *)pConfig);
-
-            //
-            //preventing the invalid case
-            //
-            if (nlen == 0)
+            am_hal_mspi_addr_e *eAddr = (am_hal_mspi_addr_e *)pConfig;
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+            if (!pConfig)
             {
-                break;
+                return AM_HAL_STATUS_INVALID_ARG;
             }
-
-            olen = MSPIn(pMSPIState->ui32Module)->CFG_b.ASIZE + 1;
-            if (olen != nlen)
-            {
-                MSPIn(pMSPIState->ui32Module)->CFG_b.ASIZE = nlen - 1;
-            }
-            *((uint8_t *)pConfig) = olen;
+#endif // AM_HAL_DISABLE_API_VALIDATION
+            MSPIn(pMSPIState->ui32Module)->CFG_b.ASIZE = *eAddr;
             break;
         }
 
@@ -2317,6 +2322,26 @@ uint32_t am_hal_mspi_control(void *pHandle,
 
             break;
         }
+
+        case AM_HAL_MSPI_REQ_TIMING_SCAN:
+        {
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+            if (!pConfig)
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+            am_hal_mspi_timing_scan_t *pTiming = (am_hal_mspi_timing_scan_t *)pConfig;
+
+            MSPIn(ui32Module)->CFG_b.WRITELATENCY = pTiming->ui8WriteLatency;
+            MSPIn(ui32Module)->FLASH_b.XIPENWLAT  = (pTiming->ui8WriteLatency != 0);
+
+            MSPIn(ui32Module)->CFG_b.TURNAROUND   = pTiming->ui8Turnaround;
+            MSPIn(ui32Module)->FLASH_b.XIPENTURN  = (pTiming->ui8Turnaround != 0);
+
+            break;
+        }
+
         default:
             return AM_HAL_STATUS_INVALID_ARG;
     }
