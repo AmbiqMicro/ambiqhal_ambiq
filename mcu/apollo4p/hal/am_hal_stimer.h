@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_STIMER_H
@@ -55,7 +55,7 @@ extern "C"
 //
 //! Compute address of a given COMPARE register.
 //! @note - The parameter n should be 0 (as only 1 stimer module exists).
-//!         For Apollo3, the parameter r should be 0-7 (compare) or 0-3 (capture).
+//!         For Apollo4p, the parameter r should be 0-7 (compare) or 0-3 (capture).
 //
 #define AM_HAL_STIMER_COMPARE_OFFSET (&STIMER->SCMPR1 - &STIMER->SCMPR0)
 #define AM_REG_STIMER_COMPARE(n, r)     ((&STIMER->SCMPR0) +   \

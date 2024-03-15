@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MCUCTRL_H
@@ -86,7 +86,9 @@ typedef enum
 am_hal_mcuctrl_hfxtal_users_e;
 
 //****************************************************************************
+//
 //! @brief this struct is used to pass data into am_hal_mcuctrl_control()
+//
 //****************************************************************************
 typedef struct
 {
@@ -128,11 +130,6 @@ extern const am_hal_mcuctrl_control_arg_t g_amHalMcuctrlArgBLEDefault;
 //**********************************************************
 #define XTALHSCAP2TRIM_DEFAULT  44
 #define XTALHSCAPTRIM_DEFAULT   4
-
-//
-// Designate this peripheral.
-//
-#define AM_APOLLO3_MCUCTRL  1
 
 #define APOLLO4_A                                                      \
   ((MCUCTRL->CHIPREV & MCUCTRL_CHIPREV_REVMAJ_Msk) ==                  \
@@ -325,7 +322,7 @@ typedef struct
     uint32_t ui32VendorID;
 
     //
-    //! SKU (Apollo3).
+    //! SKU
     //
     uint32_t ui32SKU;
 
@@ -429,23 +426,32 @@ extern bool am_hal_mcuctrl_EXTCLK_active(void );
 //!
 //! @param pArgs - Pointer to arguments for Control Switch Case, see note and example below
 //!
-//! @note pArgs: new use for SDK Rev 4.4:\n
+//! @note pArgs: new use for SDK Rev 4.4:<br>
 //! to use the HF XTAL clock this function now expects a pointer the following
-//! struct variable\n
-//!      am_hal_mcuctrl_control_arg_t\n
+//! struct variable<br>
+//!      am_hal_mcuctrl_control_arg_t<br>
 //! this is needed for the following eControl keywords
 //!      AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START,
 //!      AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL,
 //!      AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE,
 //!      AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_CLOCKOUT,
 //!
-//! @example
-//! am_hal_mcuctrl_control_arg_t cvar = g_amHalMcuctrlArgDefault;\n
-//! // the user must choose the appropriate bit from the enum am_hal_mcuctrl_hfxtal_users_e\n
-//! // there are numerous examples that use this structure\n
-//! cvar.ui32_arg_hfxtal_user_mask = (1 \<\< AM_HAL_HFXTAL_AUADC_EN);\n
-//! // populate the remaing fields as needed or use the default values\n
-//! retStat = am_hal_mcuctrl_control( AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL, (void *) &cvar );\n
+//! @code{.unparsed}
+//!
+//!   am_hal_mcuctrl_control_arg_t cvar = g_amHalMcuctrlArgDefault;<br>
+//!
+//!   //
+//!   // the user must choose the appropriate bit from the enum am_hal_mcuctrl_hfxtal_users_e<br>
+//!   // there are numerous examples that use this structure<br>
+//!   //
+//!   cvar.ui32_arg_hfxtal_user_mask = (1 \<\< AM_HAL_HFXTAL_AUADC_EN);<br>
+//!
+//!   //
+//!   // populate the remaing fields as needed or use the default values<br>
+//!   //
+//!   retStat = am_hal_mcuctrl_control( AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL, (void *) &cvar );<br>
+//!
+//! @endcode
 //!
 //! @return status      - generic or interface specific status.
 //

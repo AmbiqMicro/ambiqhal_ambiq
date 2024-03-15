@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -2007,7 +2007,6 @@ uint32_t am_hal_mspi_control(void *pHandle,
 
         case AM_HAL_MSPI_REQ_DQS:
         {
-            uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
             am_hal_mspi_dqs_t *pDQS = (am_hal_mspi_dqs_t *)pConfig;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
             if (!pConfig)
@@ -2025,10 +2024,8 @@ uint32_t am_hal_mspi_control(void *pHandle,
             MSPIn(ui32Module)->DEV0DDR_b.RXDQSDELAYHI0              = pDQS->ui8RxDQSDelayHi;
             MSPIn(ui32Module)->DEV0DDR_b.RXDQSDELAYNEGHI0           = pDQS->ui8RxDQSDelayNegHi;
             MSPIn(ui32Module)->DEV0DDR_b.RXDQSDELAYHIEN0            = pDQS->bRxDQSDelayHiEN;
-
-            return ui32Status;
         }
-        //break; // Statement is unreachable compiler warning
+        break;
 
         case AM_HAL_MSPI_REQ_RXCFG:
         {
@@ -2068,6 +2065,25 @@ uint32_t am_hal_mspi_control(void *pHandle,
             MSPIn(ui32Module)->DEV0XIP_b.XIPTURNAROUND0              = pTimingScan->ui8Turnaround;
             MSPIn(ui32Module)->DEV0DDR_b.TXDQSDELAY0                 = pTimingScan->ui8TxDQSDelay;
             MSPIn(ui32Module)->DEV0DDR_b.RXDQSDELAY0                 = pTimingScan->ui8RxDQSDelay;
+        }
+        break;
+
+        case AM_HAL_MSPI_REQ_TIMING_SCAN_GET:
+        {
+            am_hal_mspi_timing_scan_t *pTimingScan = (am_hal_mspi_timing_scan_t *)pConfig;
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+            if (!pConfig)
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+#endif
+            pTimingScan->bTxNeg             = MSPIn(ui32Module)->DEV0CFG_b.TXNEG0;
+            pTimingScan->bRxNeg             = MSPIn(ui32Module)->DEV0CFG_b.RXNEG0;
+            pTimingScan->bRxCap             = MSPIn(ui32Module)->DEV0CFG_b.RXCAP0;
+            pTimingScan->ui8Turnaround      = MSPIn(ui32Module)->DEV0CFG_b.TURNAROUND0;
+            pTimingScan->ui8Turnaround      = MSPIn(ui32Module)->DEV0XIP_b.XIPTURNAROUND0;
+            pTimingScan->ui8TxDQSDelay      = MSPIn(ui32Module)->DEV0DDR_b.TXDQSDELAY0;
+            pTimingScan->ui8RxDQSDelay      = MSPIn(ui32Module)->DEV0DDR_b.RXDQSDELAY0;
         }
         break;
 
@@ -2781,6 +2797,18 @@ uint32_t am_hal_mspi_control(void *pHandle,
 
             break;
         }
+        case AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_DIS:
+            //
+            // Disable send flash row address.
+            //
+            MSPIn(ui32Module)->DEV0XIP_b.XIPSENDA0 = 0;
+            break;
+        case AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_EN:
+            //
+            // Enable send flash row address.
+            //
+            MSPIn(ui32Module)->DEV0XIP_b.XIPSENDA0 = 1;
+            break;
         default:
             return AM_HAL_STATUS_INVALID_ARG;
     }
@@ -3314,7 +3342,7 @@ uint32_t am_hal_mspi_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
 
             //
             // Wait for the command completion.
-            // In Apollo3P - we cannot rely on CMDCMP, as hardware may be splitting
+            // In apollo4p - we cannot rely on CMDCMP, as hardware may be splitting
             // the transactions internally, and each split transaction generates CMDCMP
             // DMATIP is guaranteed to deassert only once the bus transaction is done
             //

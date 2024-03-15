@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MSPI_H
@@ -437,6 +437,8 @@ typedef enum
     AM_HAL_MSPI_REQ_RXCFG,
     // Pass am_hal_mspi_timimg_scan_t * as pConfig
     AM_HAL_MSPI_REQ_TIMING_SCAN,
+    // Pass am_hal_mspi_timimg_scan_t * as pConfig
+    AM_HAL_MSPI_REQ_TIMING_SCAN_GET,
     // pConfig am_hal_mspi_xip_config_t *
     AM_HAL_MSPI_REQ_XIP_CONFIG,
     // Pass am_hal_mspi_xip_misc_t * as pConfig
@@ -481,6 +483,10 @@ typedef enum
     AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN,
     // Set writlatncy when write date to nand flash
     AM_HAL_MSPI_REQ_NAND_FLASH_SET_WLAT,
+    // Disable send flash row address
+    AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_DIS,
+    // Enable send flash row address
+    AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_EN,
 
     AM_HAL_MSPI_REQ_MAX
 } am_hal_mspi_request_e;

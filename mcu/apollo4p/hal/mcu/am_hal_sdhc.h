@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SDHC_H
@@ -138,6 +138,19 @@ extern bool am_hal_sdhc_get_cd(void *pHandle);
 
 //*****************************************************************************
 //
+//! @brief SDHC detects the card write protection
+//!
+//! @param pHandle      - handle for the interface.
+//!
+//! This function detects the card write protection in the slot.
+//!
+//! @return status      - boolean.
+//
+//*****************************************************************************
+extern bool am_hal_sdhc_get_wr_protect(void *pHandle);
+
+//*****************************************************************************
+//
 //! @brief SDHC sets the SDIO bus IO volage
 //!
 //! @param pHandle      - handle for the interface.
@@ -225,6 +238,8 @@ extern uint32_t am_hal_sdhc_card_busy(void *pHandle, uint32_t ui32TimeoutMS);
 //!
 //! @param pHandle        - handle for the interface.
 //! @param ui8TxRxDelays  - delay values to set
+//!
+//! @return status      - generic or interface specific status.
 //
 //*****************************************************************************
 extern void am_hal_sdhc_set_txrx_delay(void *pHandle, uint8_t ui8TxRxDelays[2]);

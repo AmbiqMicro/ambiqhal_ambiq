@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -160,6 +160,10 @@ am_hal_rtc_config(const am_hal_rtc_config_t *psConfig)
     {
         case AM_HAL_RTC_OSC_XT:
             ui32Oscillator = CLKGEN_OCTRL_OSEL_RTC_XT;
+            break;
+
+        case AM_HAL_RTC_OSC_LFRC:
+            ui32Oscillator = CLKGEN_OCTRL_OSEL_RTC_LFRC;
             break;
 
         default:
@@ -337,33 +341,6 @@ am_hal_rtc_time_get(am_hal_rtc_time_t *pTime)
     else
     {
         return 0;
-    }
-}
-
-//*****************************************************************************
-//
-// Selects the clock source for the RTC.
-//
-// This function selects the clock source for the RTC.
-//
-// Valid values for ui32OSC are:
-//
-//     AM_HAL_RTC_OSC_LFRC
-//     AM_HAL_RTC_OSC_XT
-//
-// @note After selection of the RTC oscillator, a 2 second delay occurs before
-// the new setting is reflected in status. Therefore the CLKGEN.STATUS.OMODE
-// bit will not reflect the new status until after the 2s wait period.
-//
-//
-//*****************************************************************************
-void
-am_hal_rtc_osc_select(uint32_t ui32OSC)
-{
-    if ( ui32OSC == AM_HAL_RTC_OSC_XT )
-    {
-        // Clear bit to 0 for XTAL
-        CLKGEN->OCTRL &= ~CLKGEN_OCTRL_OSEL_Msk;
     }
 }
 

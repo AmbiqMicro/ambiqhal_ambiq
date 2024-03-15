@@ -43,7 +43,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_H
@@ -65,7 +65,6 @@
 #include "am_util_debug.h"
 #include "am_util_delay.h"
 #include "am_util_id.h"
-#include "am_util_regdump.h"
 #include "am_util_stdio.h"
 #include "am_util_string.h"
 #include "am_util_time.h"
@@ -75,7 +74,6 @@
 #elif defined(AM_PART_APOLLO4_API)
 #include "am_util_ble_cooper.h"
 #endif
-
 
 #endif  // AM_UTIL_H
 

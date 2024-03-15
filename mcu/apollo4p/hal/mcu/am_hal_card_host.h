@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CARD_HOST_H
@@ -53,7 +53,7 @@ extern "C"
 #endif
 
 //
-//! SD/MMC/SDIO host instance index
+//! SD/MMC/SDIO Host Controller index
 //
 typedef enum
 {
@@ -73,6 +73,7 @@ typedef enum
     AM_HAL_CMD_ERR_CRC,
     AM_HAL_CMD_ERR_ENDBIT,
     AM_HAL_CMD_ERR_NO_RESPONSE,
+    AM_HAL_CMD_ERR_INVALID_RESPONSE,
 } am_hal_card_cmd_err_e;
 
 //
@@ -142,6 +143,15 @@ typedef enum
 } am_hal_host_uhs_mode_e;
 
 //
+//! Scatter IO Struct
+//
+typedef struct
+{
+    void     *pIovBase;
+    uint32_t ui32IovLen;
+} am_hal_card_iovec_t;
+
+//
 //! Command Data Struct
 //
 typedef struct
@@ -152,6 +162,8 @@ typedef struct
     uint8_t *pui8Buf;
     uint32_t ui32BlkSize;
     uint32_t ui32BlkCnt;
+    uint8_t  ui8IovCnt;
+    am_hal_card_iovec_t *pIov;
     am_hal_card_data_err_e eDataError;
 } am_hal_card_cmd_data_t;
 
@@ -250,6 +262,7 @@ struct am_hal_card_host_ops
     uint32_t (*set_uhs_mode)(void *pHandle, am_hal_host_uhs_mode_e eUHSMode);
     void (*set_txrx_delay)(void *pHandle, uint8_t ui8TxRxDelays[2]);
     bool (*get_cd)(void *pHandle);
+    bool (*get_wr_protect)(void *pHandle);
     uint32_t (*card_busy)(void *pHandle, uint32_t ui32TimeoutMS);
 };
 

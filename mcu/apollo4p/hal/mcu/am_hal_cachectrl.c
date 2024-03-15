@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -114,6 +114,8 @@ daxi_flush_invalidate(bool bFlush)
         // APB_SYNC
         //
         am_hal_sysctrl_sysbus_write_flush();
+
+        while ( !CPU->DAXICTRL_b.DAXIREADY );
     }
 
     //
@@ -141,11 +143,6 @@ daxi_flush_complete(void)
 {
     AM_CRITICAL_BEGIN
     daxi_flush_invalidate(true);
-
-    //
-    // flush any buffered core and peripheral writes.
-    //
-    while ( !CPU->DAXICTRL_b.DAXIREADY );
     AM_CRITICAL_END
 
 } // daxi_flush_complete()

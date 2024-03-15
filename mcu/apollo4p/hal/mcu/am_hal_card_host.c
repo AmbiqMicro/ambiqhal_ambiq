@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -192,6 +192,7 @@ static am_hal_card_host_ops_t g_sdhc_host_ops = {
     .set_uhs_mode = am_hal_sdhc_set_uhs_mode,
     .set_txrx_delay = am_hal_sdhc_set_txrx_delay,
     .get_cd = am_hal_sdhc_get_cd,
+    .get_wr_protect = am_hal_sdhc_get_wr_protect,
     .card_busy = am_hal_sdhc_card_busy,
 };
 

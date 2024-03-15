@@ -21,8 +21,23 @@ zephyr_library_sources(hal/mcu/am_hal_rtc.c)
 zephyr_library_sources(hal/mcu/am_hal_utils.c)
 zephyr_library_sources(hal/mcu/am_hal_mcuctrl.c)
 
+if(CONFIG_AMBIQ_HAL_USE_ADC)
+    zephyr_library_sources(hal/am_hal_adc.c)
+endif()
+
 if(CONFIG_AMBIQ_HAL_USE_GPIO)
     zephyr_library_sources(hal/am_hal_gpio.c)
+endif()
+
+if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPI)
+    zephyr_library_sources(hal/mcu/am_hal_iom.c)
+    zephyr_library_sources(hal/mcu/am_hal_cmdq.c)
+    zephyr_library_sources(hal/mcu/am_hal_fault.c)
+endif()
+
+if(CONFIG_AMBIQ_HAL_USE_MSPI)
+    zephyr_library_sources(hal/mcu/am_hal_mspi.c)
+    zephyr_library_sources(hal/mcu/am_hal_cmdq.c)
 endif()
 
 if(CONFIG_AMBIQ_HAL_USE_STIMER)
@@ -35,17 +50,6 @@ endif()
 
 if(CONFIG_AMBIQ_HAL_USE_WDT)
     zephyr_library_sources(hal/am_hal_wdt.c)
-endif()
-
-if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPI)
-    zephyr_library_sources(hal/mcu/am_hal_iom.c)
-    zephyr_library_sources(hal/mcu/am_hal_cmdq.c)
-    zephyr_library_sources(hal/mcu/am_hal_fault.c)
-endif()
-
-if(CONFIG_AMBIQ_HAL_USE_MSPI)
-    zephyr_library_sources(hal/mcu/am_hal_mspi.c)
-    zephyr_library_sources(hal/mcu/am_hal_cmdq.c)
 endif()
 
 zephyr_include_directories(hal)

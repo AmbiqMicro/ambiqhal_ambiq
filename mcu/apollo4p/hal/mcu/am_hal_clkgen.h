@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CLKGEN_H
@@ -52,11 +52,6 @@ extern "C"
 {
 #endif
 
-//
-//! Designate this peripheral.
-//
-#define AM_APOLLO3_CLKGEN   1
-
 //*****************************************************************************
 //
 //! @name System Clock max frequency
@@ -65,11 +60,7 @@ extern "C"
 //! These macros provide a definition of the maximum clock frequency.
 //
 //*****************************************************************************
-#ifdef APOLLO4_FPGA
-#define AM_HAL_CLKGEN_FREQ_MAX_HZ           (APOLLO4_FPGA * 1000000)
-#else // APOLLO4_FPGA
 #define AM_HAL_CLKGEN_FREQ_MAX_HZ           96000000
-#endif // APOLLO4_FPGA
 
 #define AM_HAL_CLKGEN_FREQ_MAX_KHZ      (AM_HAL_CLKGEN_FREQ_MAX_HZ / 1000)
 #define AM_HAL_CLKGEN_FREQ_MAX_MHZ      (AM_HAL_CLKGEN_FREQ_MAX_HZ / 1000000)
@@ -90,16 +81,6 @@ typedef enum
     AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE,
     AM_HAL_CLKGEN_CONTROL_HFRC2_START,
     AM_HAL_CLKGEN_CONTROL_HFRC2_STOP,
-    AM_HAL_CLKGEN_CONTROL_XTAL24M_ENABLE,
-    AM_HAL_CLKGEN_CONTROL_XTAL24M_DISABLE,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_0,      // Drive strength
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_1,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_2,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_3,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_4,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_5,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_6,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_7,
     AM_HAL_CLKGEN_CONTROL_DCCLK_ENABLE,
     AM_HAL_CLKGEN_CONTROL_DCCLK_DISABLE,
     AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_OFF,
@@ -267,18 +248,30 @@ typedef struct
 //!
 //! @note IMPORTANT! This function MUST be called very early in execution of
 //!       an application with the parameter AM_HAL_CLKGEN_CONTROL_SYSCLK_MAX
-//!       in order to set Apollo3 to its required operating frequency.
+//!       in order to set Apollo4p to its required operating frequency.
 //!
 //! @param eControl - One of the following:
-//!     AM_HAL_CLKGEN_CONTROL_SYSCLK_MAX
-//!     AM_HAL_CLKGEN_CONTROL_XTAL_START
-//!     AM_HAL_CLKGEN_CONTROL_LFRC_START
-//!     AM_HAL_CLKGEN_CONTROL_XTAL_STOP
-//!     AM_HAL_CLKGEN_CONTROL_LFRC_STOP
-//!     AM_HAL_CLKGEN_CONTROL_RTC_SEL_XTAL
 //!     AM_HAL_CLKGEN_CONTROL_RTC_SEL_LFRC
+//!     AM_HAL_CLKGEN_CONTROL_RTC_SEL_XTAL
 //!     AM_HAL_CLKGEN_CONTROL_HFADJ_ENABLE
 //!     AM_HAL_CLKGEN_CONTROL_HFADJ_DISABLE
+//!     AM_HAL_CLKGEN_CONTROL_HF2ADJ_ENABLE
+//!     AM_HAL_CLKGEN_CONTROL_HF2ADJ_DISABLE
+//!     AM_HAL_CLKGEN_CONTROL_HFRC2_START
+//!     AM_HAL_CLKGEN_CONTROL_HFRC2_STOP
+//!     AM_HAL_CLKGEN_CONTROL_DCCLK_ENABLE
+//!     AM_HAL_CLKGEN_CONTROL_DCCLK_DISABLE
+//!     AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_OFF
+//!     AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_HFRC48
+//!     AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_HFRC96
+//!     AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_DPHYPLL
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLK_ENABLE
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLK_DISABLE
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_OFF
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_HFRC12
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_HFRC6
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_HFXT
+//!     AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE
 //! @param pArgs - Pointer to arguments for Control Switch Case
 //!
 //! @return status      - generic or interface specific status.

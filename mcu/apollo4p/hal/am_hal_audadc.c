@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -678,7 +678,7 @@ am_hal_audadc_slot_dc_offset_calculate(void *pHandle,
             }
             else
             {
-                fLinearGain = pow(10, fSlotGainDB / 20);
+                fLinearGain = powf(10, fSlotGainDB / 20);
                 fOffsetmFS = (pSlotCalib->sCalibCoeff[ui32SlotNumber].fHGSlope * fLinearGain) + pSlotCalib->sCalibCoeff[ui32SlotNumber].fHGIntercept;
             }
 
@@ -871,7 +871,9 @@ am_hal_audadc_configure_dma(void *pHandle,
     //
     if ( g_AUDADCSlotsConfigured > 1 )
     {
+        //
         // Need slot number to distinguish between slot results.
+        //
         ui32Config |= _VAL2FLD(AUDADC_DMACFG_DMAEN, AUDADC_DMACFG_DMAEN_DIS);
     }
     else
@@ -879,10 +881,6 @@ am_hal_audadc_configure_dma(void *pHandle,
         ui32Config |= _VAL2FLD(AUDADC_DMACFG_DMAEN, AUDADC_DMACFG_DMAEN_EN);
     }
 
-    //
-    // Enable DMA Halt on Status (DMAERR or DMACPL) by default. This bit is reserved in apollo4
-    //
-//    ui32Config |= _VAL2FLD(AUDADC_DMACFG_DMAHONSTAT, AUDADC_DMACFG_DMAHONSTAT_EN);
 
     //
     // Configure the DMA dynamic priority handling.

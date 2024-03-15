@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-f9cb503747 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -2858,6 +2858,11 @@ am_hal_iom_spi_blocking_fullduplex(void *pHandle,
         return ui32Status;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+    if (pIOMState->eSeq == AM_HAL_IOM_SEQ_RUNNING)
+    {
+        // Dynamic additions to sequence not allowed
+        return AM_HAL_STATUS_INVALID_OPERATION;
+    }
 
     ui32Module = pIOMState->ui32Module;
     ui32Offset = psTransaction->ui64Instr;
@@ -2906,6 +2911,11 @@ am_hal_iom_spi_blocking_fullduplex(void *pHandle,
     // Disable IOM interrupts as we'll be polling
     //
     IOMn(ui32Module)->INTEN = 0;
+    //
+    // Disable DMA - in case the last transaction was DMA
+    // For CQ - we disable DMA only at the start of next transaction
+    //
+    IOMn(ui32Module)->DMACFG_b.DMAEN = 0;
 
     //
     // Clear interrupts
@@ -3012,18 +3022,26 @@ am_hal_iom_spi_blocking_fullduplex(void *pHandle,
             //
             // Safe to read the FIFO, read 4 bytes
             //
-            *pui32RxBuffer++ = IOMn(ui32Module)->FIFOPOP;
+            uint32_t ui32Read;
+            ui32Read = IOMn(ui32Module)->FIFOPOP;
 #if MANUAL_POP
             IOMn(ui32Module)->FIFOPOP = 0x11111111;
 #endif
             ui32FifoSiz -= 4;
             if (ui32RxBytes >= 4)
             {
+                *pui32RxBuffer++ = ui32Read;
                 ui32RxBytes -= 4;
             }
             else
             {
-                ui32RxBytes = 0;
+                // Copy byte by byte - so as to not corrupt the rest of the buffer
+                uint8_t *pui8Buffer = (uint8_t *)pui32RxBuffer;
+                do
+                {
+                    *pui8Buffer++ = ui32Read & 0xFF;
+                    ui32Read >>= 8;
+                } while (--ui32RxBytes);
             }
         }
     }
@@ -3039,6 +3057,7 @@ am_hal_iom_spi_blocking_fullduplex(void *pHandle,
 
     if ( ui32Status != AM_HAL_STATUS_SUCCESS )
     {
+        IOMn(ui32Module)->MSPICFG_b.FULLDUP = 0;
         return ui32Status;
     }
 
@@ -3065,6 +3084,11 @@ am_hal_iom_spi_blocking_fullduplex(void *pHandle,
     //
     IOMn(ui32Module)->INTCLR = AM_HAL_IOM_INT_ALL;
     IOMn(ui32Module)->INTEN = ui32IntConfig;
+
+    //
+    // Quit FULLDUPLEX mode
+    //
+    IOMn(ui32Module)->MSPICFG_b.FULLDUP = 0;
 
     //
     // Return the status.

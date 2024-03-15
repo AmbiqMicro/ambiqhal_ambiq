@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -252,6 +252,10 @@ am_hal_crc32(uint32_t ui32StartAddr, uint32_t ui32SizeBytes, uint32_t *pui32Crc)
 
     if (status == AM_HAL_STATUS_SUCCESS)
     {
+        if (SECURITY->CTRL_b.CRCERROR)
+        {
+            status = AM_HAL_STATUS_HW_ERR;
+        }
         *pui32Crc = SECURITY->RESULT;
     }
 

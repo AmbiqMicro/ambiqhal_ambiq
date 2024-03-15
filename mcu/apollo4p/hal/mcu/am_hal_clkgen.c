@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -67,8 +67,6 @@ am_hal_clkgen_control(am_hal_clkgen_control_e eControl, void *pArgs)
 
     switch ( eControl )
     {
-
-
         case AM_HAL_CLKGEN_CONTROL_RTC_SEL_LFRC:
             CLKGEN->OCTRL_b.OSEL = CLKGEN_OCTRL_OSEL_RTC_LFRC;
             break;

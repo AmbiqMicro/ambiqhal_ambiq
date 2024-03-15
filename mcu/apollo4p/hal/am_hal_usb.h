@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -58,6 +58,7 @@ extern "C" {
 //! used in function am_hal_usb_setHFRC2 arguments
 //
 //*****************************************************************************
+
 typedef enum
 {
     AM_HAL_USB_HS_CLK_DISABLE,            ///< hfrc2 will be disabled, default off method

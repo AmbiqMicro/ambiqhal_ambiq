@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -179,7 +179,8 @@ typedef struct
         uint32_t regIDX0;
         uint32_t regIDX1;
         uint32_t regIDX2;
-    } regEndPoints[AM_HAL_USB_EP_MAX_NUMBER];
+    }
+    regEndPoints[AM_HAL_USB_EP_MAX_NUMBER];
 }
 am_hal_usb_register_state_t;
 
@@ -218,10 +219,13 @@ typedef struct
     am_hal_usb_ep0_setup_received_callback ep0_setup_callback;
     //! Endpoint transfer complete callback
     am_hal_usb_ep_xfer_complete_callback ep_xfer_complete_callback;
+
+    bool bPendingInEndData;
+    bool bPendingOutEndData;
 }
 am_hal_usb_state_t;
 
-static am_hal_usb_state_t g_am_hal_usb_states[AM_REG_USB_NUM_MODULES];
+static am_hal_usb_state_t g_am_hal_usb_states[AM_REG_USB_NUM_MODULES] = {0};
 
 //*****************************************************************************
 //
@@ -779,19 +783,9 @@ am_hal_usb_power_control(void *pHandle,
                          am_hal_sysctrl_power_state_e ePowerState,
                          bool bRetainState)
 {
-    uint8_t i;
-    uint32_t ui32Status;
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *) pHandle;
-    uint32_t ui32Module = pState->ui32Module;
 
-    USB_Type *pUSB = USBn(ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
-    if ( ui32Module >= AM_REG_USB_NUM_MODULES )
-    {
-        return AM_HAL_STATUS_OUT_OF_RANGE;
-    }
-
     //
     // Check to make sure this is a valid handle.
     //
@@ -800,6 +794,21 @@ am_hal_usb_power_control(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint8_t i;
+    uint32_t ui32Status;
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *) pHandle;
+    uint32_t ui32Module = pState->ui32Module;
+
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    if ( ui32Module >= AM_REG_USB_NUM_MODULES )
+    {
+        return AM_HAL_STATUS_OUT_OF_RANGE;
+    }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+    USB_Type *pUSB = USBn(ui32Module);
 
     //
     // Decode the requested power state and update SCARD operation accordingly.
@@ -1213,13 +1222,11 @@ am_hal_usb_fifo_unloading(USB_Type *pUSB, uint8_t ui8EpNum, uint8_t *pucBuf, uin
 
     if (Read32bitRemain)
     {
-        uint8_t *pui8FIFO;
-
-        pui8FIFO = ((uint8_t *)FIFOx_ADDR(pUSB, ui8EpNum));
+        volatile uint8_t *pui8FIFO = ((volatile uint8_t *)FIFOx_ADDR(pUSB, ui8EpNum));
 
         for (int i = 0; i < Read32bitRemain; i++)
         {
-            pucBuf[Read32bitCount*sizeof(uint32_t) + i] = *pui8FIFO;
+            pucBuf[Read32bitCount*sizeof(uint32_t) + i] = (uint8_t) *pui8FIFO;
         }
     }
 }
@@ -1443,9 +1450,6 @@ am_hal_usb_xfer_complete(am_hal_usb_state_t *pState, am_hal_usb_ep_xfer_t *pXfer
 uint32_t
 am_hal_usb_ep_stall(void *pHandle, uint8_t ui8EpAddr)
 {
-    uint8_t ui8EpNum, ui8EpDir;
-    am_hal_usb_state_t *pState;
-    USB_Type *pUSB;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle) )
@@ -1457,6 +1461,9 @@ am_hal_usb_ep_stall(void *pHandle, uint8_t ui8EpAddr)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif
+    uint8_t ui8EpNum, ui8EpDir;
+    am_hal_usb_state_t *pState;
+    USB_Type *pUSB;
 
     ui8EpNum = am_hal_usb_ep_number(ui8EpAddr);
     ui8EpDir = am_hal_usb_ep_dir(ui8EpAddr);
@@ -1507,9 +1514,6 @@ am_hal_usb_ep_stall(void *pHandle, uint8_t ui8EpAddr)
 uint32_t
 am_hal_usb_ep_clear_stall(void *pHandle, uint8_t ui8EpAddr)
 {
-    uint8_t ui8EpNum, ui8EpDir;
-    am_hal_usb_state_t *pState;
-    USB_Type *pUSB;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle) )
@@ -1521,6 +1525,9 @@ am_hal_usb_ep_clear_stall(void *pHandle, uint8_t ui8EpAddr)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif
+    uint8_t ui8EpNum, ui8EpDir;
+    am_hal_usb_state_t *pState;
+    USB_Type *pUSB;
 
     ui8EpNum = am_hal_usb_ep_number(ui8EpAddr);
     ui8EpDir = am_hal_usb_ep_dir(ui8EpAddr);
@@ -1627,10 +1634,6 @@ am_hal_usb_ep_fifo_reset(uint32_t *ui32Allocated)
 uint32_t
 am_hal_usb_ep_init(void *pHandle, uint8_t ui8EpAddr, uint8_t ui8EpAttr, uint16_t ui16MaxPacket)
 {
-    uint8_t sz;
-    uint8_t ui8EpNum, ui8EpDir;
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -1641,6 +1644,10 @@ am_hal_usb_ep_init(void *pHandle, uint8_t ui8EpAddr, uint8_t ui8EpAttr, uint16_t
     {
         return AM_HAL_STATUS_INVALID_ARG;
     }
+    uint8_t sz;
+    uint8_t ui8EpNum, ui8EpDir;
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     // Normally USB stack endpoint descriptor should define
     // 64  bytes max packet for full speed
@@ -1784,19 +1791,49 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
 
     switch ( pState->eEP0State )
     {
+        case AM_HAL_USB_EP0_STATE_IDLE:
+            if((pState->bPendingInEndData || pState->bPendingOutEndData) && (ui16Len == 0))
+            {
+                // Reset EP0 state and wait for the next command from host.
+                am_hal_usb_ep0_state_reset(pState);
+                pState->bPendingInEndData = false;
+                pState->bPendingOutEndData = false;
+            }
+            else
+            {
+                AM_HAL_USB_EXIT_CRITICAL;
+                return AM_HAL_STATUS_FAIL;
+            }
+            break;
+
         case AM_HAL_USB_EP0_STATE_SETUP:
             if (ui16Len == 0x0)
             {
-                // Upper layer USB stack just use zero length packet to confirm no data stage
-                // some requests like CLEAR_FEARURE, SET_ADDRESS, SET_CONFIGRATION, etc.
-                // end the control transfer from device side
-                CSR0_ServicedOutPktRdyAndDataEnd_Set(pUSB);
+                // There are 2 conditions that we are entering to this handling:
+                // 1. Previous command was with data stage. However, the subsequent SETUP is
+                //    received in ISR before the ACK stage handling is done. For this case,
+                //    reset ep0_xfer and keep the state at SETUP.
+                // 2. Previous command was command without data stage. We should send the EP0
+                //    back to IDLE so that it is able to receive next SETUP correctly.
 
-                // Move to the status stage and second EP0 interrupt
-                // Will indicate request is completed
-                pState->eEP0State =
-                    (ui8EpDir == AM_HAL_USB_EP_DIR_IN) ? AM_HAL_USB_EP0_STATE_STATUS_TX : AM_HAL_USB_EP0_STATE_STATUS_RX;
+                // Case 1:
+                if(pState->bPendingOutEndData || pState->bPendingInEndData)
+                {
+                    am_hal_usb_xfer_reset(&pState->ep0_xfer);
+                    pState->bPendingOutEndData = false;
+                    pState->bPendingInEndData  = false;
+                }
+                // case 2:
+                else
+                {
+                    // Upper layer USB stack just use zero length packet to confirm no data stage
+                    // some requests like CLEAR_FEARURE, SET_ADDRESS, SET_CONFIGRATION, etc.
+                    // end the control transfer from device side
+                    CSR0_ServicedOutPktRdyAndDataEnd_Set(pUSB);
 
+                    pState->eEP0State =
+                        (ui8EpDir == AM_HAL_USB_EP_DIR_IN) ? AM_HAL_USB_EP0_STATE_STATUS_TX : AM_HAL_USB_EP0_STATE_STATUS_RX;
+                }
             }
             else
             {
@@ -1804,10 +1841,21 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
                 // some requests like GET_*_DESCRIPTOR
                 CSR0_ServicedOutPktRdy_Set(pUSB);
 
+                // Clear SetupEnd flag since we are starting a new SETUP stage
+                // here
+                if (CSR0_SetupEnd(pUSB))
+                {
+                    CSR0_ServicedSetupEnd_Set(pUSB);
+                }
+
                 switch ( ui8EpDir )
                 {
                     // Read requests handling
                     case AM_HAL_USB_EP_DIR_IN:
+                        // Flag that we need to handle End Data later for OUT
+                        // direction
+                        pState->bPendingOutEndData = true;
+
                         // Load the first packet
                         if (ui16Len < maxpacket)
                         {
@@ -1831,6 +1879,11 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
                     case AM_HAL_USB_EP_DIR_OUT:
                         // Write requests handling
                         // Waiting the host sending the data to the device
+
+                        // Flag that we need to handle End Data later for IN
+                        // direction
+                        pState->bPendingInEndData = true;
+
                         pState->ep0_xfer.remaining = ui16Len;
                         pState->eEP0State = AM_HAL_USB_EP0_STATE_DATA_RX;
 
@@ -2045,7 +2098,6 @@ am_hal_usb_intr_ep_in_enable(void *pHandle, uint32_t ui32IntMask)
 uint32_t
 am_hal_usb_intr_ep_in_disable(void *pHandle, uint32_t ui32IntMask)
 {
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2057,6 +2109,7 @@ am_hal_usb_intr_ep_in_disable(void *pHandle, uint32_t ui32IntMask)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
     USB_Type *pUSB = USBn(pState->ui32Module);
 
     INTRINE_Disable(pUSB, ui32IntMask);
@@ -2072,9 +2125,6 @@ am_hal_usb_intr_ep_in_disable(void *pHandle, uint32_t ui32IntMask)
 uint32_t
 am_hal_usb_intr_ep_in_clear(void *pHandle)
 {
-    volatile uint32_t tmp = 0;
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2082,6 +2132,9 @@ am_hal_usb_intr_ep_in_clear(void *pHandle)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif
+    volatile uint32_t tmp = 0;
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     tmp = INTRIN_Clear(pUSB);
     (void)tmp;
@@ -2097,9 +2150,6 @@ am_hal_usb_intr_ep_in_clear(void *pHandle)
 uint32_t
 am_hal_usb_intr_ep_in_status_get(void *pHandle, uint32_t *pui32IntStatus, bool bEnabledOnly)
 {
-    uint32_t ui32IntStatus = 0;
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
    if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2107,6 +2157,9 @@ am_hal_usb_intr_ep_in_status_get(void *pHandle, uint32_t *pui32IntStatus, bool b
        return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif
+    uint32_t ui32IntStatus = 0;
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     ui32IntStatus = INTRIN_Get(pUSB);
 
@@ -2128,8 +2181,6 @@ am_hal_usb_intr_ep_in_status_get(void *pHandle, uint32_t *pui32IntStatus, bool b
 uint32_t
 am_hal_usb_intr_ep_out_enable(void *pHandle, uint32_t ui32IntMask)
 {
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2141,6 +2192,8 @@ am_hal_usb_intr_ep_out_enable(void *pHandle, uint32_t ui32IntMask)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     INTROUTE_Enable(pUSB, ui32IntMask);
 
@@ -2155,8 +2208,6 @@ am_hal_usb_intr_ep_out_enable(void *pHandle, uint32_t ui32IntMask)
 uint32_t
 am_hal_usb_intr_ep_out_disable(void *pHandle, uint32_t ui32IntMask)
 {
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2168,6 +2219,8 @@ am_hal_usb_intr_ep_out_disable(void *pHandle, uint32_t ui32IntMask)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     INTROUTE_Disable(pUSB, ui32IntMask);
 
@@ -2183,8 +2236,6 @@ uint32_t
 am_hal_usb_intr_ep_out_clear(void *pHandle)
 {
     volatile uint32_t tmp = 0;
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2192,6 +2243,8 @@ am_hal_usb_intr_ep_out_clear(void *pHandle)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     tmp = INTROUT_Clear(pUSB);
     (void)tmp;
@@ -2208,8 +2261,6 @@ uint32_t
 am_hal_usb_intr_ep_out_status_get(void *pHandle, uint32_t *pui32IntStatus, bool bEnabledOnly)
 {
     uint32_t ui32IntStatus = 0;
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2217,6 +2268,8 @@ am_hal_usb_intr_ep_out_status_get(void *pHandle, uint32_t *pui32IntStatus, bool 
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     ui32IntStatus = INTROUT_Get(pUSB);
 
@@ -2238,8 +2291,6 @@ am_hal_usb_intr_ep_out_status_get(void *pHandle, uint32_t *pui32IntStatus, bool 
 uint32_t
 am_hal_usb_intr_usb_enable(void *pHandle, uint32_t ui32IntMask)
 {
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2251,6 +2302,8 @@ am_hal_usb_intr_usb_enable(void *pHandle, uint32_t ui32IntMask)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     INTRUSBE_Enable(pUSB, ui32IntMask);
 
@@ -2265,8 +2318,6 @@ am_hal_usb_intr_usb_enable(void *pHandle, uint32_t ui32IntMask)
 uint32_t
 am_hal_usb_intr_usb_disable(void *pHandle, uint32_t ui32IntMask)
 {
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2278,6 +2329,8 @@ am_hal_usb_intr_usb_disable(void *pHandle, uint32_t ui32IntMask)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     INTRUSBE_Disable(pUSB, ui32IntMask);
 
@@ -2293,8 +2346,6 @@ uint32_t
 am_hal_usb_intr_usb_clear(void *pHandle)
 {
     volatile uint32_t tmp = 0;
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2302,6 +2353,8 @@ am_hal_usb_intr_usb_clear(void *pHandle)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     tmp = INTRUSB_Clear(pUSB);
     (void)tmp;
@@ -2319,7 +2372,6 @@ am_hal_usb_intr_usb_status_get(void *pHandle, uint32_t *pui32IntStatus, bool bEn
 {
     uint32_t ui32IntStatus = 0;
     am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle))
@@ -2327,6 +2379,8 @@ am_hal_usb_intr_usb_status_get(void *pHandle, uint32_t *pui32IntStatus, bool bEn
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif
+
+    USB_Type *pUSB = USBn(pState->ui32Module);
 
     ui32IntStatus = INTRUSB_Get(pUSB);
 
@@ -2945,8 +2999,13 @@ am_hal_usb_control(am_hal_usb_control_e eControl, void *pArgs)
             break;
 
         case AM_HAL_CLKGEN_CONTROL_SET_HFRC2_TYPE:
+            if (!pArgs)
+            {
+                ui32RetVal = AM_HAL_STATUS_INVALID_ARG;
+                break;
+            }
             ui32RetVal =  am_hal_usb_setHFRC2( *((am_hal_usb_hs_clock_type *) pArgs)) ;
-			break ;
+            break ;
 
         default:
             ui32RetVal = AM_HAL_STATUS_INVALID_ARG;
@@ -2965,7 +3024,7 @@ uint32_t
 am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType)
 {
     uint32_t ui32Status = AM_HAL_STATUS_INVALID_ARG;
-    switch ( tUsbHsClockType )
+    switch (tUsbHsClockType)
     {
         case AM_HAL_USB_HS_CLK_DISABLE:
         case AM_HAL_USB_HS_CLK_DISABLE_HFRC2_ADJ:
@@ -2981,8 +3040,8 @@ am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType)
                 //
                 ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HF2ADJ_DISABLE, NULL);
             }
-            break ;
-            
+            break;
+
         case AM_HAL_USB_HS_CLK_HFRC2_ADJ:
         case AM_HAL_USB_HS_CLK_HFRC2_ADJ_EXTERN_CLK:
             //
@@ -2993,18 +3052,31 @@ am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType)
             ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HFRC2_STOP, false);
             if (ui32Status != AM_HAL_STATUS_SUCCESS)
             {
-                break ;
+                break;
             }
             {
                 am_hal_mcuctrl_control_arg_t ctrlArgs = g_amHalMcuctrlArgDefault;
                 ctrlArgs.ui32_arg_hfxtal_user_mask = 1 << AM_HAL_HFXTAL_USB_PHI_EN;
-                ctrlArgs.b_arg_apply_ext_source = AM_HAL_USB_HS_CLK_HFRC2_ADJ_EXTERN_CLK == tUsbHsClockType;
-
-                ui32Status = am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START, &ctrlArgs);
+                am_hal_mcuctrl_control_e eMcuControlType;
+                if (AM_HAL_USB_HS_CLK_HFRC2_ADJ_EXTERN_CLK == tUsbHsClockType)
+                {
+                    ctrlArgs.b_arg_apply_ext_source = true;
+                    eMcuControlType = AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL;
+                }
+                else
+                {
+                    ctrlArgs.b_arg_apply_ext_source = false;
+                    eMcuControlType = AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START;
+                }
+                ui32Status = am_hal_mcuctrl_control(eMcuControlType, &ctrlArgs);
                 if (ui32Status != AM_HAL_STATUS_SUCCESS)
                 {
                     break;
                 }
+                //
+                // add a short wait for clock to start, before start adjust FLL
+                //
+                am_hal_delay_us(50);
             }
 
             //
@@ -3019,25 +3091,24 @@ am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType)
             ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE, (void *) &tHfadj_cmp);
             if (ui32Status != AM_HAL_STATUS_SUCCESS)
             {
-                break ;
+                break;
             }
             ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HFRC2_START, NULL);
-            break ;
-            
+            break;
+
         case AM_HAL_USB_HS_CLK_HFRC2:
             //
             // HFRC2 enabled with no adjust FLL, this is the default for HIGH_SPEED USB
             //
             ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HFRC2_START, NULL);
-            break ;
-            
+            break;
+
         default:
-            break ;
+            break;
     }
-	
+
     return ui32Status;
 }
-
 
 //*****************************************************************************
 //

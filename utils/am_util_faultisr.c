@@ -8,16 +8,16 @@
 //! dependencies (SWO output).  It collects the fault information into the sHalFaultData
 //! structure, which it then prints to stdout (typically SWO).
 //!
-//! By default this handler, when included in the build overrides the weak binding of
+//! By default this handler, when included in the build, overrides the weak binding of
 //! the default hardfault handler.  It allocates 512 bytes of global variable space for
 //! a local stack which guarantees diagnostic output under all hardfault conditions. If
-//! the local stack is not wanted/needed, remove the macro AM_LOCAL_STACK below. If
+//! the local stack is not wanted/needed, define AM_HF_NO_LOCAL_STACK below. If
 //! the local stack is disabled, and the SP was invalid at the time of the hardfault,
-//! a second hardfault can occur before any diagnostic data is collected.
+//! a second hardfault can occur before any diagnostic data is collected or output.
 //!
 //! This handler outputs information about the state of the processor at the time
 //! the hardfault occurred to stdout (typically SWO).  If output is not desired remove
-//! the macro AM_UTIL_FAULTISR_PRINT below. When prints are disabled, the fault
+//! the #define AM_UTIL_FAULTISR_PRINT below. When prints are disabled, the fault
 //! information is available in the local sHalFaultData structure.
 //!
 //! The handler does not return. After outputting the diagnostic information, it
@@ -69,7 +69,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -82,8 +82,8 @@
 //
 //*****************************************************************************
 
-#define AM_LOCAL_STACK              // when defined use local stack for HF Diagnostics
-//#define AM_UTIL_FAULTISR_PRINT      // when defined print output to stdout (SWO)
+//#define AM_HF_NO_LOCAL_STACK      // when defined use existing MSP (no local stack)
+//#define AM_UTIL_FAULTISR_PRINT    // when defined print output to stdout (SWO)
 
 //
 // Macros used by am_util_faultisr_collect_data().
@@ -95,7 +95,9 @@
 //
 // Macros for valid stack ranges.
 //
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#define AM_NUM_STACK_RANGES 1
+
+#if defined(AM_PART_APOLLO4_API)
   #define AM_SP_LOW    SRAM_BASEADDR
   #define AM_SP_HIGH   (SRAM_BASEADDR + RAM_TOTAL_SIZE)
 #elif defined(AM_PART_APOLLO3P)
@@ -119,8 +121,8 @@
 //*****************************************************************************
 
 // temporary stack (in case the HF was caused by invalid stack)
-#if defined(AM_LOCAL_STACK)
-uint8_t gFaultStack[512];    // needs ~320 bytes (+7 for 8-byte alignment)
+#if !defined(AM_HF_NO_LOCAL_STACK)
+uint64_t gFaultStack[64];    // needs ~320 bytes (8-byte alignment)
 #endif
 
 //*****************************************************************************
@@ -159,7 +161,6 @@ typedef struct
 
 } am_fault_t;
 
-
 //
 // Restore the default structure alignment
 //
@@ -170,34 +171,55 @@ typedef struct
 // Prototypes
 //
 //*****************************************************************************
-void am_util_faultisr_collect_data(uint32_t u32IsrSP);
-bool am_valid_sp(uint32_t u32IsrSP);
+uint32_t am_getStackedReg(uint32_t regnum, uint32_t *u32SP);
+void am_util_faultisr_collect_data(uint32_t *u32IsrSP);
+bool am_valid_sp(uint32_t *u32IsrSP);
 
 //
 // Prototype for printf, if used.
 //
 extern uint32_t am_util_stdio_printf(char *pui8Fmt, ...);
 
+//*****************************************************************************
+//
+// HardFault_Handler() gets control when a hard fault occurs.  it pass the previous
+// active stack pointer (MSP or PSP) in R0 to the function am_util_faultisr_collect_data()
+// which will never return.   If AM_HF_NO_LOCAL_STACK is not defined, it sets the MSP to
+// the local stack, and for M55 devices sets the MSPLIM register.
+//
+//*****************************************************************************
 
-//*****************************************************************************
-//
-// getStackedReg() will retrieve a specified register value, as it was stacked
-// by the processor after the fault, from the stack.
-//
-// The registers are stacked in the following order:
-//  R0, R1, R2, R3, R12, LR, PC, PSR.
-// To get R0 from the stack, call getStackedReg(0), r1 is getStackedReg(1)...
-//
-//*****************************************************************************
+// for GCC, ARM6 and IAR, all use the same inline assembly syntax
+#if defined(__GNUC_STDC_INLINE__) || defined(__IAR_SYSTEMS_ICC__) || ((defined(__ARMCC_VERSION)) && (__ARMCC_VERSION > 6000000))
+#if defined(__IAR_SYSTEMS_ICC__)
+#pragma diag_suppress = Pe940   // Suppress IAR compiler warning about missing
+                                // return statement on a non-void function
+__stackless uint32_t
+#else // GCC or ARM6
+uint32_t __attribute__((naked))
+#endif
+HardFault_Handler(void)
+{
+    __asm("    tst    lr, #4\n"                          // Check if we should use MSP or PSP
+          "    ite    eq\n"                              // Instrs executed when: eq,ne
+          "    mrseq  r0, msp\n"                         // t: bit2=0 indicating MSP stack
+          "    mrsne  r0, psp\n");                       // e: bit2=1 indicating PSP stack
+#if !defined(AM_HF_NO_LOCAL_STACK)
+    __asm("    ldr    r1, =gFaultStack\n");              // get address of the base of the temp_stack
+    __asm("    add    r1, r1, #512\n"                    // address of the top of the stack.
+          "    bic    r1, #3\n"                          // make sure the new stack is 8-byte aligned
+          "    mov    sp, r1\n");                        // move the new stack address to the SP
+#endif  // !defined(AM_HF_NO_LOCAL_STACK)
+    __asm("    b      am_util_faultisr_collect_data\n"); // no return - simple branch to get fault info
+}
+#endif // for GCC, ARM6 and IAR,
+
+// for ARM5 compiler
 #if (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION < 6000000)
 __asm uint32_t
-#if AM_CMSIS_REGS
 HardFault_Handler(void)
-#else // AM_CMSIS_REGS
-am_fault_isr(void)
-#endif // AM_CMSIS_REGS
 
-#if defined(AM_LOCAL_STACK)
+#if !defined(AM_HF_NO_LOCAL_STACK)
 {
     PRESERVE8
     import  am_util_faultisr_collect_data
@@ -211,7 +233,7 @@ am_fault_isr(void)
     bic     r1, #3                        // make sure the new stack is 8-byte aligned
     mov     sp, r1                        // move the new stack address to the SP
     b       am_util_faultisr_collect_data // no return - simple branch to get fault info
-    nop                                   // Avoid compiler warning about padding 2 bytes
+    movs    r0, r0                        // fill instruction for 4-byte alignment - not executed
 }
 #else // no local stack
 {
@@ -222,109 +244,28 @@ am_fault_isr(void)
     mrseq   r0, msp                       // t: bit2=0 indicating MSP stack
     mrsne   r0, psp                       // e: bit2=1 indicating PSP stack
     b       am_util_faultisr_collect_data // no return - simple branch to get fault info
+    movs    r0, r0                        // fill instruction for 4-byte alignment - not executed
 }
-#endif
+#endif  // !defined(AM_HF_NO_LOCAL_STACK)
 
-__asm uint32_t
-getStackedReg(uint32_t regnum, uint32_t u32SP)
-{
-    lsls    r0, r0, #2
-    adds    r0, r0, r1
-    ldr     r0, [r0]
-    bx      lr
-}
+#endif  // ARM5 Compiler
 
-#elif (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION > 6000000)
-uint32_t __attribute__((naked))
-#if AM_CMSIS_REGS
-HardFault_Handler(void)
-#else // AM_CMSIS_REGS
-am_fault_isr(void)
-#endif // AM_CMSIS_REGS
+//*****************************************************************************
+//
+// am_getStackedReg() will retrieve a specified register value, as it was stacked
+// by the processor after the fault, from the stack.
+//
+// The registers are stacked in the following order:
+//  R0, R1, R2, R3, R12, LR, PC, PSR.
+//
+// To get R0 from the stack, call getStackedReg(0), r1 is getStackedReg(1)...
+//
+//*****************************************************************************
+uint32_t
+am_getStackedReg(uint32_t regnum, uint32_t *u32SP)
 {
-    __asm("    tst    lr, #4\n"                          // Check if we should use MSP or PSP
-          "    ite    eq\n"                              // Instrs executed when: eq,ne
-          "    mrseq  r0, msp\n"                         // t: bit2=0 indicating MSP stack
-          "    mrsne  r0, psp\n");                       // e: bit2=1 indicating PSP stack
-#if defined(AM_LOCAL_STACK)
-    __asm("    ldr    r1, =gFaultStack\n"                // get address of the base of the temp_stack
-          "    add    r1, r1, #512\n"                    // address of the top of the stack.
-          "    bic    r1, #3\n"                          // make sure the new stack is 8-byte aligned
-          "    mov    sp,r1\n");                         // move the new stack address to the SP
-#endif
-    __asm("    b      am_util_faultisr_collect_data\n"); // no return - simple branch to get fault info
+    return (u32SP[regnum]);
 }
-
-uint32_t __attribute__((naked))
-getStackedReg(uint32_t regnum, uint32_t u32SP)
-{
-    __asm("    lsls    r0, r0, #2");
-    __asm("    adds    r0, r1");
-    __asm("    ldr     r0, [r0]");
-    __asm("    bx      lr");
-}
-#elif defined(__GNUC_STDC_INLINE__)
-uint32_t __attribute__((naked))
-#if AM_CMSIS_REGS
-HardFault_Handler(void)
-#else // AM_CMSIS_REGS
-am_fault_isr(void)
-#endif // AM_CMSIS_REGS
-{
-     __asm("    tst    lr, #4\n"                          // Check if we should use MSP or PSP
-          "    ite    eq\n"                              // Instrs executed when: eq,ne
-          "    mrseq  r0, msp\n"                         // t: bit2=0 indicating MSP stack
-          "    mrsne  r0, psp\n");                       // e: bit2=1 indicating PSP stack
-#if defined(AM_LOCAL_STACK)
-    __asm("    ldr    r1, =gFaultStack\n"                // get address of the base of the temp_stack
-          "    add    r1, r1, #512\n"                    // address of the top of the stack.
-          "    bic    r1, #3\n"                          // make sure the new stack is 8-byte aligned
-          "    mov    sp,r1\n");                         // move the new stack address to the SP
-#endif
-    __asm("    b      am_util_faultisr_collect_data\n"); // no return - simple branch to get fault info
-}
-
-uint32_t __attribute__((naked))
-getStackedReg(uint32_t regnum, uint32_t u32SP)
-{
-    __asm("    lsls    r0, r0, #2");
-    __asm("    adds    r0, r1");
-    __asm("    ldr     r0, [r0]");
-    __asm("    bx      lr");
-}
-#elif defined(__IAR_SYSTEMS_ICC__)
-#pragma diag_suppress = Pe940   // Suppress IAR compiler warning about missing
-                                // return statement on a non-void function
-__stackless uint32_t
-#if AM_CMSIS_REGS
-HardFault_Handler(void)
-#else // AM_CMSIS_REGS
-am_fault_isr(void)
-#endif // AM_CMSIS_REGS
-{
-    __asm("    tst    lr, #4\n"                          // Check if we should use MSP or PSP
-          "    ite    eq\n"                              // Instrs executed when: eq,ne
-          "    mrseq  r0, msp\n"                         // t: bit2=0 indicating MSP stack
-          "    mrsne  r0, psp\n");                       // e: bit2=1 indicating PSP stack
-#if defined(AM_LOCAL_STACK)
-    __asm("    ldr    r1, =gFaultStack\n"                // get address of the base of the temp_stack
-          "    add    r1, r1, #512\n"                    // address of the top of the stack.
-          "    bic    r1, #3\n"                          // make sure the new stack is 8-byte aligned
-          "    mov    sp,r1\n");                         // move the new stack address to the SP
-#endif
-    __asm("    b      am_util_faultisr_collect_data\n"); // no return - simple branch to get fault info
-}
-
-__stackless uint32_t
-getStackedReg(uint32_t regnum, uint32_t u32SP)
-{
-    __asm("     lsls    r0, r0, #2");
-    __asm("     adds    r0, r0, r1");
-    __asm("     ldr     r0, [r0]");
-    __asm("     bx      lr");
-}
-#pragma diag_default = Pe940    // Restore IAR compiler warning
-#endif
 
 //*****************************************************************************
 //
@@ -333,14 +274,15 @@ getStackedReg(uint32_t regnum, uint32_t u32SP)
 // This function is intended to be called by HardFault_Handler(), called
 // when the processor receives a hard fault interrupt.  This part of the
 // handler parses through the various fault codes and saves them into a data
-// structure so they can be readily examined by the user in the debugger.
+// structure so they can be readily examined by the user in the debugger or
+// output to the stdout (SWO).  This function does not return to the caller.
 //
 // The input u32IsrSP is expected to be the value of the stack pointer when
 // HardFault_Handler() was called.
 //
 //*****************************************************************************
 void
-am_util_faultisr_collect_data(uint32_t u32IsrSP)
+am_util_faultisr_collect_data(uint32_t *u32IsrSP)
 {
     volatile am_fault_t sFaultData;
 #if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
@@ -419,20 +361,20 @@ am_util_faultisr_collect_data(uint32_t u32IsrSP)
         // The address of the instruction that caused the fault is the stacked PC
         // if BFSR bit1 is set.
         //
-        sFaultData.u32FaultAddr = (sFaultData.u8BFSR & 0x02) ? getStackedReg(6, u32IsrSP) : 0xffffffff;
+        sFaultData.u32FaultAddr = (sFaultData.u8BFSR & 0x02) ? am_getStackedReg(6, u32IsrSP) : 0xffffffff;
 
         //
         // Get the stacked registers.
         // Note - the address of the instruction that caused the fault is u32PC.
         //
-        sFaultData.u32R0  = getStackedReg(0, u32IsrSP);
-        sFaultData.u32R1  = getStackedReg(1, u32IsrSP);
-        sFaultData.u32R2  = getStackedReg(2, u32IsrSP);
-        sFaultData.u32R3  = getStackedReg(3, u32IsrSP);
-        sFaultData.u32R12 = getStackedReg(4, u32IsrSP);
-        sFaultData.u32LR  = getStackedReg(5, u32IsrSP);
-        sFaultData.u32PC  = getStackedReg(6, u32IsrSP);
-        sFaultData.u32PSR = getStackedReg(7, u32IsrSP);
+        sFaultData.u32R0  = am_getStackedReg(0, u32IsrSP);
+        sFaultData.u32R1  = am_getStackedReg(1, u32IsrSP);
+        sFaultData.u32R2  = am_getStackedReg(2, u32IsrSP);
+        sFaultData.u32R3  = am_getStackedReg(3, u32IsrSP);
+        sFaultData.u32R12 = am_getStackedReg(4, u32IsrSP);
+        sFaultData.u32LR  = am_getStackedReg(5, u32IsrSP);
+        sFaultData.u32PC  = am_getStackedReg(6, u32IsrSP);
+        sFaultData.u32PSR = am_getStackedReg(7, u32IsrSP);
     }
     //
     // Use the HAL MCUCTRL functions to read the fault data.
@@ -530,13 +472,14 @@ am_util_faultisr_collect_data(uint32_t u32IsrSP)
     {
         am_util_stdio_printf("    SYS Fault Address: 0x%08X\n", sHalFaultData.ui32SYS);
     }
+
+    am_util_stdio_printf("\n\nDone with output. Entering infinite loop.\n\n");
+
     //
     // Spin in an infinite loop.
     // We need to spin here inside the function so that we have access to
     // local data, i.e. sFaultData.
     //
-    am_util_stdio_printf("\n\nDone with output. Entering infinite loop.\n\n");
-
 #endif  // AM_UTIL_FAULTISR_PRINT
 
     u32Mask = 0;
@@ -555,9 +498,14 @@ am_util_faultisr_collect_data(uint32_t u32IsrSP)
 //
 //*****************************************************************************
 bool
-am_valid_sp(uint32_t u32IsrSP)
+am_valid_sp(uint32_t *u32IsrSP)
 {
-    return ( (u32IsrSP >= AM_SP_LOW) && (u32IsrSP < AM_SP_HIGH) ) ? true : false;
+    // test for valid ranges
+    if ( ((uint32_t) u32IsrSP >= AM_SP_LOW) && ((uint32_t) u32IsrSP < AM_SP_HIGH) )
+    {
+        return true;
+    }
+    return false;  // not in any valid range
 }
 //*****************************************************************************
 

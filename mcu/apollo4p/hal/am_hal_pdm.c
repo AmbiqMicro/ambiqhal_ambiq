@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -393,7 +393,7 @@ am_hal_pdm_enable(void *pHandle)
     uint32_t ui32Module = pState->ui32Module;
 
     PDMn(ui32Module)->CTRL_b.RSTB = 0;
-    delay_us(5000);
+    delay_us(50);
     PDMn(ui32Module)->CTRL_b.RSTB = 1;
 
     PDMn(ui32Module)->CTRL_b.CLKEN = 1;

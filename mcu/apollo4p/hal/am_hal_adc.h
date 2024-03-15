@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_ADC_H
@@ -99,10 +99,9 @@
 // ****************************************************************************
 //
 //! @brief Minimum value for TRKCYC for the general purpose ADC.
-// Errata ERR091: TRKCYC must be minimum of 32
 //
 // ****************************************************************************
-#define AM_HAL_ADC_MIN_TRKCYC           32
+#define AM_HAL_ADC_MIN_TRKCYC           0
 
 // ****************************************************************************
 //
