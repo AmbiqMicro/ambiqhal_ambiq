@@ -40,7 +40,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision stable-c1f95ddf60 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -97,7 +97,14 @@
 //
 #define AM_NUM_STACK_RANGES 1
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
+  #undef  AM_NUM_STACK_RANGES
+  #define AM_NUM_STACK_RANGES  2
+  #define AM_SP_LOW    ITCM_BASEADDR
+  #define AM_SP_HIGH   (ITCM_BASEADDR + ITCM_MAX_SIZE)
+  #define AM_SP_LOW2   DTCM_BASEADDR
+  #define AM_SP_HIGH2  (DTCM_BASEADDR + DTCM_MAX_SIZE + SSRAM_MAX_SIZE)
+#elif defined(AM_PART_APOLLO4_API)
   #define AM_SP_LOW    SRAM_BASEADDR
   #define AM_SP_HIGH   (SRAM_BASEADDR + RAM_TOTAL_SIZE)
 #elif defined(AM_PART_APOLLO3P)
@@ -107,10 +114,10 @@
   #define AM_SP_LOW    SRAM_BASEADDR
   #define AM_SP_HIGH   (SRAM_BASEADDR + ( 384 * 1024 ))
 #elif defined(AM_PART_APOLLO2)
-  #define AM_SP_LOW     SRAM_BASEADDR
+  #define AM_SP_LOW    SRAM_BASEADDR
   #define AM_SP_HIGH   (SRAM_BASEADDR + ( 256 * 1024 ))
 #elif defined(AM_PART_APOLLO)
-  #define AM_SP_LOW     SRAM_BASEADDR
+  #define AM_SP_LOW    SRAM_BASEADDR
   #define AM_SP_HIGH   (SRAM_BASEADDR + ( 64 * 1024 ))
 #endif
 
@@ -206,6 +213,9 @@ HardFault_Handler(void)
           "    mrsne  r0, psp\n");                       // e: bit2=1 indicating PSP stack
 #if !defined(AM_HF_NO_LOCAL_STACK)
     __asm("    ldr    r1, =gFaultStack\n");              // get address of the base of the temp_stack
+#if defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
+    __asm("    MSR msplim, r1\n");                       // for Apollo5 (M55) set MSP stack limit register
+#endif
     __asm("    add    r1, r1, #512\n"                    // address of the top of the stack.
           "    bic    r1, #3\n"                          // make sure the new stack is 8-byte aligned
           "    mov    sp, r1\n");                        // move the new stack address to the SP
@@ -219,7 +229,7 @@ HardFault_Handler(void)
 __asm uint32_t
 HardFault_Handler(void)
 
-#if !defined(AM_HF_NO_LOCAL_STACK)
+#if !defined(AM_HF_NO_LOCAL_STACK)    // Apollo5 does not support ARM5 - can not be used for M55
 {
     PRESERVE8
     import  am_util_faultisr_collect_data
@@ -285,17 +295,18 @@ void
 am_util_faultisr_collect_data(uint32_t *u32IsrSP)
 {
     volatile am_fault_t sFaultData;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+
+#if defined(AM_PART_APOLLO4_API)
     am_hal_fault_status_t  sHalFaultData = {0};
 #elif defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P) || defined(AM_PART_APOLLO2) || defined(AM_PART_APOLLO)
     am_hal_mcuctrl_fault_t sHalFaultData = {0};
-#endif // if defined(AM_PART_APOLLO4X)
+#endif
 
     uint32_t u32Mask = 0;
 
     //
     // Following is a brief overview of fault information provided by the M4.
-    // More details can be found in the Cortex M4 User Guide.
+    // More details can be found in the Cortex M4/M55 User Guide.
     //
     // CFSR (Configurable Fault Status Reg) contains MMSR, BFSR, and UFSR:
     //   7:0    MMSR (MemManage)
@@ -379,7 +390,8 @@ am_util_faultisr_collect_data(uint32_t *u32IsrSP)
     //
     // Use the HAL MCUCTRL functions to read the fault data.
     //
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+
+#if defined(AM_PART_APOLLO4_API)
     am_hal_fault_status_get(&sHalFaultData);
 #elif defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
     am_hal_mcuctrl_info_get(AM_HAL_MCUCTRL_INFO_FAULT_STATUS, &sHalFaultData);
@@ -453,6 +465,7 @@ am_util_faultisr_collect_data(uint32_t *u32IsrSP)
         u32Mask >>= 1;
     }
 
+#if !defined(AM_PART_APOLLO5A) && !defined(AM_PART_APOLLO5B) // No CPU register block in Apollo5
     //
     // Print out any Apollo* Internal fault information - if any
     //
@@ -472,6 +485,7 @@ am_util_faultisr_collect_data(uint32_t *u32IsrSP)
     {
         am_util_stdio_printf("    SYS Fault Address: 0x%08X\n", sHalFaultData.ui32SYS);
     }
+#endif  // !defined(AM_PART_APOLLO5A) && !defined(AM_PART_APOLLO5B)
 
     am_util_stdio_printf("\n\nDone with output. Entering infinite loop.\n\n");
 
@@ -505,6 +519,12 @@ am_valid_sp(uint32_t *u32IsrSP)
     {
         return true;
     }
+#if defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
+    if ( ((uint32_t) u32IsrSP >= AM_SP_LOW2) && ((uint32_t) u32IsrSP < AM_SP_HIGH2) )
+    {
+        return true;
+    }
+#endif
     return false;  // not in any valid range
 }
 //*****************************************************************************

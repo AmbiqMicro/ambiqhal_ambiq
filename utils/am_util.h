@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision stable-c1f95ddf60 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_H
@@ -71,8 +71,13 @@
 
 #if defined(AM_PART_APOLLO3_API)
 #include "am_util_ble.h"
+#include "am_util_regdump.h"
 #elif defined(AM_PART_APOLLO4_API)
 #include "am_util_ble_cooper.h"
+#endif
+
+#if defined(AM_PART_APOLLO5_API)
+#include "am_util_pmu.h"
 #endif
 
 #endif  // AM_UTIL_H
