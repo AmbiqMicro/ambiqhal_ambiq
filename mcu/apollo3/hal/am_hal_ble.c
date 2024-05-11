@@ -763,7 +763,7 @@ am_hal_ble_patch_t am_ble_hw_patch =
 
 uint32_t am_hal_ble_patch_preload(void *pHandle)
 {
-    uint32_t *pRamCode;
+    uint32_t *pRamCode = NULL;
 
     if (APOLLO3_B0 || APOLLO3_GE_B0)
     {
@@ -776,8 +776,11 @@ uint32_t am_hal_ble_patch_preload(void *pHandle)
     am_hal_ble_patch_complete(pHandle);
 
     am_hal_ble_plf_reg_write(pHandle, 0x43000004, 0xFFFFFFFF);
-    am_hal_ble_plf_reg_write(pHandle, 0x43C00008, pRamCode[2]);
-    am_hal_ble_plf_reg_write(pHandle, 0x43C00000, pRamCode[3]);
+    if (pRamCode)
+    {
+        am_hal_ble_plf_reg_write(pHandle, 0x43C00008, pRamCode[2]);
+        am_hal_ble_plf_reg_write(pHandle, 0x43C00000, pRamCode[3]);
+    }
 
     //reset pmu registers
     am_hal_ble_plf_reg_write(pHandle, 0x45800008, 0xa6a);
