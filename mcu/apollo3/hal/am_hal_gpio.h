@@ -453,6 +453,7 @@ enum am_hal_gpio_pincfgerr
 //!  Define some common GPIO pin configurations.
 //*****************************************************************************
 //! Basics
+extern const am_hal_gpio_pincfg_t g_AM_HAL_GPIO_DEFAULT;
 extern const am_hal_gpio_pincfg_t g_AM_HAL_GPIO_DISABLE;
 extern const am_hal_gpio_pincfg_t g_AM_HAL_GPIO_TRISTATE;
 
@@ -479,6 +480,27 @@ extern const am_hal_gpio_pincfg_t g_AM_HAL_GPIO_OUTPUT_WITH_READ;
 //*****************************************************************************
 typedef void (*am_hal_gpio_handler_t)(void);
 typedef void (*am_hal_gpio_handler_adv_t)(void *);
+
+//*****************************************************************************
+//
+// External functions.
+//
+//*****************************************************************************
+
+//*****************************************************************************
+//
+//! @brief Return the current configuration of a pin.
+//!
+//! @param ui32GpioNum is the GPIO pin number to configure.
+//! @param psGpioCfg - Ptr for the return value of the current configuration.
+//!
+//! This function returns the current configuration of a GPIO.
+//!
+//! @return Standard HAL status code.
+//
+//*****************************************************************************
+extern uint32_t
+am_hal_gpio_pinconfig_get(uint32_t ui32GpioNum, am_hal_gpio_pincfg_t* psGpioCfg);
 
 //*****************************************************************************
 //
@@ -768,6 +790,24 @@ extern uint32_t am_hal_gpio_isgpio(uint32_t ui32Pin);
 
 //*****************************************************************************
 //
+//! @name Helper macros
+//! @{
+//
+//*****************************************************************************
+#define AM_HAL_MASK32(n)        ((uint32_t)1 << ((n) & 0x1F))
+
+#define AM_HAL_GPIO_RDn(pin)    ((volatile uint32_t *)&GPIO->RDA  + (((pin) >> 5) & 0x1))
+#define AM_HAL_GPIO_WTn(pin)    ((volatile uint32_t *)&GPIO->WTA  + (((pin) >> 5) & 0x1))
+#define AM_HAL_GPIO_WTCn(pin)   ((volatile uint32_t *)&GPIO->WTCA + (((pin) >> 5) & 0x1))
+#define AM_HAL_GPIO_WTSn(pin)   ((volatile uint32_t *)&GPIO->WTSA + (((pin) >> 5) & 0x1))
+#define AM_HAL_GPIO_ENn(pin)    ((volatile uint32_t *)&GPIO->ENA  + (((pin) >> 5) & 0x1))
+#define AM_HAL_GPIO_ENCn(pin)   ((volatile uint32_t *)&GPIO->ENCA + (((pin) >> 5) & 0x1))
+#define AM_HAL_GPIO_ENSn(pin)   ((volatile uint32_t *)&GPIO->ENSA + (((pin) >> 5) & 0x1))
+
+//! @}
+
+//*****************************************************************************
+//
 //! @brief Macros to read GPIO values in an optimized manner.
 //!
 //! @param n - The GPIO number to be read.
@@ -790,21 +830,9 @@ extern uint32_t am_hal_gpio_isgpio(uint32_t ui32Pin);
 //!
 //
 //*****************************************************************************
-#define am_hal_gpio_input_read(n)       (                                                                                                   \
-        (AM_REGVAL( (AM_REGADDR(GPIO, RDA) + (((uint32_t)(n) & 0x20) >> 3)) ) >>                /* Read appropriate register */             \
-          ((uint32_t)(n) & 0x1F) )      &                                                       /* Shift by appropriate number of bits */   \
-         ((uint32_t)0x1) )                                                                      /* Mask out the LSB */
-
-#define am_hal_gpio_output_read(n)      (                                                                                                   \
-        (AM_REGVAL( (AM_REGADDR(GPIO, WTA) + (((uint32_t)(n) & 0x20) >> 3)) ) >>                /* Read appropriate register */             \
-          ((uint32_t)(n) & 0x1F) )      &                                                       /* Shift by appropriate number of bits */   \
-         ((uint32_t)0x1) )                                                                      /* Mask out the LSB */
-
-#define am_hal_gpio_enable_read(n)      (                                                                                                   \
-        (AM_REGVAL( (AM_REGADDR(GPIO, ENA) + (((uint32_t)(n) & 0x20) >> 3)) ) >>                /* Read appropriate register */             \
-          ((uint32_t)(n) & 0x1F) )      &                                                       /* Shift by appropriate number of bits */   \
-         ((uint32_t)0x1) )                                                                      /* Mask out the LSB */
-
+#define am_hal_gpio_input_read(n)   ((*AM_HAL_GPIO_RDn((n)) >> ((n) % 32)) & 1)
+#define am_hal_gpio_output_read(n)  ((*AM_HAL_GPIO_WTn((n)) >> ((n) % 32)) & 1)
+#define am_hal_gpio_enable_read(n)  ((*AM_HAL_GPIO_ENn((n)) >> ((n) % 32)) & 1)
 
 //*****************************************************************************
 //
