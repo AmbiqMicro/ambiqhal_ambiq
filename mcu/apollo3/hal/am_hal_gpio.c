@@ -661,7 +661,7 @@ am_hal_gpio_pinconfig(uint32_t ui32Pin, am_hal_gpio_pincfg_t bfGpioCfg)
         // If eIntDir is provided, eGPRdZero is ignored and can only be
         //  achieved via the AM_HAL_GPIO_PIN_INTDIR_NONE setting.
         //
-        if ( bfGpioCfg.eIntDir == 0 )
+        if ( bfGpioCfg.eIntDir == AM_HAL_GPIO_PIN_INTDIR_NONE )
         {
             ui32GPCfg &= ~(1 << GPIOCFG_FLD_INCFG_S);
             ui32GPCfg |= (bfGpioCfg.eGPRdZero << GPIOCFG_FLD_INCFG_S);
