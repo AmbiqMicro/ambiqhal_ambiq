@@ -8,6 +8,7 @@
 if(CONFIG_AMBIQ_HAL)
     zephyr_include_directories(
         CMSIS/AmbiqMicro/Include
+        CMSIS/Arm/Include
         utils
         )
     add_subdirectory(mcu)
