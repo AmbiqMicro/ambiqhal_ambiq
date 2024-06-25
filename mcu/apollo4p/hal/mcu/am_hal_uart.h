@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -52,7 +52,6 @@
 #include <stdbool.h>
 
 #include "am_mcu_apollo.h"
-
 
 #ifdef __cplusplus
 extern "C"
@@ -849,7 +848,6 @@ extern uint32_t am_hal_uart_append_tx( void *pHandle,
 extern int32_t am_hal_uart_get_rx_data( void *pHandle,
                                         uint8_t *pui8DestBuff,
                                         uint32_t ui32MaxBytes);
-
 
 #ifdef __cplusplus
 }

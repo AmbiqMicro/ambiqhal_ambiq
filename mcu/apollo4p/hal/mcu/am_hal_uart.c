@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -539,7 +539,6 @@ config_baudrate(uint32_t ui32Module, uint32_t ui32DesiredBaudrate, uint32_t *pui
     return AM_HAL_STATUS_SUCCESS;
 } // config_baudrate()
 
-
 //*****************************************************************************
 //
 // Manage UART ISR used when uart fifos and tx and rx queues are enabled
@@ -616,7 +615,6 @@ am_hal_uart_interrupt_queue_service(void *pHandle)
             //
             pUart->IEC = (UART0_IEC_RTIC_Msk | UART0_IEC_RXIC_Msk);
         }
-
 
     } // ui32IES_int &  (AM_HAL_UART_INT_RX | AM_HAL_UART_INT_RX_TMOUT
 
@@ -839,7 +837,6 @@ am_hal_uart_append_tx( void *pHandle, uint8_t *pui8Buff, uint32_t ui32NumBytes )
             pUart->IER = (pUart->IER & ~UART0_IER_TXIM_Msk) | UART0_IER_TXCMPMIM_Msk;
         }
     AM_CRITICAL_END
-
 
     return AM_HAL_STATUS_SUCCESS;
 

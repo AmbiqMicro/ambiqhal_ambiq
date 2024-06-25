@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CARD_H
@@ -503,7 +503,7 @@ extern "C"
 #define SDIO_SCAN_RXDELAY_MAX    32
 
 //
-// SDHC auto cmd32 enable
+// SDHC auto cmd23 enable
 //
 #define ENABLE_SDHC_AUTO_CMD23_FEATURE
 
@@ -609,6 +609,8 @@ typedef enum
 
 typedef uint32_t (*am_hal_card_pwr_ctrl_func)(am_hal_card_pwr_e eCardPwr);
 
+typedef uint32_t (*am_hal_sdio_card_reset_func)(void);
+
 typedef enum
 {
     AM_HAL_CARD_PWR_CTRL_NONE,
@@ -689,6 +691,7 @@ typedef struct
     uint32_t ui32BlkSize;
     uint32_t ui32RpmbSizeMult;
     uint16_t ui16CmdClass;
+    bool     bCardTypeDetect;
     am_hal_card_pwr_ctrl_func pCardPwrCtrlFunc;
     am_hal_card_pwr_ctrl_policy_e eCardPwrCtrlPolicy;
     am_hal_card_cfg_t cfg;
@@ -777,6 +780,7 @@ extern uint32_t am_hal_card_cfg_set(am_hal_card_t *pCard, am_hal_card_type_e eTy
 //! @brief Initialize the card instance function
 //!
 //! @param pCard              - pointer to the card instance.
+//! @param eType              - card type like eMMC, MMC, SDIO, .etc
 //! @param pCardPwrCtrlFunc   - pointer to the User defined Card Pwr Ctrl Func
 //! @param eCardPwrCtrlPolicy - Power Control Policy can be:
 //!     AM_HAL_CARD_PWR_CTRL_NONE
@@ -790,8 +794,9 @@ extern uint32_t am_hal_card_cfg_set(am_hal_card_t *pCard, am_hal_card_type_e eTy
 //! @return status      - generic or interface specific status..
 //
 //*****************************************************************************
-extern uint32_t am_hal_card_init(am_hal_card_t *pCard, am_hal_card_pwr_ctrl_func pCardPwrCtrlFunc,
-    am_hal_card_pwr_ctrl_policy_e eCardPwrCtrlPolicy);
+extern uint32_t am_hal_card_init(am_hal_card_t *pCard, am_hal_card_type_e eType,
+                                 am_hal_card_pwr_ctrl_func pCardPwrCtrlFunc,
+                                 am_hal_card_pwr_ctrl_policy_e eCardPwrCtrlPolicy);
 
 //*****************************************************************************
 //
@@ -1608,7 +1613,7 @@ extern uint32_t am_hal_sdio_card_calibrate(am_hal_host_inst_index_e eIndex,
                                     uint32_t ui32BlockCnt,
                                     am_hal_host_bus_voltage_e eIoVoltage,
                                     uint8_t ui8TxRxDelays[2],
-                                    am_hal_card_pwr_ctrl_func pSdioCardReset);
+                                    am_hal_sdio_card_reset_func pSdioCardReset);
 
 #ifdef __cplusplus
 }

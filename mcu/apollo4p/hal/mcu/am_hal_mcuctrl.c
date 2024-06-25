@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,11 +41,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
-#include "am_hal_mcuctrl.h"
+#include "am_mcu_apollo.h"
 
 //*****************************************************************************
 //
@@ -136,7 +136,6 @@ const am_hal_mcuctrl_control_arg_t g_amHalMcuctrlArgBLEDefault =
     .b_arg_force_update        = false,
     .b_arg_enable_HfXtalClockout = true,
 };
-
 
 static uint32_t
 mcuctrl_HFXTAL_clockOutPad_mask_modify(bool bClockOutEnable, uint32_t ui32ClockEnableMask );
@@ -307,7 +306,6 @@ mcuctrl_ctrl_HFXTAL_normal(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
         return AM_HAL_STATUS_INVALID_ARG;
     }
 
-
     //
     // Begin critical section.
     //
@@ -332,10 +330,13 @@ mcuctrl_ctrl_HFXTAL_normal(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
                                                peCtrlArg->ui32_arg_hfxtal_user_mask);
     }
 
+    //
+    // when true, HFXTAL is already in use, check status 2nd time below
+    //
     bool bHSXTAL_enabled  = am_hal_mcuctrl_EXTCLK_active();
 
     //
-    // is the HFXTAL transitioning to enabled with this call
+    // check if HFXTAL transitioning to enabled with this call
     //
     bool bEnableHFXTAL    = !bHSXTAL_entry_enabled && bHSXTAL_enabled;
 
@@ -411,7 +412,6 @@ mcuctrl_ctrl_HFXTAL_normal(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
 static uint32_t
 mcuctrl_ctrl_HFXTAL_kickstart(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
 {
-
     if (peCtrlArg == 0)
     {
         //
@@ -510,7 +510,6 @@ mcuctrl_ctrl_HFXTAL_kickstart(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
         //
         am_hal_delay_us(5);
 
-
         ui32Reg = MCUCTRL->XTALHSCTRL ;
         ui32Reg &= ~MCUCTRL_XTALHSCTRL_XTALHSINJECTIONENABLE_Msk;
 
@@ -525,7 +524,6 @@ mcuctrl_ctrl_HFXTAL_kickstart(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
         }
 
         MCUCTRL->XTALHSCTRL = ui32Reg;
-
 
     } // !bEnableHFXTAL || peCtrlArg->b_arg_force_update
 
@@ -672,7 +670,6 @@ mcuctrl_ctrl_HFXTAL_disable(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
 
     return AM_HAL_STATUS_SUCCESS;
 }
-
 
 // ****************************************************************************
 //
