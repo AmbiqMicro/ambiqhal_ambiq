@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -253,8 +253,7 @@ am_hal_rtc_time_set(am_hal_rtc_time_t *pTime)
     // Write the RTCUP register.
     //
     RTC->CTRUP =
-        _VAL2FLD(RTC_CTRUP_CEB,     (pTime->ui32CenturyEnable))          |
-        _VAL2FLD(RTC_CTRUP_CB,      (pTime->ui32Century))                |
+        _VAL2FLD(RTC_CTRUP_CB,      (pTime->ui32CenturyBit))                |
         _VAL2FLD(RTC_CTRUP_CTRWKDY, (pTime->ui32Weekday))                |
         _VAL2FLD(RTC_CTRUP_CTRYR,   dec_to_bcd((pTime->ui32Year)))       |
         _VAL2FLD(RTC_CTRUP_CTRMO,   dec_to_bcd((pTime->ui32Month)))      |
@@ -315,9 +314,8 @@ am_hal_rtc_time_get(am_hal_rtc_time_t *pTime)
     //
     // Break out the upper word.
     //
-    pTime->ui32CenturyEnable = _FLD2VAL(RTC_CTRUP_CEB, ui32RTCUp);
 
-    pTime->ui32Century      = _FLD2VAL(RTC_CTRUP_CB, ui32RTCUp);
+    pTime->ui32CenturyBit      = _FLD2VAL(RTC_CTRUP_CB, ui32RTCUp);
 
     ui32Value               = _FLD2VAL(RTC_CTRUP_CTRWKDY, ui32RTCUp);
     pTime->ui32Weekday      = bcd_to_dec(ui32Value);
@@ -511,9 +509,8 @@ am_hal_rtc_alarm_get(am_hal_rtc_time_t *pTime,
         //
         // Break out the upper word.
         //
+        pTime->ui32CenturyBit = 0;
         pTime->ui32ReadError = 0;
-        pTime->ui32CenturyEnable = 0;
-        pTime->ui32Century = 0;
 
         ui32Value = ((ui32ALMUp & RTC_ALMUP_ALMWKDY_Msk) >> RTC_ALMUP_ALMWKDY_Pos);
         pTime->ui32Weekday = bcd_to_dec(ui32Value);

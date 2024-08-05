@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_RTC_H
@@ -134,9 +134,8 @@ am_hal_rtc_config_t;
 typedef struct am_hal_rtc_time_struct
 {
     uint32_t ui32ReadError;
-    uint32_t ui32CenturyEnable;
     uint32_t ui32Weekday;
-    uint32_t ui32Century;
+    uint32_t ui32CenturyBit;
     uint32_t ui32Year;
     uint32_t ui32Month;
     uint32_t ui32DayOfMonth;
@@ -195,28 +194,6 @@ extern uint32_t am_hal_rtc_osc_enable(void);
 //
 //*****************************************************************************
 extern uint32_t am_hal_rtc_osc_disable(void);
-
-//*****************************************************************************
-//
-//! @brief Enable/Start the RTC.
-//!
-//! Starts the RTC.
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
-//
-//*****************************************************************************
-extern uint32_t am_hal_rtc_enable(void);
-
-//*****************************************************************************
-//
-//! @brief Disable/Stop the RTC.
-//!
-//! Stops the RTC.
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
-//
-//*****************************************************************************
-extern uint32_t am_hal_rtc_disable(void);
 
 //*****************************************************************************
 //
