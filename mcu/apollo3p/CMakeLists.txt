@@ -20,6 +20,7 @@ zephyr_library_sources(hal/am_hal_burst.c)
 zephyr_library_sources(hal/am_hal_reset.c)
 zephyr_library_sources(hal/am_hal_clkgen.c)
 zephyr_library_sources(hal/am_hal_sysctrl.c)
+zephyr_library_sources(hal/am_hal_debug.c)
 
 if(CONFIG_AMBIQ_HAL_USE_GPIO)
     zephyr_library_sources(hal/am_hal_gpio.c)
