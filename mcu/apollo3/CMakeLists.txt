@@ -38,10 +38,13 @@ if(CONFIG_AMBIQ_HAL_USE_WDT)
     zephyr_library_sources(hal/am_hal_wdt.c)
 endif()
 
-if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPI)
+if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPIM)
     zephyr_library_sources(hal/am_hal_iom.c)
-    zephyr_library_sources(hal/am_hal_ios.c)
     zephyr_library_sources(hal/am_hal_cmdq.c)
+endif()
+
+if(CONFIG_AMBIQ_HAL_USE_SPIS)
+    zephyr_library_sources(hal/am_hal_ios.c)
 endif()
 
 if(CONFIG_AMBIQ_HAL_USE_MSPI)

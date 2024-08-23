@@ -40,8 +40,11 @@ endif()
 
 if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPI)
     zephyr_library_sources(hal/am_hal_iom.c)
-    zephyr_library_sources(hal/am_hal_ios.c)
     zephyr_library_sources(hal/am_hal_cmdq.c)
+endif()
+
+if(CONFIG_AMBIQ_HAL_USE_SPIS)
+    zephyr_library_sources(hal/am_hal_ios.c)
 endif()
 
 if(CONFIG_AMBIQ_HAL_USE_MSPI)
