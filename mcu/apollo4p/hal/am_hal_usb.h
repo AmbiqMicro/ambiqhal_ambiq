@@ -863,6 +863,18 @@ extern uint32_t am_hal_usb_control(am_hal_usb_control_e eControl, void *pArgs);
 extern uint32_t am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType);
 
 
+//*****************************************************************************
+//
+//! @brief Reset EP State
+//!
+//! @param pHandle   - handle for the module instance.
+//! @param ui8EpAddr - USB endpoint address for state reset
+//!
+//! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
+//
+//*****************************************************************************
+extern uint32_t am_hal_usb_ep_state_reset(void *pHandle, uint8_t ui8EpAddr);
+
 #ifdef __cplusplus
 }
 #endif
@@ -875,4 +887,3 @@ extern uint32_t am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType);
 //! @}
 //
 //*****************************************************************************
-
