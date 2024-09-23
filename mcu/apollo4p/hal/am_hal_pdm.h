@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -138,11 +138,10 @@ am_hal_pdm_gain_e;
 //! gain step size.
 //
 //*****************************************************************************
-// FIXME - CORECFG1 SELSTEP Enums missing.
 typedef enum
 {
-  AM_HAL_PDM_GAIN_STEP_0_13DB = 0,
-  AM_HAL_PDM_GAIN_STEP_0_26DB = 1
+  AM_HAL_PDM_GAIN_STEP_0_13DB = PDM0_CORECFG1_SELSTEP_0_13DB,
+  AM_HAL_PDM_GAIN_STEP_0_26DB = PDM0_CORECFG1_SELSTEP_0_26DB
 }
 am_hal_pdm_gain_stepsize_e;
 
