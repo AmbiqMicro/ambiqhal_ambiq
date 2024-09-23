@@ -6,7 +6,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -111,11 +111,11 @@
 #define AM_REG_INFO0_SIGNATURE3_SIG3_Msk 0xFFFFFFFF
 
 // CUSTOMER_TRIM - Customer Programmable trim overrides. Bits in this register are loaded into hardware registers at reset.
-#define AM_REG_INFO0_CUSTOMER_TRIM_ERR001_MUSTBE_0_S 0
-#define AM_REG_INFO0_CUSTOMER_TRIM_ERR001_MUSTBE_0_M 0x00000001
-#define AM_REG_INFO0_CUSTOMER_TRIM_ERR001_MUSTBE_0(n) (((uint32_t)(n) << 0) & 0x00000001)
-#define AM_REG_INFO0_CUSTOMER_TRIM_ERR001_MUSTBE_0_Pos 0
-#define AM_REG_INFO0_CUSTOMER_TRIM_ERR001_MUSTBE_0_Msk 0x00000001
+#define AM_REG_INFO0_CUSTOMER_TRIM_ERR079_MUSTBE_0_S 0
+#define AM_REG_INFO0_CUSTOMER_TRIM_ERR079_MUSTBE_0_M 0x00000001
+#define AM_REG_INFO0_CUSTOMER_TRIM_ERR079_MUSTBE_0(n) (((uint32_t)(n) << 0) & 0x00000001)
+#define AM_REG_INFO0_CUSTOMER_TRIM_ERR079_MUSTBE_0_Pos 0
+#define AM_REG_INFO0_CUSTOMER_TRIM_ERR079_MUSTBE_0_Msk 0x00000001
 
 // SECURITY_WIRED_IFC_CFG0 - This 32-bit word contains the interface configuration word0 for the UART wired update. This feature is not applicable to Apollo4 revA without pre-installed bootloader.
 #define AM_REG_INFO0_SECURITY_WIRED_IFC_CFG0_RSVD30_S 30
