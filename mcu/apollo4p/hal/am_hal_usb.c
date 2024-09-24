@@ -660,6 +660,8 @@ typedef enum
 }
 am_hal_usb_ep_xfer_type_e;
 
+static void am_hal_usb_out_ep_handling(am_hal_usb_state_t *pState, USB_Type *pUSB, uint8_t ui8EpNum);
+
 //
 // Endpoint address and attribute operation functions
 //
@@ -2062,14 +2064,20 @@ am_hal_usb_non_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui
             pXfer->remaining = ui16Len;
 
             //
-            // clear OutPktRdy bit before enabling the interrupt
-            //
-            OUTCSRL_OutPktRdy_Clear(pUSB);
-
-            //
             // enable out endpoint interrupt for this EP.
             //
             INTROUTE_Enable(pUSB, 0x1 << ui8EpNum);
+
+            //
+            // If OutPktRdy is raised, the interrupt might have occurred
+            // when OUT EP buffer is not assigned from stack yet. Trigger
+            // the handling right away.
+            //
+            if(OUTCSRL_OutPktRdy(pUSB))
+            {
+                am_hal_usb_out_ep_handling(pState, pUSB, ui8EpNum);
+                break;
+            }
             break;
     }
 
@@ -2848,6 +2856,12 @@ am_hal_usb_out_ep_handling(am_hal_usb_state_t *pState, USB_Type *pUSB, uint8_t u
         count = OUTCOUNT(pUSB);
         maxpacket = pState->epout_maxpackets[ui8EpNum - 1];
 
+        if (pXfer->len == 0)
+        {
+            INTROUTE_Disable(pUSB, 0x1 << ui8EpNum);
+            return;
+        }
+
         if (pXfer->remaining < count)
         {
             am_hal_usb_fifo_unloading(pUSB, ui8EpNum, pXfer->buf + pXfer->len - pXfer->remaining, pXfer->remaining);
@@ -2859,6 +2873,7 @@ am_hal_usb_out_ep_handling(am_hal_usb_state_t *pState, USB_Type *pUSB, uint8_t u
             am_hal_usb_fifo_unloading(pUSB, ui8EpNum, pXfer->buf + pXfer->len - pXfer->remaining, count);
             pXfer->remaining -= count;
         }
+        OUTCSRL_OutPktRdy_Clear(pUSB);
 
         if (pXfer->remaining == 0x0 || count < maxpacket)
         {
@@ -2881,7 +2896,6 @@ am_hal_usb_out_ep_handling(am_hal_usb_state_t *pState, USB_Type *pUSB, uint8_t u
             }
         }
 #endif
-        OUTCSRL_OutPktRdy_Clear(pUSB);
     }
 }
 
