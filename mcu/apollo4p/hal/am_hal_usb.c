@@ -2931,6 +2931,7 @@ am_hal_usb_interrupt_service(void *pHandle,
         USBPHY->REG10 |= 0x2;
 
         // Back to active state
+        INTRUSBE_Suspend_Enable(pUSB);
         pState->eDevState = AM_HAL_USB_DEV_STATE_RESUMING;
         if (pState->dev_evt_callback)
         {
@@ -2983,8 +2984,9 @@ am_hal_usb_interrupt_service(void *pHandle,
 #endif
 
         //
-        // Always enable the SuspendM
+        // Enable interrupt for USB suspend. Discard suspend interrupt event.
         //
+        ui32IntrUsbStatus &= ~USB_INTRUSB_Suspend_Msk;
         INTRUSBE_Suspend_Enable(pUSB);
 
         if (pState->dev_evt_callback)
@@ -3054,6 +3056,7 @@ am_hal_usb_interrupt_service(void *pHandle,
         //
         USBPHY->REG10 &= 0xFD;
 
+        INTRUSBE_Suspend_Disable(pUSB);
         pState->eDevState = AM_HAL_USB_DEV_STATE_SUSPENDING;
         if (pState->dev_evt_callback)
         {
