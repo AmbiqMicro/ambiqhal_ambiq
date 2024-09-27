@@ -67,7 +67,7 @@
 //!       The USB controller will send STATUS ACK to USB Host regardless of the
 //!       selection.
 //
-#define AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
+// #define AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
 
 
 //*****************************************************************
@@ -238,10 +238,10 @@ typedef struct
     //! Endpoint transfer complete callback
     am_hal_usb_ep_xfer_complete_callback ep_xfer_complete_callback;
 
-    #ifndef AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
+#ifndef AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
     bool bPendingInEndData;
     bool bPendingOutEndData;
-    #endif
+#endif
 }
 am_hal_usb_state_t;
 
@@ -806,7 +806,6 @@ am_hal_usb_power_control(void *pHandle,
                          bool bRetainState)
 {
 
-
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
     // Check to make sure this is a valid handle.
@@ -821,7 +820,6 @@ am_hal_usb_power_control(void *pHandle,
     uint32_t ui32Status;
     am_hal_usb_state_t *pState = (am_hal_usb_state_t *) pHandle;
     uint32_t ui32Module = pState->ui32Module;
-
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( ui32Module >= AM_REG_USB_NUM_MODULES )
@@ -1852,9 +1850,9 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
 
     switch ( pState->eEP0State )
     {
-        #ifndef  AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
+#ifndef  AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
         case AM_HAL_USB_EP0_STATE_IDLE:
-            if((pState->bPendingInEndData || pState->bPendingOutEndData) && (ui16Len == 0))
+            if ((pState->bPendingInEndData || pState->bPendingOutEndData) && (ui16Len == 0))
             {
                 // Reset EP0 state and wait for the next command from host.
                 am_hal_usb_ep0_state_reset(pState);
@@ -1867,12 +1865,12 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
                 return AM_HAL_STATUS_FAIL;
             }
             break;
-        #endif
+#endif
 
         case AM_HAL_USB_EP0_STATE_SETUP:
             if (ui16Len == 0x0)
             {
-                #ifndef  AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
+#ifndef  AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
                 // There are 2 conditions that we are entering to this handling:
                 // 1. Previous command was with data stage. However, the subsequent SETUP is
                 //    received in ISR before the ACK stage handling is done. For this case,
@@ -1881,7 +1879,7 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
                 //    back to IDLE so that it is able to receive next SETUP correctly.
 
                 // Case 1:
-                if(pState->bPendingOutEndData || pState->bPendingInEndData)
+                if (pState->bPendingOutEndData || pState->bPendingInEndData)
                 {
                     am_hal_usb_xfer_reset(&pState->ep0_xfer);
                     pState->bPendingOutEndData = false;
@@ -1898,7 +1896,7 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
                     pState->eEP0State =
                         (ui8EpDir == AM_HAL_USB_EP_DIR_IN) ? AM_HAL_USB_EP0_STATE_STATUS_TX : AM_HAL_USB_EP0_STATE_STATUS_RX;
                 }
-                #else
+#else
                 // Upper layer USB stack just use zero length packet to confirm no data stage
                 // some requests like CLEAR_FEARURE, SET_ADDRESS, SET_CONFIGRATION, etc.
                 // end the control transfer from device side
@@ -1908,7 +1906,7 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
                 // Will indicate request is completed
                 pState->eEP0State =
                     (ui8EpDir == AM_HAL_USB_EP_DIR_IN) ? AM_HAL_USB_EP0_STATE_STATUS_TX : AM_HAL_USB_EP0_STATE_STATUS_RX;
-                #endif
+#endif
             }
             else
             {
@@ -1928,11 +1926,11 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
                     // Read requests handling
                     case AM_HAL_USB_EP_DIR_IN:
 
-                        #ifndef  AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
+#ifndef  AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
                         // Flag that we need to handle End Data later for OUT
                         // direction
                         pState->bPendingOutEndData = true;
-                        #endif
+#endif
 
                         // Load the first packet
                         if (ui16Len < maxpacket)
@@ -1958,11 +1956,11 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
                         // Write requests handling
                         // Waiting the host sending the data to the device
 
-                        #ifndef  AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
+#ifndef  AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
                         // Flag that we need to handle End Data later for IN
                         // direction
                         pState->bPendingInEndData = true;
-                        #endif
+#endif
 
                         pState->ep0_xfer.remaining = ui16Len;
                         pState->eEP0State = AM_HAL_USB_EP0_STATE_DATA_RX;
@@ -3099,8 +3097,8 @@ am_hal_usb_control(am_hal_usb_control_e eControl, void *pArgs)
                 ui32RetVal = AM_HAL_STATUS_INVALID_ARG;
                 break;
             }
-            ui32RetVal =  am_hal_usb_setHFRC2( *((am_hal_usb_hs_clock_type *) pArgs)) ;
-            break ;
+            ui32RetVal =  am_hal_usb_setHFRC2( *((am_hal_usb_hs_clock_type *) pArgs));
+            break;
 
         default:
             ui32RetVal = AM_HAL_STATUS_INVALID_ARG;

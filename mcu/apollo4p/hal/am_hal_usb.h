@@ -157,7 +157,6 @@ typedef enum
 }
 am_hal_usb_xfer_code_e;
 
-
 //*****************************************************************************
 //
 //! @brief Enum for the USB control call
@@ -179,7 +178,6 @@ typedef enum
     //! this is controller by an argument of type am_hal_usb_hs_clock_type
     //! this is how modules configure the HFRC2
     AM_HAL_CLKGEN_CONTROL_SET_HFRC2_TYPE,
-
 
 } am_hal_usb_control_e;
 
@@ -861,7 +859,6 @@ extern uint32_t am_hal_usb_control(am_hal_usb_control_e eControl, void *pArgs);
 //
 //*****************************************************************************
 extern uint32_t am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType);
-
 
 //*****************************************************************************
 //
