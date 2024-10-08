@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_2_0-dd5f40c14b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -60,8 +60,6 @@
 #define AM_HAL_MSPI_HW_IDX_MAX          (AM_REG_MSPI_CQCURIDX_CQCURIDX_M >> AM_REG_MSPI_CQCURIDX_CQCURIDX_S)    // 8 bit value
 #define AM_HAL_MSPI_MAX_CQ_ENTRIES      (256)
 
-
-
 // For MSPI - Need to Set the flag for unpausing
 #define AM_HAL_MSPI_SC_PAUSE_CQ         AM_HAL_MSPI_SC_PAUSE(AM_HAL_MSPI_PAUSE_FLAG_CQ)
 #define AM_HAL_MSPI_SC_PAUSE_SEQLOOP    AM_HAL_MSPI_SC_PAUSE(AM_HAL_MSPI_PAUSE_FLAG_SEQLOOP)
@@ -69,7 +67,6 @@
 #define AM_HAL_MSPI_SC_UNPAUSE_SEQLOOP  AM_HAL_MSPI_SC_UNPAUSE(AM_HAL_MSPI_PAUSE_FLAG_SEQLOOP)
 #define AM_HAL_MSPI_SC_PAUSE_BLOCK      AM_HAL_MSPI_SC_PAUSE(AM_HAL_MSPI_PAUSE_FLAG_BLOCK)
 #define AM_HAL_MSPI_SC_UNPAUSE_BLOCK    AM_HAL_MSPI_SC_UNPAUSE(AM_HAL_MSPI_PAUSE_FLAG_BLOCK)
-
 
 // Max time to wait when attempting to pause the command queue
 #define AM_HAL_MSPI_MAX_PAUSE_DELAY     (100*1000) // 100ms
@@ -279,7 +276,6 @@ typedef struct
 //*****************************************************************************
 static am_hal_mspi_state_t  g_MSPIState[AM_REG_MSPI_NUM_MODULES];
 
-
 #if !MSPI_USE_CQ
 void (*g_pfnDMACallback[AM_REG_MSPI_NUM_MODULES])(void);
 void *g_pCallbackCtxt[AM_REG_MSPI_NUM_MODULES];
@@ -432,6 +428,7 @@ build_dma_cmdlist(am_hal_mspi_state_t *pMSPIState,
 //! @param pui32Data    - Pointer to an array of the data to be written.
 //! @param ui32NumBytes - Number of BYTES to copy into the FIFO.
 //! @param ui32Timeout  - timeout microsecond delay loops
+//! @param ui32Control  - data for MSPI CTRL Register
 //!
 //! This function copies data from the array \e pui32Data into the MSPI FIFO.
 //!
@@ -440,7 +437,7 @@ build_dma_cmdlist(am_hal_mspi_state_t *pMSPIState,
 //*****************************************************************************
 static uint32_t
 mspi_fifo_write(uint32_t ui32Module, uint32_t *pui32Data,
-                uint32_t ui32NumBytes, uint32_t ui32Timeout)
+                uint32_t ui32NumBytes, uint32_t ui32Timeout, uint32_t ui32Control)
 {
     uint32_t ui32Index;
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
@@ -452,6 +449,11 @@ mspi_fifo_write(uint32_t ui32Module, uint32_t *pui32Data,
     {
         return AM_HAL_STATUS_OUT_OF_RANGE;
     }
+
+    //
+    // Initiate the Transfer.
+    //
+    MSPIn(ui32Module)->CTRL = ui32Control;
 
     //
     // Loop over the words in the array until we have the correct number of
@@ -496,7 +498,7 @@ mspi_fifo_write(uint32_t ui32Module, uint32_t *pui32Data,
 //*****************************************************************************
 static uint32_t
 mspi_fifo_read(uint32_t ui32Module, uint32_t *pui32Data,
-               uint32_t ui32NumBytes, uint32_t ui32Timeout)
+               uint32_t ui32NumBytes, uint32_t ui32Timeout, uint32_t ui32Control)
 {
     am_hal_mspi_buffer(4) sTempBuffer;
     uint32_t i, ui32NumWords, ui32Leftovers;
@@ -516,6 +518,11 @@ mspi_fifo_read(uint32_t ui32Module, uint32_t *pui32Data,
     //
     ui32NumWords = ui32NumBytes / 4;
     ui32Leftovers = ui32NumBytes - (ui32NumWords * 4);
+
+    //
+    // Initiate the Transfer.
+    //
+    MSPIn(ui32Module)->CTRL = ui32Control;
 
     //
     // Copy out as many full words as we can.
@@ -628,7 +635,6 @@ mspi_dma_add_transaction(void *pHandle,
 
     pCQEntry = &pMSPIState->pTransactions[index];
 
-
     if (AM_HAL_STATUS_SUCCESS != build_dma_cmdlist(pMSPIState, AM_HAL_MSPI_TRANS_DMA, pCQEntry, (void *)psTransaction))
     {
       return AM_HAL_STATUS_FAIL;
@@ -645,7 +651,6 @@ mspi_dma_add_transaction(void *pHandle,
 
 #else
 
-
 //*****************************************************************************
 //
 //! @brief Initializes the MSPI Command Queue.
@@ -657,7 +662,6 @@ mspi_dma_add_transaction(void *pHandle,
 //! This function initializes the global command queue structure.
 //!
 //! @return HAL status of the operation.
-//
 //
 //*****************************************************************************
 static uint32_t
@@ -809,6 +813,7 @@ mspi_cq_enable(void *pHandle)
     //
     return am_hal_cmdq_enable(pMSPIState->CQ.pCmdQHdl);
 }
+
 //*****************************************************************************
 //
 //! @brief Disable the Command Queue operation.
@@ -925,7 +930,6 @@ sched_hiprio(am_hal_mspi_state_t *pMSPIState, uint32_t numTrans)
     // End the critical section.
     //
     AM_CRITICAL_END
-
 
     if (0 == ui32NumPend)
     {
@@ -1156,11 +1160,21 @@ mspi_device_configure(void *pHandle, uint32_t ui32MSPIDevice)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+//
+//
+//*****************************************************************************
 static void mspi_dummy_callback(void *pCallbackCtxt, uint32_t status)
 {
     // Dummy - Do nothing
 }
 
+//*****************************************************************************
+//
+//
+//
+//*****************************************************************************
 static void mspi_seq_loopback(void *pCallbackCtxt, uint32_t status)
 {
     // Reset the state to allow serving callbacks for next set
@@ -1179,9 +1193,11 @@ static void mspi_seq_loopback(void *pCallbackCtxt, uint32_t status)
 //
 //*****************************************************************************
 
+//*****************************************************************************
 //
 // MSPI initialization function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_initialize(uint32_t ui32Module, void **ppHandle)
 {
@@ -1234,9 +1250,11 @@ am_hal_mspi_initialize(uint32_t ui32Module, void **ppHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI Disable function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_disable(void *pHandle)
 {
@@ -1287,10 +1305,11 @@ am_hal_mspi_disable(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
-
+//*****************************************************************************
 //
 // MSPI Deinitialize function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_deinitialize(void *pHandle)
 {
@@ -1324,9 +1343,11 @@ am_hal_mspi_deinitialize(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI device configuration function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_device_configure(void *pHandle,
                              am_hal_mspi_dev_config_t *pConfig)
@@ -1548,9 +1569,11 @@ am_hal_mspi_device_configure(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI device configuration function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_enable(void *pHandle)
 {
@@ -1565,7 +1588,6 @@ am_hal_mspi_enable(void *pHandle)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
-
 
     if (pMSPIState->pTCB)
     {
@@ -1615,9 +1637,11 @@ am_hal_mspi_enable(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI device specific control function.
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_control(void *pHandle,
                              am_hal_mspi_request_e eRequest,
                              void *pConfig)
@@ -2238,9 +2262,11 @@ uint32_t am_hal_mspi_capabilities_get(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI blocking transfer function
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_blocking_transfer(void *pHandle,
                                        am_hal_mspi_pio_transfer_t *pTransaction,
                                        uint32_t ui32Timeout)
@@ -2352,22 +2378,17 @@ uint32_t am_hal_mspi_blocking_transfer(void *pHandle,
     MSPIn(ui32Module)->INTCLR = AM_HAL_MSPI_INT_ALL;
 
     //
-    // Initiate the Transfer.
-    //
-    MSPIn(ui32Module)->CTRL = ui32Control;
-
-    //
     // Read or Feed the FIFOs.
     //
     if ( AM_HAL_MSPI_RX == pTransaction->eDirection )
     {
         ui32Status = mspi_fifo_read(ui32Module, pTransaction->pui32Buffer,
-                                    pTransaction->ui32NumBytes, pMSPIState->waitTimeout);
+                                    pTransaction->ui32NumBytes, pMSPIState->waitTimeout, ui32Control);
     }
     else if ( AM_HAL_MSPI_TX == pTransaction->eDirection )
     {
         ui32Status = mspi_fifo_write(ui32Module, pTransaction->pui32Buffer,
-                                     pTransaction->ui32NumBytes, pMSPIState->waitTimeout );
+                                     pTransaction->ui32NumBytes, pMSPIState->waitTimeout, ui32Control);
     }
 
     //
@@ -2402,12 +2423,13 @@ uint32_t am_hal_mspi_blocking_transfer(void *pHandle,
     // Return the status.
     //
     return ui32Status;
-
 }
 
+//*****************************************************************************
 //
 // MSPI Non-Blocking transfer function
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_nonblocking_transfer(void *pHandle,
                                           void *pTransfer,
                                           am_hal_mspi_trans_e eMode,
@@ -2560,7 +2582,6 @@ uint32_t am_hal_mspi_nonblocking_transfer(void *pHandle,
         //
         AM_CRITICAL_END
 
-
         if (0 == ui32NumPend)
         {
             uint32_t index = (pMSPIState->ui32LastIdxProcessed + 1) % pMSPIState->ui32MaxTransactions;
@@ -2581,9 +2602,11 @@ uint32_t am_hal_mspi_nonblocking_transfer(void *pHandle,
     return ui32Status;
 }
 
+//*****************************************************************************
 //
 // MSPI status function
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_status_get(void *pHandle,
                                 am_hal_mspi_status_t *pStatus )
 {
@@ -2601,20 +2624,31 @@ uint32_t am_hal_mspi_status_get(void *pHandle,
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
     ui32Module = pMSPIState->ui32Module;
+
     //
     // Get the Command Complete status.
     //
-
+    pStatus->bTransferComplete = (MSPIn(ui32Module)->INTSTAT & MSPI_INTSTAT_CMDCMP_Msk) != 0;
     //
     // Get the FIFO status.
     //
 
+
     //
     //  Get the DMA status.
     //
-    pStatus->bErr = ((MSPIn(ui32Module)->DMASTAT & MSPI_DMASTAT_DMAERR_Msk) > 0);
-    pStatus->bCmp = ((MSPIn(ui32Module)->DMASTAT & MSPI_DMASTAT_DMACPL_Msk) > 0);
-    pStatus->bTIP = ((MSPIn(ui32Module)->DMASTAT & MSPI_DMASTAT_DMATIP_Msk) > 0);
+    {
+        uint32_t ui32temp = MSPIn(ui32Module)->DMASTAT;
+
+        pStatus->bErr = (ui32temp & MSPI_DMASTAT_DMAERR_Msk) != 0;
+        pStatus->bCmp = (ui32temp & MSPI_DMASTAT_DMACPL_Msk) != 0;
+        pStatus->bTIP = (ui32temp & MSPI_DMASTAT_DMATIP_Msk) != 0;
+        //
+        // does the current index match the end index
+        //
+        ui32temp = MSPIn(ui32Module)->CQENDIDX;
+        pStatus->bCQEndMatch = ui32temp == MSPIn(ui32Module)->CQCURIDX;
+    }
 
     //
     // Get the CQ status.
@@ -2631,9 +2665,11 @@ uint32_t am_hal_mspi_status_get(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI enable interrupts function
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_interrupt_enable(void *pHandle,
                                       uint32_t ui32IntMask)
 {
@@ -2662,9 +2698,11 @@ uint32_t am_hal_mspi_interrupt_enable(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI disable interrupts function
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_interrupt_disable(void *pHandle,
                                        uint32_t ui32IntMask)
 {
@@ -2693,9 +2731,11 @@ uint32_t am_hal_mspi_interrupt_disable(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI interrupt status function
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_interrupt_status_get(void *pHandle,
                                           uint32_t  *pui32Status,
                                           bool bEnabledOnly)
@@ -2730,9 +2770,11 @@ uint32_t am_hal_mspi_interrupt_status_get(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI interrupt clear
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_interrupt_clear(void *pHandle,
                                      uint32_t ui32IntMask)
 {
@@ -2761,9 +2803,11 @@ uint32_t am_hal_mspi_interrupt_clear(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI interrupt service routine
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
@@ -3077,9 +3121,11 @@ uint32_t am_hal_mspi_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
   return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI power control function
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_power_control(void *pHandle,
                                    am_hal_sysctrl_power_state_e ePowerState,
                                    bool bRetainState)
@@ -3229,9 +3275,11 @@ uint32_t am_hal_mspi_power_control(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI High Priority transfer function
 //
+//*****************************************************************************
 uint32_t am_hal_mspi_highprio_transfer(void *pHandle,
                                        am_hal_mspi_dma_transfer_t *pTransfer,
                                        am_hal_mspi_trans_e eMode,
