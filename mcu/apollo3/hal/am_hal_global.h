@@ -16,7 +16,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_2_0-dd5f40c14b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_GLOBAL_H
@@ -98,10 +98,13 @@ extern "C"
 #define STRINGIZE_VAL(n)                    STRINGIZE_VAL2(n)
 #define STRINGIZE_VAL2(n)                   #n
 
-#ifdef __GNUC__
-#define COMPILER_VERSION                    ("GCC " __VERSION__)
-#elif defined(__ARMCC_VERSION)
+//
+// The Arm6 compiler defines both GNUC and ARMCC_VERSION. So check ARMCC first.
+//
+#if defined(__ARMCC_VERSION)
 #define COMPILER_VERSION                    ("ARMCC " STRINGIZE_VAL(__ARMCC_VERSION))
+#elif __GNUC__
+#define COMPILER_VERSION                    ("GCC " __VERSION__)
 #elif defined(__KEIL__)
 #define COMPILER_VERSION                    "KEIL_CARM " STRINGIZE_VAL(__CA__)
 #elif defined(__IAR_SYSTEMS_ICC__)

@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_2_0-dd5f40c14b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -257,6 +257,8 @@ typedef struct
     bool bSoftMute;
 
     bool bLRSwap;
+
+    bool bDoNotStartPdm;
 }
 am_hal_pdm_config_t;
 
@@ -268,9 +270,39 @@ am_hal_pdm_config_t;
 typedef struct
 {
     uint32_t ui32TargetAddr;
+    //
+    //! second buffer when double buffering
+    //
+    uint32_t ui32TargetAddrReverse;
+
+    //
+    //! when double buffering, if this is non zero, it is the addres
+    //! of the buffer with data
+    //! it should be zeroed once the data is read from the buffer
+    //
+    uint32_t ui32BufferWithDataAddr;
+
+    //
+    //! number of byes for each DMA transfer
+    //
     uint32_t ui32TotalCount;
+
+    //
+    //! start DMA transfer in ISR to keep data flowing
+    //
+    volatile bool     bRestartDMA;
+
+    uint8_t  align[3];  //! longword align struct
 }
 am_hal_pdm_transfer_t;
+
+typedef struct
+{
+    uint32_t isrStat;
+    uint32_t dmaStat;
+
+}
+am_hal_interupt_service_msg_t;
 
 
 //*****************************************************************************
@@ -315,7 +347,7 @@ extern uint32_t am_hal_pdm_power_control(void *pHandle, am_hal_sysctrl_power_sta
 //! @return uint32_t
 //
 //*****************************************************************************
-extern uint32_t am_hal_pdm_configure(void *pHandle, am_hal_pdm_config_t *psConfig);
+extern uint32_t am_hal_pdm_configure(void *pHandle, const am_hal_pdm_config_t *psConfig);
 
 // Enable/Disable
 //*****************************************************************************
@@ -341,14 +373,60 @@ extern uint32_t am_hal_pdm_disable(void *pHandle);
 
 //*****************************************************************************
 //
-//! @brief Starts a DMA transaction from the PDM directly to SRAM
+//! @brief  setup dma parameters,
+//! this will not start a DMA transfer
 //!
 //! @param pHandle
-//! @param pDmaCfg
+//!
+//! @return
+//
+//*****************************************************************************
+extern uint32_t am_hal_dma_param_setup(void *pHandle, am_hal_pdm_transfer_t *pDmaCfg);
+
+//*****************************************************************************
+//
+//! @brief  start dma with perviously setup parameters
+//!
+//! @param pHandle
+//!
+//! @return
+//
+//*****************************************************************************
+extern uint32_t am_hal_dma_restart(void *pHandle);
+//*****************************************************************************
+//
+//! @brief Setup and start a DMA transaction from the PDM directly to SRAM
+//!
+//! @param pHandle
+//! @param pDmaCfg  DMA config params
 //! @return uint32_t
 //
 //*****************************************************************************
 extern uint32_t am_hal_pdm_dma_start(void *pHandle, am_hal_pdm_transfer_t *pDmaCfg);
+//*****************************************************************************
+//
+//! @brief Set FIFOTHR Value
+//!
+//! @param pHandle - handle for the interface.
+//! @param value   - value for the threshold.
+//!
+//! @return AM_HAL_STATUS_SUCCESS
+//
+//*****************************************************************************
+uint32_t am_hal_pdm_fifo_threshold_setup(void *pHandle, uint32_t value);
+
+//*****************************************************************************
+//
+//! @brief PDM DMA Get Buffer
+//!
+//! @param pHandle - handle for the interface.
+//!
+//! @return Pointer to the DMA Buffer
+//
+//*****************************************************************************
+extern uint32_t am_hal_pdm_dma_get_buffer(void *pHandle);
+
+//*****************************************************************************
 
 //*****************************************************************************
 //
@@ -424,6 +502,25 @@ extern uint32_t am_hal_pdm_interrupt_clear(void *pHandle, uint32_t ui32IntMask);
 //
 //*****************************************************************************
 extern uint32_t am_hal_pdm_interrupt_status_get(void *pHandle, uint32_t *pui32Status, bool bEnabledOnly);
+
+//*****************************************************************************
+//
+//! @brief PDM Interrupt Service Routine
+//!
+//! @details This is called from an ISR, this will manage
+//! double buffered PDM dma transfers
+//!
+//! @param pHandle     - handle for the module instance.
+//! @param ptIsrData   - returns module status
+//! @param pTransferCfg    - Pointer to the PDM Config
+//!
+//! @return AM_HAL_STATUS_SUCCESS
+//
+//*****************************************************************************
+extern uint32_t am_hal_pdm_interrupt_service(void *pHandle,
+                    am_hal_interupt_service_msg_t *ptIsrData,
+                    am_hal_pdm_transfer_t* pTransferCfg);
+
 
 
 #ifdef __cplusplus

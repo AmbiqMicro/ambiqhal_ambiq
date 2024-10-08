@@ -9,7 +9,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_2_0-dd5f40c14b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_REG_BASE_ADDRESSES_H
@@ -47,44 +47,15 @@
 #include "stdint.h"
 
 //
-// ARM standard register space (needed for macros)
-//
-#define REG_ITM_BASEADDR                        (0x00000000UL)
-#define REG_JEDEC_BASEADDR                      (0x00000000UL)
-#define REG_NVIC_BASEADDR                       (0x00000000UL)
-#define REG_SYSCTRL_BASEADDR                    (0x00000000UL)
-#define REG_SYSTICK_BASEADDR                    (0x00000000UL)
-#define REG_TPIU_BASEADDR                       (0x00000000UL)
-
-//
-// Peripheral register space
-//
-#define REG_ADC_BASEADDR                        (0x50010000UL)
-#define REG_APBDMA_BASEADDR                     (0x40011000UL)
-#define REG_BLEIF_BASEADDR                      (0x5000C000UL)
-#define REG_CACHECTRL_BASEADDR                  (0x40018000UL)
-#define REG_CLKGEN_BASEADDR                     (0x40004000UL)
-#define REG_CTIMER_BASEADDR                     (0x40008000UL)
-#define REG_GPIO_BASEADDR                       (0x40010000UL)
-//#define REG_IOMSTR_BASEADDR                     (0x50004000UL)
-#define REG_IOM_BASEADDR                        (0x50004000UL)
-#define REG_IOSLAVE_BASEADDR                    (0x50000000UL)
-#define REG_MCUCTRL_BASEADDR                    (0x40020000UL)
-#define REG_MSPI_BASEADDR                       (0x50014000UL)
-#define REG_PDM_BASEADDR                        (0x50011000UL)
-#define REG_PWRCTRL_BASEADDR                    (0x40021000UL)
-#define REG_RSTGEN_BASEADDR                     (0x40000000UL)
-#define REG_RTC_BASEADDR                        (0x40004200UL)
-#define REG_SCARD_BASEADDR                      (0x40080000UL)
-#define REG_SECURITY_BASEADDR                   (0x40030000UL)
-#define REG_UART_BASEADDR                       (0x4001C000UL)
-#define REG_VCOMP_BASEADDR                      (0x4000C000UL)
-#define REG_WDT_BASEADDR                        (0x40024000UL)
-
-//
 // SRAM address space
 //
 #define SRAM_BASEADDR                           (0x10000000UL)
+
+//
+// TCM address space
+//
+#define TCM_BASEADDR                            SRAM_BASEADDR
+#define TCM_MAX_SIZE                            (64UL * 1024UL)
 
 //
 // Flash address space

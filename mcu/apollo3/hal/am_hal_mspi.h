@@ -11,7 +11,7 @@
 //*****************************************************************************
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_2_0-dd5f40c14b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MSPI_H
@@ -458,19 +458,34 @@ extern "C"
   } am_hal_mspi_dma_transfer_t;
 
 
-  //
-  //! MSPI status structure.
-  //
-  typedef struct
-  {
+//
+//! MSPI status structure.
+//
+typedef struct
+{
+    uint32_t ui32NumCQEntries;
+
     //
     //! DMA status.
     //
-    bool                        bErr;
-    bool                        bCmp;
-    bool                        bTIP;
-    uint32_t                    ui32NumCQEntries;
-  } am_hal_mspi_status_t;
+    bool bErr;
+    bool bCmp;
+    bool bTIP;
+
+    //
+    //! This is true when the current command queue index matches the end index.
+    //! A DMA transfer will be complete when this is true.
+    //
+    bool bCQEndMatch;
+
+    //
+    //! This mirrors the CMDCMP bit. Transfer complete
+    //
+    bool bTransferComplete;
+
+
+}
+am_hal_mspi_status_t;
 
 
 #define am_hal_mspi_buffer(A)                                               \

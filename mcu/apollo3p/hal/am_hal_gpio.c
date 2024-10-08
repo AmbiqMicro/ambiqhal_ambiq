@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_2_0-dd5f40c14b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -302,8 +302,8 @@ g_ui8NCEtable[AM_HAL_GPIO_MAX_PADS][4] =
     {NCETBL(1, 3, 3), NCETBL(0, 2, 0), NCETBL(1, 5, 3), NCETBL(1, 2, 1)},   // NCE2
     {NCETBL(1, 3, 0), NCETBL(1, 4, 0), NCETBL(1, 5, 0), NCETBL(1, 2, 0)},   // NCE3
     {NCETBL(1, 3, 1), NCETBL(1, 4, 1), NCETBL(0, 1, 0), NCETBL(1, 1, 1)},   // NCE4
-    {0xFF,          0xFF,          0xFF,          0xFF},                // NCE5
-    {0xFF,          0xFF,          0xFF,          0xFF},                // NCE6
+    {0xFF,            0xFF,            0xFF,            0xFF},              // NCE5
+    {0xFF,            0xFF,            0xFF,            0xFF},              // NCE6
     {NCETBL(0, 1, 0), NCETBL(0, 2, 1), NCETBL(1, 5, 1), NCETBL(0, 0, 0)},   // NCE7
     {NCETBL(1, 3, 0), NCETBL(1, 4, 0), NCETBL(0, 2, 0), NCETBL(1, 0, 0)},   // NCE8
     {NCETBL(0, 1, 0), NCETBL(1, 4, 3), NCETBL(1, 5, 3), NCETBL(1, 2, 3)},   // NCE9
@@ -336,41 +336,41 @@ g_ui8NCEtable[AM_HAL_GPIO_MAX_PADS][4] =
     {NCETBL(1, 3, 1), NCETBL(1, 4, 1), NCETBL(1, 5, 1), NCETBL(0, 0, 1)},   // NCE36
     {NCETBL(1, 3, 1), NCETBL(1, 4, 2), NCETBL(1, 5, 2), NCETBL(0, 0, 0)},   // NCE37
     {NCETBL(1, 0, 3), NCETBL(1, 1, 3), NCETBL(0, 2, 1), NCETBL(1, 5, 3)},   // NCE38
-    {0xFF,          0xFF,          0xFF,          0xFF},                // NCE39
-    {0xFF,          0xFF,          0xFF,          0xFF},                // NCE40
-    {NCETBL(0,2,0), NCETBL(1,1,1), NCETBL(0,1,1), NCETBL(0,0,1)},       // NCE41
-    {NCETBL(1,0,0), NCETBL(0,1,0), NCETBL(1,2,0), NCETBL(1,5,0)},       // NCE42
-    {NCETBL(1,0,1), NCETBL(1,1,1), NCETBL(0,2,0), NCETBL(0,0,1)},       // NCE43
-    {NCETBL(1,0,2), NCETBL(0,0,0), NCETBL(1,2,2), NCETBL(1,5,2)},       // NCE44
-    {NCETBL(1,3,3), NCETBL(1,4,3), NCETBL(1,5,0), NCETBL(1,1,3)},       // NCE45
-    {NCETBL(1,3,0), NCETBL(0,1,0), NCETBL(0,2,0), NCETBL(0,0,1)},       // NCE46
-    {NCETBL(0,1,1), NCETBL(1,1,0), NCETBL(1,2,1), NCETBL(1,3,1)},       // NCE47
-    {NCETBL(0,1,0), NCETBL(1,1,2), NCETBL(1,2,2), NCETBL(0,2,1)},       // NCE48
-    {NCETBL(1,0,3), NCETBL(0,1,1), NCETBL(1,2,3), NCETBL(1,1,0)},       // NCE49
-    {NCETBL(0,1,0), NCETBL(0,2,0), NCETBL(1,2,3), NCETBL(1,0,0)},       // NCE50
-    {NCETBL(1,4,2), NCETBL(1,1,1), NCETBL(1,2,1), NCETBL(1,0,0)},       // NCE51
-    {NCETBL(1,0,1), NCETBL(1,1,2), NCETBL(0,0,0), NCETBL(1,2,1)},       // NCE52
-    {NCETBL(1,0,2), NCETBL(1,1,3), NCETBL(0,2,0), NCETBL(1,2,0)},       // NCE53
-    {NCETBL(0,2,0), NCETBL(1,4,0), NCETBL(1,5,0), NCETBL(1,3,0)},       // NCE54
-    {NCETBL(1,3,0), NCETBL(0,0,0), NCETBL(1,5,1), NCETBL(1,4,0)},       // NCE55
-    {NCETBL(1,3,2), NCETBL(1,4,3), NCETBL(1,5,2), NCETBL(0,0,1)},       // NCE56
-    {NCETBL(0,0,0), NCETBL(1,4,3), NCETBL(1,5,3), NCETBL(1,0,1)},       // NCE57
-    {NCETBL(1,3,3), NCETBL(1,1,0), NCETBL(0,0,0), NCETBL(1,5,3)},       // NCE58
-    {NCETBL(0,1,1), NCETBL(1,1,1), NCETBL(1,2,1), NCETBL(0,0,0)},       // NCE59
-    {NCETBL(0,0,1), NCETBL(1,1,2), NCETBL(1,2,2), NCETBL(1,0,3)},       // NCE60
-    {NCETBL(0,0,0), NCETBL(1,1,3), NCETBL(0,2,0), NCETBL(0,1,0)},       // NCE61
-    {NCETBL(0,0,1), NCETBL(1,4,0), NCETBL(1,5,0), NCETBL(0,1,1)},       // NCE62
-    {NCETBL(0,1,0), NCETBL(1,4,1), NCETBL(0,2,0), NCETBL(0,0,0)},       // NCE63
-    {NCETBL(1,0,0), NCETBL(1,4,2), NCETBL(1,5,2), NCETBL(0,0,1)},       // NCE64
-    {NCETBL(1,0,1), NCETBL(0,0,0), NCETBL(1,5,2), NCETBL(1,3,1)},       // NCE65
-    {NCETBL(0,1,0), NCETBL(1,1,0), NCETBL(1,2,0), NCETBL(1,4,1)},       // NCE66
-    {NCETBL(1,0,3), NCETBL(1,1,1), NCETBL(1,2,3), NCETBL(1,5,1)},       // NCE67
-    {NCETBL(1,3,0), NCETBL(0,0,0), NCETBL(1,2,2), NCETBL(1,0,2)},       // NCE68
-    {NCETBL(1,3,1), NCETBL(1,1,3), NCETBL(0,0,0), NCETBL(0,1,0)},       // NCE69
-    {NCETBL(1,3,2), NCETBL(0,2,0), NCETBL(1,5,0), NCETBL(0,1,1)},       // NCE70
-    {NCETBL(1,3,3), NCETBL(1,4,1), NCETBL(1,0,3), NCETBL(1,1,2)},       // NCE71
-    {NCETBL(0,0,0), NCETBL(0,2,0), NCETBL(0,1,0), NCETBL(1,2,2)},       // NCE72
-    {NCETBL(0,1,0), NCETBL(1,4,3), NCETBL(1,5,3), NCETBL(0,2,0)},       // NCE73
+    {0xFF,            0xFF,            0xFF,            0xFF},              // NCE39
+    {0xFF,            0xFF,            0xFF,            0xFF},              // NCE40
+    {NCETBL(0, 2, 0), NCETBL(1, 1, 1), NCETBL(0, 1, 1), NCETBL(0, 0, 1)},   // NCE41
+    {NCETBL(1, 0, 0), NCETBL(0, 1, 0), NCETBL(1, 2, 0), NCETBL(1, 5, 0)},   // NCE42
+    {NCETBL(1, 0, 1), NCETBL(1, 1, 1), NCETBL(0, 2, 0), NCETBL(0, 0, 1)},   // NCE43
+    {NCETBL(1, 0, 2), NCETBL(0, 0, 0), NCETBL(1, 2, 2), NCETBL(1, 5, 2)},   // NCE44
+    {NCETBL(1, 3, 3), NCETBL(1, 4, 3), NCETBL(1, 5, 0), NCETBL(1, 1, 3)},   // NCE45
+    {NCETBL(1, 3, 0), NCETBL(0, 1, 0), NCETBL(0, 2, 0), NCETBL(0, 0, 1)},   // NCE46
+    {NCETBL(0, 1, 1), NCETBL(1, 1, 0), NCETBL(1, 2, 1), NCETBL(1, 3, 1)},   // NCE47
+    {NCETBL(0, 1, 0), NCETBL(1, 1, 2), NCETBL(1, 2, 2), NCETBL(0, 2, 1)},   // NCE48
+    {NCETBL(1, 0, 3), NCETBL(0, 1, 1), NCETBL(1, 2, 3), NCETBL(1, 1, 0)},   // NCE49
+    {NCETBL(0, 1, 0), NCETBL(0, 2, 0), NCETBL(1, 2, 3), NCETBL(1, 0, 0)},   // NCE50
+    {NCETBL(1, 4, 2), NCETBL(1, 1, 1), NCETBL(1, 2, 1), NCETBL(1, 0, 0)},   // NCE51
+    {NCETBL(1, 0, 1), NCETBL(1, 1, 2), NCETBL(0, 0, 0), NCETBL(1, 2, 1)},   // NCE52
+    {NCETBL(1, 0, 2), NCETBL(1, 1, 3), NCETBL(0, 2, 0), NCETBL(1, 2, 0)},   // NCE53
+    {NCETBL(0, 2, 0), NCETBL(1, 4, 0), NCETBL(1, 5, 0), NCETBL(1, 3, 0)},   // NCE54
+    {NCETBL(1, 3, 0), NCETBL(0, 0, 0), NCETBL(1, 5, 1), NCETBL(1, 4, 0)},   // NCE55
+    {NCETBL(1, 3, 2), NCETBL(1, 4, 3), NCETBL(1, 5, 2), NCETBL(0, 0, 1)},   // NCE56
+    {NCETBL(0, 0, 0), NCETBL(1, 4, 3), NCETBL(1, 5, 3), NCETBL(1, 0, 1)},   // NCE57
+    {NCETBL(1, 3, 3), NCETBL(1, 1, 0), NCETBL(0, 0, 0), NCETBL(1, 5, 3)},   // NCE58
+    {NCETBL(0, 1, 1), NCETBL(1, 1, 1), NCETBL(1, 2, 1), NCETBL(0, 0, 0)},   // NCE59
+    {NCETBL(0, 0, 1), NCETBL(1, 1, 2), NCETBL(1, 2, 2), NCETBL(1, 0, 3)},   // NCE60
+    {NCETBL(0, 0, 0), NCETBL(1, 1, 3), NCETBL(0, 2, 0), NCETBL(0, 1, 0)},   // NCE61
+    {NCETBL(0, 0, 1), NCETBL(1, 4, 0), NCETBL(1, 5, 0), NCETBL(0, 1, 1)},   // NCE62
+    {NCETBL(0, 1, 0), NCETBL(1, 4, 1), NCETBL(0, 2, 0), NCETBL(0, 0, 0)},   // NCE63
+    {NCETBL(1, 0, 0), NCETBL(1, 4, 2), NCETBL(1, 5, 2), NCETBL(0, 0, 1)},   // NCE64
+    {NCETBL(1, 0, 1), NCETBL(0, 0, 0), NCETBL(1, 5, 2), NCETBL(1, 3, 1)},   // NCE65
+    {NCETBL(0, 1, 0), NCETBL(1, 1, 0), NCETBL(1, 2, 0), NCETBL(1, 4, 1)},   // NCE66
+    {NCETBL(1, 0, 3), NCETBL(1, 1, 1), NCETBL(1, 2, 3), NCETBL(1, 5, 1)},   // NCE67
+    {NCETBL(1, 3, 0), NCETBL(0, 0, 0), NCETBL(1, 2, 2), NCETBL(1, 0, 2)},   // NCE68
+    {NCETBL(1, 3, 1), NCETBL(1, 1, 3), NCETBL(0, 0, 0), NCETBL(0, 1, 0)},   // NCE69
+    {NCETBL(1, 3, 2), NCETBL(0, 2, 0), NCETBL(1, 5, 0), NCETBL(0, 1, 1)},   // NCE70
+    {NCETBL(1, 3, 3), NCETBL(1, 4, 1), NCETBL(1, 0, 3), NCETBL(1, 1, 2)},   // NCE71
+    {NCETBL(0, 0, 0), NCETBL(0, 2, 0), NCETBL(0, 1, 0), NCETBL(1, 2, 2)},   // NCE72
+    {NCETBL(0, 1, 0), NCETBL(1, 4, 3), NCETBL(1, 5, 3), NCETBL(0, 2, 0)},   // NCE73
 };
 
 //*****************************************************************************
@@ -452,64 +452,64 @@ popcount(uint32_t *pui32bitmask, int32_t i32numbits)
 //*****************************************************************************
 uint32_t am_hal_gpio_pinconfig_get(uint32_t ui32GpioNum, am_hal_gpio_pincfg_t *psGpioCfg)
 {
-	uint32_t ui32GPCfgAddr, ui32PadregAddr, ui32AltpadAddr;
-	uint32_t ui32GPCfgMask, ui32PadMask;
-	uint32_t ui32GPCfgShft, ui32PadShft;
-	uint32_t ui32GPCfgVal, ui32PadVal, ui32AltVal;
+    uint32_t ui32GPCfgAddr, ui32PadregAddr, ui32AltpadAddr;
+    uint32_t ui32GPCfgMask, ui32PadMask;
+    uint32_t ui32GPCfgShft, ui32PadShft;
+    uint32_t ui32GPCfgVal, ui32PadVal, ui32AltVal;
 
-	if (ui32GpioNum >= AM_HAL_GPIO_MAX_PADS) {
-		return AM_HAL_STATUS_OUT_OF_RANGE;
-	}
+    if (ui32GpioNum >= AM_HAL_GPIO_MAX_PADS) {
+        return AM_HAL_STATUS_OUT_OF_RANGE;
+    }
 
-	if (psGpioCfg == (am_hal_gpio_pincfg_t *)0x0) {
-		return AM_HAL_STATUS_INVALID_ARG;
-	}
+    if (psGpioCfg == (am_hal_gpio_pincfg_t *)0x0) {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
 
-	ui32GPCfgAddr = AM_REGADDR(GPIO, CFGA) + ((ui32GpioNum >> 1) & ~0x3);
-	ui32PadregAddr = AM_REGADDR(GPIO, PADREGA) + (ui32GpioNum & ~0x3);
-	ui32AltpadAddr = AM_REGADDR(GPIO, ALTPADCFGA) + (ui32GpioNum & ~0x3);
-	ui32GPCfgShft = ((ui32GpioNum & 0x7) << 2);
-	ui32PadShft = ((ui32GpioNum & 0x3) << 3);
-	ui32GPCfgMask = (uint32_t)0xF << ui32GPCfgShft;
-	ui32PadMask = (uint32_t)0xFF << ui32PadShft;
+    ui32GPCfgAddr = AM_REGADDR(GPIO, CFGA) + ((ui32GpioNum >> 1) & ~0x3);
+    ui32PadregAddr = AM_REGADDR(GPIO, PADREGA) + (ui32GpioNum & ~0x3);
+    ui32AltpadAddr = AM_REGADDR(GPIO, ALTPADCFGA) + (ui32GpioNum & ~0x3);
+    ui32GPCfgShft = ((ui32GpioNum & 0x7) << 2);
+    ui32PadShft = ((ui32GpioNum & 0x3) << 3);
+    ui32GPCfgMask = (uint32_t)0xF << ui32GPCfgShft;
+    ui32PadMask = (uint32_t)0xFF << ui32PadShft;
 
-	ui32GPCfgVal = (AM_REGVAL(ui32GPCfgAddr) & ui32GPCfgMask) >> ui32GPCfgShft;
-	ui32PadVal = (AM_REGVAL(ui32PadregAddr) & ui32PadMask) >> ui32PadShft;
-	ui32AltVal = (AM_REGVAL(ui32AltpadAddr) & ui32PadMask) >> ui32PadShft;
+    ui32GPCfgVal = (AM_REGVAL(ui32GPCfgAddr) & ui32GPCfgMask) >> ui32GPCfgShft;
+    ui32PadVal = (AM_REGVAL(ui32PadregAddr) & ui32PadMask) >> ui32PadShft;
+    ui32AltVal = (AM_REGVAL(ui32AltpadAddr) & ui32PadMask) >> ui32PadShft;
 
-	psGpioCfg->eGPOutcfg =
-		(ui32GPCfgVal & GPIO_CFGA_GPIO0OUTCFG_Msk) >> GPIO_CFGA_GPIO0OUTCFG_Pos;
-	psGpioCfg->eGPInput =
-		(ui32PadVal & GPIO_PADREGA_PAD0INPEN_Msk) >> GPIO_PADREGA_PAD0INPEN_Pos;
+    psGpioCfg->eGPOutcfg =
+        (ui32GPCfgVal & GPIO_CFGA_GPIO0OUTCFG_Msk) >> GPIO_CFGA_GPIO0OUTCFG_Pos;
+    psGpioCfg->eGPInput =
+        (ui32PadVal & GPIO_PADREGA_PAD0INPEN_Msk) >> GPIO_PADREGA_PAD0INPEN_Pos;
 
-	if ((ui32PadVal & GPIO_PADREGA_PAD0PULL_Msk) >> GPIO_PADREGA_PAD0PULL_Pos) {
-		if ((ui32PadVal & GPIO_PADREGA_PAD0RSEL_Msk) >> GPIO_PADREGA_PAD0RSEL_Pos) {
-			psGpioCfg->ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K +
-					     ((ui32PadVal & GPIO_PADREGA_PAD0RSEL_Msk) >>
-					      GPIO_PADREGA_PAD0RSEL_Pos);
-		} else if (ui32GpioNum != 20) {
-			psGpioCfg->ePullup = AM_HAL_GPIO_PIN_PULLUP_WEAK;
-		} else {
-			psGpioCfg->ePullup = AM_HAL_GPIO_PIN_PULLDOWN;
-		}
-	} else {
-		psGpioCfg->ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
-	}
+    if ((ui32PadVal & GPIO_PADREGA_PAD0PULL_Msk) >> GPIO_PADREGA_PAD0PULL_Pos) {
+        if ((ui32PadVal & GPIO_PADREGA_PAD0RSEL_Msk) >> GPIO_PADREGA_PAD0RSEL_Pos) {
+            psGpioCfg->ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K +
+                         ((ui32PadVal & GPIO_PADREGA_PAD0RSEL_Msk) >>
+                          GPIO_PADREGA_PAD0RSEL_Pos);
+        } else if (ui32GpioNum != 20) {
+            psGpioCfg->ePullup = AM_HAL_GPIO_PIN_PULLUP_WEAK;
+        } else {
+            psGpioCfg->ePullup = AM_HAL_GPIO_PIN_PULLDOWN;
+        }
+    } else {
+        psGpioCfg->ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
+    }
 
-	psGpioCfg->uFuncSel =
-		(ui32PadVal & GPIO_PADREGA_PAD0FNCSEL_Msk) >> GPIO_PADREGA_PAD0FNCSEL_Pos;
-	psGpioCfg->eCEpol = (ui32GPCfgVal & GPIO_CFGA_GPIO0INTD_Msk) >> GPIO_CFGA_GPIO0INTD_Pos;
-	psGpioCfg->eIntDir =
-		(((ui32GPCfgVal & GPIO_CFGA_GPIO0INCFG_Msk) >> GPIO_CFGA_GPIO0INCFG_Pos) << 1) |
-		psGpioCfg->eCEpol;
-	psGpioCfg->eDriveStrength =
-		(((ui32AltVal & GPIO_ALTPADCFGA_PAD0_DS1_Msk) >> GPIO_ALTPADCFGA_PAD0_DS1_Pos)
-		 << 1) |
-		((ui32PadVal & GPIO_PADREGA_PAD0STRNG_Msk) >> GPIO_PADREGA_PAD0STRNG_Pos);
-	psGpioCfg->eGPRdZero =
-		(ui32GPCfgVal & GPIO_CFGA_GPIO0INCFG_Msk) >> GPIO_CFGA_GPIO0INCFG_Pos;
+    psGpioCfg->uFuncSel =
+        (ui32PadVal & GPIO_PADREGA_PAD0FNCSEL_Msk) >> GPIO_PADREGA_PAD0FNCSEL_Pos;
+    psGpioCfg->eCEpol = (ui32GPCfgVal & GPIO_CFGA_GPIO0INTD_Msk) >> GPIO_CFGA_GPIO0INTD_Pos;
+    psGpioCfg->eIntDir =
+        (((ui32GPCfgVal & GPIO_CFGA_GPIO0INCFG_Msk) >> GPIO_CFGA_GPIO0INCFG_Pos) << 1) |
+        psGpioCfg->eCEpol;
+    psGpioCfg->eDriveStrength =
+        (((ui32AltVal & GPIO_ALTPADCFGA_PAD0_DS1_Msk) >> GPIO_ALTPADCFGA_PAD0_DS1_Pos)
+         << 1) |
+        ((ui32PadVal & GPIO_PADREGA_PAD0STRNG_Msk) >> GPIO_PADREGA_PAD0STRNG_Pos);
+    psGpioCfg->eGPRdZero =
+        (ui32GPCfgVal & GPIO_CFGA_GPIO0INCFG_Msk) >> GPIO_CFGA_GPIO0INCFG_Pos;
 
-	return AM_HAL_STATUS_SUCCESS;
+    return AM_HAL_STATUS_SUCCESS;
 }// am_hal_gpio_pinconfig_get()
 
 //*****************************************************************************
@@ -1314,7 +1314,7 @@ am_hal_gpio_interrupt_register(uint32_t ui32GPIONumber,
 //*****************************************************************************
 uint32_t
 am_hal_gpio_interrupt_register_adv(uint32_t ui32GPIONumber,
-                               am_hal_gpio_handler_adv_t pfnHandler, void *pCtxt)
+                                   am_hal_gpio_handler_adv_t pfnHandler, void *pCtxt)
 {
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //

@@ -6,7 +6,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_2_0-dd5f40c14b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -605,7 +605,7 @@
 #define AM_REG_INFO0_SECURITY_VERSION_VERSION_M 0xFFFFFFFF
 #define AM_REG_INFO0_SECURITY_VERSION_VERSION(n) (((uint32_t)(n) << 0) & 0xFFFFFFFF)
 
-// SECURITY_SRAM_RESV - This 16-bit word indicates the amount of SRAM to keep reserved for application scratch space. This reserves the specified memory at the top end of SRAM memory address range. This memory is not disturbed by the Secure Boot Loader. Please note that future releases of SBL may increase the width of this field to 18 bits.
+// SECURITY_SRAM_RESV - This 16-bit word indicates the minimum amount of SRAM that the Secure Boot Loader (SBL) reserves for the application, which will not be disturbed by SBL across a reset. The programmed value is rounded up, if necessary, by SBL to the next 256 byte boundary. That value is subtracted from the top of SRAM, resulting in a region at the top of SRAM that becomes the reserved area. Example: Apollo3 has 384KB of SRAM, 0x10000000-0x10005FFF. SRAM_RESV contains 0x3E8, SBL rounds up to 0x400, and reserves the region 0x10005C00 - 0x10005FFF for use by the application. Application data in this region will not be modified by SBL across reset.
 #define AM_REG_INFO0_SECURITY_SRAM_RESV_SRAM_RESV_S 0
 #define AM_REG_INFO0_SECURITY_SRAM_RESV_SRAM_RESV_M 0x0000FFFF
 #define AM_REG_INFO0_SECURITY_SRAM_RESV_SRAM_RESV(n) (((uint32_t)(n) << 0) & 0x0000FFFF)

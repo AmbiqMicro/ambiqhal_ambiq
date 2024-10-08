@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_2_0-dd5f40c14b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -1189,6 +1189,14 @@ am_hal_pwrctrl_ldo_vddx_active_trim_adj_default(am_hal_burst_voltage_wa_e vddx, 
     // save original LDO value, it will be restored
     //
     int32_t i32ActualCode = 0;
+
+    //
+    // check if info1 patch5 is present
+    //
+    if (!am_hal_burst_ldo_patch_check())
+    {
+        return 0;
+    }
 
     AM_CRITICAL_BEGIN;
     if (vddx == AM_HAL_BURST_VDDC)

@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_3_1_1-10cda4b5e0 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_3_2_0-dd5f40c14b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -290,7 +290,6 @@ uint32_t
 am_hal_adc_deinitialize(void *pHandle)
 {
     uint32_t            status = AM_HAL_STATUS_SUCCESS;
-    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -301,6 +300,8 @@ am_hal_adc_deinitialize(void *pHandle)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
 
     if ( pADCState->prefix.s.bEnable )
     {
@@ -331,8 +332,6 @@ am_hal_adc_configure(void *pHandle,
                      am_hal_adc_config_t *psConfig)
 {
     uint32_t            ui32Config;
-    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -343,6 +342,9 @@ am_hal_adc_configure(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
+    uint32_t            ui32Module = pADCState->ui32Module;
 
     ui32Config = 0;
 
@@ -416,8 +418,6 @@ am_hal_adc_configure_slot(void *pHandle,
 {
     uint32_t            ui32Config;
     uint32_t            ui32RegOffset;
-    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -427,7 +427,12 @@ am_hal_adc_configure_slot(void *pHandle,
     {
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
+#endif // AM_HAL_DISABLE_API_VALIDATION
 
+    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
+    uint32_t            ui32Module = pADCState->ui32Module;
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
     //
     // Check the slot number.
     //
@@ -502,7 +507,6 @@ am_hal_adc_configure_dma(void *pHandle,
                          am_hal_adc_dma_config_t *pDMAConfig)
 {
     uint32_t    ui32Config;
-    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -511,6 +515,19 @@ am_hal_adc_configure_dma(void *pHandle,
     if ( !AM_HAL_ADC_CHK_HANDLE(pHandle) )
     {
         return AM_HAL_STATUS_INVALID_HANDLE;
+    }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    //
+    // Check for DMA to/from DTCM.
+    //
+    if ( (pDMAConfig->ui32TargetAddress >= AM_HAL_FLASH_DTCM_START) &&
+      (pDMAConfig->ui32TargetAddress <= AM_HAL_FLASH_DTCM_END) )
+    {
+      return AM_HAL_STATUS_OUT_OF_RANGE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
@@ -597,7 +614,6 @@ uint32_t am_hal_adc_control(void *pHandle,
                             am_hal_adc_request_e eRequest,
                             void *pArgs)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -608,6 +624,8 @@ uint32_t am_hal_adc_control(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
     switch ( eRequest )
     {
@@ -782,8 +800,6 @@ uint32_t am_hal_adc_control(void *pHandle,
 uint32_t
 am_hal_adc_enable(void *pHandle)
 {
-    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -793,12 +809,14 @@ am_hal_adc_enable(void *pHandle)
     {
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
+#endif
+    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
+    uint32_t            ui32Module = pADCState->ui32Module;
 
     if ( pADCState->prefix.s.bEnable )
     {
         return AM_HAL_STATUS_SUCCESS;
     }
-#endif // AM_HAL_DISABLE_API_VALIDATION
 
     //
     // Enable the ADC.
@@ -830,8 +848,6 @@ am_hal_adc_enable(void *pHandle)
 uint32_t
 am_hal_adc_disable(void *pHandle)
 {
-    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -842,6 +858,14 @@ am_hal_adc_disable(void *pHandle)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
+    uint32_t            ui32Module = pADCState->ui32Module;
+
+    //
+    // disable dma in progress and clear status
+    //
+    ADCn(ui32Module)->DMACFG_b.DMAEN = 0;
+    ADCn(ui32Module)->DMASTAT = 0 ;
 
     //
     // Disable the ADC.
@@ -874,8 +898,6 @@ am_hal_adc_disable(void *pHandle)
 uint32_t
 am_hal_adc_status_get(void *pHandle, am_hal_adc_status_t *pStatus )
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
-
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
     // Check the handle.
@@ -885,6 +907,8 @@ am_hal_adc_status_get(void *pHandle, am_hal_adc_status_t *pStatus )
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
     //
     // Get the power status.
@@ -926,7 +950,6 @@ am_hal_adc_status_get(void *pHandle, am_hal_adc_status_t *pStatus )
 uint32_t
 am_hal_adc_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -937,6 +960,8 @@ am_hal_adc_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     //
     // Enable the interrupts.
@@ -964,7 +989,6 @@ am_hal_adc_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
 uint32_t
 am_hal_adc_interrupt_disable(void *pHandle, uint32_t ui32IntMask)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -975,6 +999,8 @@ am_hal_adc_interrupt_disable(void *pHandle, uint32_t ui32IntMask)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     //
     // Disable the interrupts.
@@ -1005,7 +1031,6 @@ am_hal_adc_interrupt_status(void *pHandle,
                             uint32_t  *pui32Status,
                             bool bEnabledOnly)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1016,6 +1041,8 @@ am_hal_adc_interrupt_status(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     //
     // if requested, only return the interrupts that are enabled.
@@ -1052,7 +1079,6 @@ am_hal_adc_interrupt_status(void *pHandle,
 uint32_t
 am_hal_adc_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1064,6 +1090,7 @@ am_hal_adc_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
+    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
     //
     // Clear the interrupts.
     //
@@ -1095,15 +1122,13 @@ am_hal_adc_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
 // @return status      - generic or interface specific status.
 //
 //*****************************************************************************
-uint32_t am_hal_adc_samples_read(void *pHandle, bool bFullSample,
+uint32_t am_hal_adc_samples_read(void *pHandle,
+                                 bool bFullSample,
                                  uint32_t *pui32InSampleBuffer,
                                  uint32_t *pui32InOutNumberSamples,
                                  am_hal_adc_sample_t *pui32OutBuffer)
 {
     uint32_t      ui32Sample;
-    uint32_t      ui32RequestedSamples = *pui32InOutNumberSamples;
-
-    uint32_t ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1123,6 +1148,8 @@ uint32_t am_hal_adc_samples_read(void *pHandle, bool bFullSample,
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
+    uint32_t ui32RequestedSamples   = *pui32InOutNumberSamples;
+    uint32_t ui32Module             = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     *pui32InOutNumberSamples = 0;
 
@@ -1181,7 +1208,6 @@ uint32_t am_hal_adc_samples_read(void *pHandle, bool bFullSample,
 uint32_t
 am_hal_adc_sw_trigger(void *pHandle)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1192,6 +1218,8 @@ am_hal_adc_sw_trigger(void *pHandle)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     //
     // Write to the Software trigger register in the ADC.
@@ -1223,8 +1251,6 @@ am_hal_adc_power_control(void *pHandle,
                          am_hal_sysctrl_power_state_e ePowerState,
                          bool bRetainState)
 {
-    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1235,6 +1261,9 @@ am_hal_adc_power_control(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
+    uint32_t            ui32Module = pADCState->ui32Module;
 
     //
     // Decode the requested power state and update MSPI operation accordingly.
@@ -1254,20 +1283,21 @@ am_hal_adc_power_control(void *pHandle,
 
             if ( bRetainState )
             {
-                ADCn(ui32Module)->SL0CFG = pADCState->registerState.regSL0CFG;
-                ADCn(ui32Module)->SL1CFG = pADCState->registerState.regSL1CFG;
-                ADCn(ui32Module)->SL2CFG = pADCState->registerState.regSL2CFG;
-                ADCn(ui32Module)->SL3CFG = pADCState->registerState.regSL3CFG;
-                ADCn(ui32Module)->SL4CFG = pADCState->registerState.regSL4CFG;
-                ADCn(ui32Module)->SL5CFG = pADCState->registerState.regSL5CFG;
-                ADCn(ui32Module)->SL6CFG = pADCState->registerState.regSL6CFG;
-                ADCn(ui32Module)->SL7CFG = pADCState->registerState.regSL7CFG;
-                ADCn(ui32Module)->WULIM  = pADCState->registerState.regWULIM;
-                ADCn(ui32Module)->WLLIM  = pADCState->registerState.regWLLIM;
-                ADCn(ui32Module)->INTEN  = pADCState->registerState.regINTEN;
-                ADCn(ui32Module)->CFG    = pADCState->registerState.regCFG;
-
-                pADCState->registerState.bValid     = false;
+                ADCn(ui32Module)->SL0CFG        = pADCState->registerState.regSL0CFG;
+                ADCn(ui32Module)->SL1CFG        = pADCState->registerState.regSL1CFG;
+                ADCn(ui32Module)->SL2CFG        = pADCState->registerState.regSL2CFG;
+                ADCn(ui32Module)->SL3CFG        = pADCState->registerState.regSL3CFG;
+                ADCn(ui32Module)->SL4CFG        = pADCState->registerState.regSL4CFG;
+                ADCn(ui32Module)->SL5CFG        = pADCState->registerState.regSL5CFG;
+                ADCn(ui32Module)->SL6CFG        = pADCState->registerState.regSL6CFG;
+                ADCn(ui32Module)->SL7CFG        = pADCState->registerState.regSL7CFG;
+                ADCn(ui32Module)->WULIM         = pADCState->registerState.regWULIM;
+                ADCn(ui32Module)->WLLIM         = pADCState->registerState.regWLLIM;
+                ADCn(ui32Module)->INTEN         = 0;
+                ADCn(ui32Module)->CFG           = pADCState->registerState.regCFG & (~ADC_CFG_ADCEN_Msk);
+                ADCn(ui32Module)->CFG_b.ADCEN   = _FLD2VAL(ADC_CFG_ADCEN, pADCState->registerState.regCFG);
+                ADCn(ui32Module)->INTEN         = pADCState->registerState.regINTEN;
+                pADCState->registerState.bValid = false;
             }
             break;
 
