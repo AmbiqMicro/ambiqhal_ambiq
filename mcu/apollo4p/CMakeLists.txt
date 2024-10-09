@@ -35,7 +35,7 @@ if(CONFIG_AMBIQ_HAL_USE_HWINFO)
     zephyr_library_sources(hal/mcu/am_hal_reset.c)
 endif()
 
-if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPIC)
+if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPIC OR CONFIG_AMBIQ_HAL_USE_SPI)
     zephyr_library_sources(hal/mcu/am_hal_iom.c)
     zephyr_library_sources(hal/mcu/am_hal_cmdq.c)
     zephyr_library_sources(hal/mcu/am_hal_fault.c)
