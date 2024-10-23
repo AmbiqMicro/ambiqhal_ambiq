@@ -18078,79 +18078,79 @@ typedef enum {                                  /*!< CLKGEN_HFADJ_HFADJEN       
 /* ======================================================  CLOCKENSTAT  ====================================================== */
 /* ========================================  CLKGEN CLOCKENSTAT CLOCKENSTAT [0..31]  ========================================= */
 typedef enum {                                  /*!< CLKGEN_CLOCKENSTAT_CLOCKENSTAT                                            */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_ADC_CLKEN = 1, /*!< ADC_CLKEN : Clock enable for the ADC.                                     */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_ACTIVITY_CLKEN = 2,/*!< APBDMA_ACTIVITY_CLKEN : Clock enable for the APBDMA ACTIVITY   */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_AOH_CLKEN = 4,/*!< APBDMA_AOH_CLKEN : Clock enable for the APBDMA AOH DOMAIN           */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_AOL_CLKEN = 8,/*!< APBDMA_AOL_CLKEN : Clock enable for the APBDMA AOL DOMAIN           */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_APB_CLKEN = 16,/*!< APBDMA_APB_CLKEN : Clock enable for the APBDMA_APB                 */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_BLEL_CLKEN = 32,/*!< APBDMA_BLEL_CLKEN : Clock enable for the APBDMA_BLEL              */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_HCPA_CLKEN = 64,/*!< APBDMA_HCPA_CLKEN : Clock enable for the APBDMA_HCPA              */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_HCPB_CLKEN = 128,/*!< APBDMA_HCPB_CLKEN : Clock enable for the APBDMA_HCPB             */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_HCPC_CLKEN = 256,/*!< APBDMA_HCPC_CLKEN : Clock enable for the APBDMA_HCPC             */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_MSPI_CLKEN = 512,/*!< APBDMA_MSPI_CLKEN : Clock enable for the APBDMA_MSPI             */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_MSPI1_CLKEN = 1024,/*!< APBDMA_MSPI1_CLKEN : Clock enable for the APBDMA_MSPI1         */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_MSPI2_CLKEN = 2048,/*!< APBDMA_MSPI2_CLKEN : Clock enable for the APBDMA_MSPI2         */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_PDM_CLKEN = 4096,/*!< APBDMA_PDM_CLKEN : Clock enable for the APBDMA_PDM               */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_BLEIF_CLK_CLKEN = 8192,/*!< BLEIF_CLK_CLKEN : Clock enable for the BLEIF                      */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_BLEIF_CLK32K_CLKEN = 16384,/*!< BLEIF_CLK32K_CLKEN : Clock enable for the BLEIF 32khZ CLOCK   */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER_CLKEN = 32768,/*!< CTIMER_CLKEN : Clock enable for the CTIMER BLOCK                    */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER0A_CLKEN = 65536,/*!< CTIMER0A_CLKEN : Clock enable for the CTIMER0A                    */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER0B_CLKEN = 131072,/*!< CTIMER0B_CLKEN : Clock enable for the CTIMER0B                   */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER1A_CLKEN = 262144,/*!< CTIMER1A_CLKEN : Clock enable for the CTIMER1A                   */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER1B_CLKEN = 524288,/*!< CTIMER1B_CLKEN : Clock enable for the CTIMER1B                   */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER2A_CLKEN = 1048576,/*!< CTIMER2A_CLKEN : Clock enable for the CTIMER2A                  */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER2B_CLKEN = 2097152,/*!< CTIMER2B_CLKEN : Clock enable for the CTIMER2B                  */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER3A_CLKEN = 4194304,/*!< CTIMER3A_CLKEN : Clock enable for the CTIMER3A                  */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER3B_CLKEN = 8388608,/*!< CTIMER3B_CLKEN : Clock enable for the CTIMER3B                  */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER4A_CLKEN = 16777216,/*!< CTIMER4A_CLKEN : Clock enable for the CTIMER4A                 */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER4B_CLKEN = 33554432,/*!< CTIMER4B_CLKEN : Clock enable for the CTIMER4B                 */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER5A_CLKEN = 67108864,/*!< CTIMER5A_CLKEN : Clock enable for the CTIMER5A                 */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER5B_CLKEN = 134217728,/*!< CTIMER5B_CLKEN : Clock enable for the CTIMER5B                */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER6A_CLKEN = 268435456,/*!< CTIMER6A_CLKEN : Clock enable for the CTIMER6A                */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER6B_CLKEN = 536870912,/*!< CTIMER6B_CLKEN : Clock enable for the CTIMER6B                */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER7A_CLKEN = 1073741824,/*!< CTIMER7A_CLKEN : Clock enable for the CTIMER7A               */
-  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER7B_CLKEN = -2147483648,/*!< CTIMER7B_CLKEN : Clock enable for the CTIMER7B              */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_ADC_CLKEN = 0x1, /*!< ADC_CLKEN : Clock enable for the ADC.                                     */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_ACTIVITY_CLKEN = 0x2,/*!< APBDMA_ACTIVITY_CLKEN : Clock enable for the APBDMA ACTIVITY   */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_AOH_CLKEN = 0x4,/*!< APBDMA_AOH_CLKEN : Clock enable for the APBDMA AOH DOMAIN           */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_AOL_CLKEN = 0x8,/*!< APBDMA_AOL_CLKEN : Clock enable for the APBDMA AOL DOMAIN           */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_APB_CLKEN = 0x10,/*!< APBDMA_APB_CLKEN : Clock enable for the APBDMA_APB                 */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_BLEL_CLKEN = 0x20,/*!< APBDMA_BLEL_CLKEN : Clock enable for the APBDMA_BLEL              */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_HCPA_CLKEN = 0x40,/*!< APBDMA_HCPA_CLKEN : Clock enable for the APBDMA_HCPA              */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_HCPB_CLKEN = 0x80,/*!< APBDMA_HCPB_CLKEN : Clock enable for the APBDMA_HCPB             */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_HCPC_CLKEN = 0x100,/*!< APBDMA_HCPC_CLKEN : Clock enable for the APBDMA_HCPC             */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_MSPI_CLKEN = 0x200,/*!< APBDMA_MSPI_CLKEN : Clock enable for the APBDMA_MSPI             */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_MSPI1_CLKEN = 0x400,/*!< APBDMA_MSPI1_CLKEN : Clock enable for the APBDMA_MSPI1         */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_MSPI2_CLKEN = 0x800,/*!< APBDMA_MSPI2_CLKEN : Clock enable for the APBDMA_MSPI2         */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_APBDMA_PDM_CLKEN = 0x1000,/*!< APBDMA_PDM_CLKEN : Clock enable for the APBDMA_PDM               */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_BLEIF_CLK_CLKEN = 0x2000,/*!< BLEIF_CLK_CLKEN : Clock enable for the BLEIF                      */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_BLEIF_CLK32K_CLKEN = 0x4000,/*!< BLEIF_CLK32K_CLKEN : Clock enable for the BLEIF 32khZ CLOCK   */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER_CLKEN = 0x8000,/*!< CTIMER_CLKEN : Clock enable for the CTIMER BLOCK                    */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER0A_CLKEN = 0x10000,/*!< CTIMER0A_CLKEN : Clock enable for the CTIMER0A                    */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER0B_CLKEN = 0x20000,/*!< CTIMER0B_CLKEN : Clock enable for the CTIMER0B                   */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER1A_CLKEN = 0x40000,/*!< CTIMER1A_CLKEN : Clock enable for the CTIMER1A                   */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER1B_CLKEN = 0x80000,/*!< CTIMER1B_CLKEN : Clock enable for the CTIMER1B                   */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER2A_CLKEN = 0x100000,/*!< CTIMER2A_CLKEN : Clock enable for the CTIMER2A                  */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER2B_CLKEN = 0x200000,/*!< CTIMER2B_CLKEN : Clock enable for the CTIMER2B                  */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER3A_CLKEN = 0x400000,/*!< CTIMER3A_CLKEN : Clock enable for the CTIMER3A                  */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER3B_CLKEN = 0x800000,/*!< CTIMER3B_CLKEN : Clock enable for the CTIMER3B                  */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER4A_CLKEN = 0x1000000,/*!< CTIMER4A_CLKEN : Clock enable for the CTIMER4A                 */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER4B_CLKEN = 0x2000000,/*!< CTIMER4B_CLKEN : Clock enable for the CTIMER4B                 */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER5A_CLKEN = 0x4000000,/*!< CTIMER5A_CLKEN : Clock enable for the CTIMER5A                 */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER5B_CLKEN = 0x8000000,/*!< CTIMER5B_CLKEN : Clock enable for the CTIMER5B                */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER6A_CLKEN = 0x10000000,/*!< CTIMER6A_CLKEN : Clock enable for the CTIMER6A                */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER6B_CLKEN = 0x20000000,/*!< CTIMER6B_CLKEN : Clock enable for the CTIMER6B                */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER7A_CLKEN = 0x40000000,/*!< CTIMER7A_CLKEN : Clock enable for the CTIMER7A               */
+  CLKGEN_CLOCKENSTAT_CLOCKENSTAT_CTIMER7B_CLKEN = 0x80000000,/*!< CTIMER7B_CLKEN : Clock enable for the CTIMER7B              */
 } CLKGEN_CLOCKENSTAT_CLOCKENSTAT_Enum;
 
 /* =====================================================  CLOCKEN2STAT  ====================================================== */
 /* =======================================  CLKGEN CLOCKEN2STAT CLOCKEN2STAT [0..31]  ======================================== */
 typedef enum {                                  /*!< CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT                                          */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_DAP_CLKEN = 1,/*!< DAP_CLKEN : Clock enable for the DAP                                     */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC0_CLKEN = 2,/*!< IOMSTRIFC0_CLKEN : Clock enable for the IO MASTER 0 IFC INTERFACE */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC1_CLKEN = 4,/*!< IOMSTRIFC1_CLKEN : Clock enable for the IO MASTER 1 IFC INTERFACE */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC2_CLKEN = 8,/*!< IOMSTRIFC2_CLKEN : Clock enable for the IO MASTER 2 IFC INTERFACE */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC3_CLKEN = 16,/*!< IOMSTRIFC3_CLKEN : Clock enable for the IO MASTER 3 IFC INTERFACE */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC4_CLKEN = 32,/*!< IOMSTRIFC4_CLKEN : Clock enable for the IO MASTER 4 IFC INTERFACE */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC5_CLKEN = 64,/*!< IOMSTRIFC5_CLKEN : Clock enable for the IO MASTER 5 IFC INTERFACE */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_PDM_CLKEN = 128,/*!< PDM_CLKEN : Clock enable for the PDM                                   */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_PDMIFC_CLKEN = 256,/*!< PDMIFC_CLKEN : Clock enable for the PDM INTERFACE                   */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_PWRCTRL_CLKEN = 512,/*!< PWRCTRL_CLKEN : Clock enable for the PWRCTRL                       */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_PWRCTRL_COUNT_CLKEN = 1024,/*!< PWRCTRL_COUNT_CLKEN : Clock enable for the PWRCTRL counter  */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_RSTGEN_CLKEN = 2048,/*!< RSTGEN_CLKEN : Clock enable for the RSTGEN                         */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_SCARD_CLKEN = 4096,/*!< SCARD_CLKEN : Clock enable for the SCARD                            */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_SCARD_ALTAPB_CLKEN = 8192,/*!< SCARD_ALTAPB_CLKEN : Clock enable for the SCARD ALTAPB       */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_STIMER_CNT_CLKEN = 16384,/*!< STIMER_CNT_CLKEN : Clock enable for the STIMER_CNT_CLKEN      */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_TPIU_CLKEN = 32768,/*!< TPIU_CLKEN : Clock enable for the TPIU_CLKEN                        */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_UART0HF_CLKEN = 65536,/*!< UART0HF_CLKEN : Clock enable for the UART0 HF                    */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_UART1HF_CLKEN = 131072,/*!< UART1HF_CLKEN : Clock enable for the UART1 HF                   */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_WDT_CLKEN = 262144,/*!< WDT_CLKEN : Clock enable for the Watchdog timer                     */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_XT_32KHZ_EN = 1073741824,/*!< XT_32KHZ_EN : Clock enable for the XT 32KHZ                   */
-  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_FORCEHFRC = -2147483648,/*!< FORCEHFRC : HFRC is forced on Status.                          */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_DAP_CLKEN = 0x1,/*!< DAP_CLKEN : Clock enable for the DAP                                     */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC0_CLKEN = 0x2,/*!< IOMSTRIFC0_CLKEN : Clock enable for the IO MASTER 0x00 IFC INTERFACE */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC1_CLKEN = 0x4,/*!< IOMSTRIFC1_CLKEN : Clock enable for the IO MASTER 0x01 IFC INTERFACE */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC2_CLKEN = 0x8,/*!< IOMSTRIFC2_CLKEN : Clock enable for the IO MASTER 0x02 IFC INTERFACE */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC3_CLKEN = 0x10,/*!< IOMSTRIFC3_CLKEN : Clock enable for the IO MASTER 0x03 IFC INTERFACE */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC4_CLKEN = 0x20,/*!< IOMSTRIFC4_CLKEN : Clock enable for the IO MASTER 0x04 IFC INTERFACE */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_IOMSTRIFC5_CLKEN = 0x40,/*!< IOMSTRIFC5_CLKEN : Clock enable for the IO MASTER 0x05 IFC INTERFACE */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_PDM_CLKEN = 0x80,/*!< PDM_CLKEN : Clock enable for the PDM                                   */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_PDMIFC_CLKEN = 0x100,/*!< PDMIFC_CLKEN : Clock enable for the PDM INTERFACE                   */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_PWRCTRL_CLKEN = 0x200,/*!< PWRCTRL_CLKEN : Clock enable for the PWRCTRL                       */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_PWRCTRL_COUNT_CLKEN = 0x400,/*!< PWRCTRL_COUNT_CLKEN : Clock enable for the PWRCTRL counter  */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_RSTGEN_CLKEN = 0x800,/*!< RSTGEN_CLKEN : Clock enable for the RSTGEN                         */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_SCARD_CLKEN = 0x1000,/*!< SCARD_CLKEN : Clock enable for the SCARD                            */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_SCARD_ALTAPB_CLKEN = 0x2000,/*!< SCARD_ALTAPB_CLKEN : Clock enable for the SCARD ALTAPB       */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_STIMER_CNT_CLKEN = 0x4000,/*!< STIMER_CNT_CLKEN : Clock enable for the STIMER_CNT_CLKEN      */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_TPIU_CLKEN = 0x8000,/*!< TPIU_CLKEN : Clock enable for the TPIU_CLKEN                        */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_UART0HF_CLKEN = 0x10000,/*!< UART0HF_CLKEN : Clock enable for the UART0 HF                    */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_UART1HF_CLKEN = 0x20000,/*!< UART1HF_CLKEN : Clock enable for the UART1 HF                   */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_WDT_CLKEN = 0x40000,/*!< WDT_CLKEN : Clock enable for the Watchdog timer                     */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_XT_32KHZ_EN = 0x40000000,/*!< XT_32KHZ_EN : Clock enable for the XT 32KHZ                   */
+  CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_FORCEHFRC = 0x80000000,/*!< FORCEHFRC : HFRC is forced on Status.                          */
 } CLKGEN_CLOCKEN2STAT_CLOCKEN2STAT_Enum;
 
 /* =====================================================  CLOCKEN3STAT  ====================================================== */
 /* =======================================  CLKGEN CLOCKEN3STAT CLOCKEN3STAT [0..31]  ======================================== */
 typedef enum {                                  /*!< CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT                                          */
-  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_DAP_enabled = 131072,/*!< DAP_enabled : DAP clock is enabled [17]                           */
-  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_VCOMP_enabled = 262144,/*!< VCOMP_enabled : VCOMP power-down indicator [18]                 */
-  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_XTAL_enabled = 16777216,/*!< XTAL_enabled : XTAL is enabled [24]                            */
-  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_HFRC_enabled = 33554432,/*!< HFRC_enabled : HFRC is enabled [25]                            */
-  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_HFADJEN = 67108864,/*!< HFADJEN : HFRC Adjust enabled [26]                                  */
-  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_HFRC_en_out = 134217728,/*!< HFRC_en_out : HFRC Enabled out [27]                            */
-  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_RTC_XT = 268435456,/*!< RTC_XT : RTC use XT [28]                                            */
-  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_clkout_xtal_en = 536870912,/*!< clkout_xtal_en : XTAL clkout enabled [29]                   */
-  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_clkout_hfrc_en = 1073741824,/*!< clkout_hfrc_en : HFRC clkout enabled [30]                  */
-  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_flashclk_en = -2147483648,/*!< flashclk_en : Flash clk is enabled [31]                      */
+  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_DAP_enabled = 0x20000,/*!< DAP_enabled : DAP clock is enabled [0x11]                           */
+  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_VCOMP_enabled = 0x40000,/*!< VCOMP_enabled : VCOMP power-down indicator [0x12]                 */
+  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_XTAL_enabled = 0x1000000,/*!< XTAL_enabled : XTAL is enabled [0x18]                            */
+  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_HFRC_enabled = 0x2000000,/*!< HFRC_enabled : HFRC is enabled [0x19]                            */
+  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_HFADJEN = 0x4000000,/*!< HFADJEN : HFRC Adjust enabled [0x1a]                                  */
+  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_HFRC_en_out = 0x8000000,/*!< HFRC_en_out : HFRC Enabled out [0x1b]                            */
+  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_RTC_XT = 0x10000000,/*!< RTC_XT : RTC use XT [0x1c]                                            */
+  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_clkout_xtal_en = 0x20000000,/*!< clkout_xtal_en : XTAL clkout enabled [0x1d]                   */
+  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_clkout_hfrc_en = 0x40000000,/*!< clkout_hfrc_en : HFRC clkout enabled [0x1e]                  */
+  CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_flashclk_en = 0x80000000,/*!< flashclk_en : Flash clk is enabled [31]                      */
 } CLKGEN_CLOCKEN3STAT_CLOCKEN3STAT_Enum;
 
 /* =======================================================  FREQCTRL  ======================================================== */
@@ -26357,26 +26357,26 @@ typedef enum {                                  /*!< IOSLAVE_CFG_IFCSEL         
 /* ========================================================  CHIPPN  ========================================================= */
 /* ============================================  MCUCTRL CHIPPN PARTNUM [0..31]  ============================================= */
 typedef enum {                                  /*!< MCUCTRL_CHIPPN_PARTNUM                                                    */
-  MCUCTRL_CHIPPN_PARTNUM_APOLLO3P      = 117440512,/*!< APOLLO3P : Apollo3 Blue Plus part number is 0x07xxxxxx.                */
-  MCUCTRL_CHIPPN_PARTNUM_APOLLO3       = 100663296,/*!< APOLLO3 : Apollo3 Blue part number is 0x06xxxxxx.                      */
-  MCUCTRL_CHIPPN_PARTNUM_APOLLO2       = 50331648,/*!< APOLLO2 : Apollo2 part number is 0x03xxxxxx.                            */
-  MCUCTRL_CHIPPN_PARTNUM_APOLLO        = 16777216,/*!< APOLLO : Apollo part number is 0x01xxxxxx.                              */
-  MCUCTRL_CHIPPN_PARTNUM_PN_M          = -16777216,/*!< PN_M : Mask for the part number field.                                 */
+  MCUCTRL_CHIPPN_PARTNUM_APOLLO3P      = 0x07000000,/*!< APOLLO3P : Apollo3 Blue Plus part number is 0x07xxxxxx.                */
+  MCUCTRL_CHIPPN_PARTNUM_APOLLO3       = 0x06000000,/*!< APOLLO3 : Apollo3 Blue part number is 0x06xxxxxx.                      */
+  MCUCTRL_CHIPPN_PARTNUM_APOLLO2       = 0x03000000,/*!< APOLLO2 : Apollo2 part number is 0x03xxxxxx.                            */
+  MCUCTRL_CHIPPN_PARTNUM_APOLLO        = 0x01000000,/*!< APOLLO : Apollo part number is 0x01xxxxxx.                              */
+  MCUCTRL_CHIPPN_PARTNUM_PN_M          = 0xFF000000,/*!< PN_M : Mask for the part number field.                                 */
   MCUCTRL_CHIPPN_PARTNUM_PN_S          = 24,    /*!< PN_S : Bit position for the part number field.                            */
-  MCUCTRL_CHIPPN_PARTNUM_FLASHSIZE_M   = 15728640,/*!< FLASHSIZE_M : Mask for the FLASH_SIZE field.Values:0: 16KB1:
+  MCUCTRL_CHIPPN_PARTNUM_FLASHSIZE_M   = 0x00F00000,/*!< FLASHSIZE_M : Mask for the FLASH_SIZE field.Values:0: 16KB1:
                                                      32KB2: 64KB3: 128KB4: 256KB5: 512KB6: 1MB7: 2MB8: 1.5MB                   */
   MCUCTRL_CHIPPN_PARTNUM_FLASHSIZE_S   = 20,    /*!< FLASHSIZE_S : Bit position for the FLASH_SIZE field.                      */
-  MCUCTRL_CHIPPN_PARTNUM_SRAMSIZE_M    = 983040,/*!< SRAMSIZE_M : Mask for the SRAM_SIZE field.Values:0: 16KB1: 32KB2:
+  MCUCTRL_CHIPPN_PARTNUM_SRAMSIZE_M    = 0xF0000,/*!< SRAMSIZE_M : Mask for the SRAM_SIZE field.Values:0: 16KB1: 32KB2:
                                                      64KB3: 128KB4: 256KB5: 512KB6: 1MB7: 384KB8: 768KB                        */
   MCUCTRL_CHIPPN_PARTNUM_SRAMSIZE_S    = 16,    /*!< SRAMSIZE_S : Bit position for the SRAM_SIZE field.                        */
-  MCUCTRL_CHIPPN_PARTNUM_REV_M         = 65280, /*!< REV_M : Mask for the revision field. Bits [15:12] are major
+  MCUCTRL_CHIPPN_PARTNUM_REV_M         = 0xFF00,/*!< REV_M : Mask for the revision field. Bits [15:12] are major
                                                      rev, [11:8] are minor rev.Values:0: Major Rev A, Minor
                                                      Rev 01: Major Rev B, Minor Rev 1                                          */
   MCUCTRL_CHIPPN_PARTNUM_REV_S         = 8,     /*!< REV_S : Bit position for the revision field.                              */
-  MCUCTRL_CHIPPN_PARTNUM_PKG_M         = 192,   /*!< PKG_M : Mask for the package field.Values:0: SIP1: QFN2: BGA3:
+  MCUCTRL_CHIPPN_PARTNUM_PKG_M         = 0xC0,  /*!< PKG_M : Mask for the package field.Values:0: SIP1: QFN2: BGA3:
                                                      CSP                                                                       */
   MCUCTRL_CHIPPN_PARTNUM_PKG_S         = 6,     /*!< PKG_S : Bit position for the package field.                               */
-  MCUCTRL_CHIPPN_PARTNUM_PINS_M        = 56,    /*!< PINS_M : Mask for the pins field.Values:0: 25 pins1: 49 pins2:
+  MCUCTRL_CHIPPN_PARTNUM_PINS_M        = 0x38,  /*!< PINS_M : Mask for the pins field.Values:0: 25 pins1: 49 pins2:
                                                      64 pins3: 81 pins                                                         */
   MCUCTRL_CHIPPN_PARTNUM_PINS_S        = 3,     /*!< PINS_S : Bit position for the pins field.                                 */
   MCUCTRL_CHIPPN_PARTNUM_TEMP_S        = 1,     /*!< TEMP_S : Bit position for the temperature field.                          */
