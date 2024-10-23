@@ -35,7 +35,7 @@ if(CONFIG_AMBIQ_HAL_USE_HWINFO)
     zephyr_library_sources(hal/mcu/am_hal_reset.c)
 endif()
 
-if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPIC)
+if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPIC OR CONFIG_AMBIQ_HAL_USE_SPI)
     zephyr_library_sources(hal/mcu/am_hal_iom.c)
     zephyr_library_sources(hal/mcu/am_hal_cmdq.c)
     zephyr_library_sources(hal/mcu/am_hal_fault.c)
@@ -60,6 +60,11 @@ endif()
 
 if(CONFIG_AMBIQ_HAL_USE_WDT)
     zephyr_library_sources(hal/am_hal_wdt.c)
+endif()
+
+if(CONFIG_AMBIQ_HAL_USE_USB)
+    zephyr_library_sources(hal/am_hal_usb.c)
+	add_compile_definitions(AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK)
 endif()
 
 zephyr_include_directories(hal)
