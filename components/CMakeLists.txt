@@ -1,15 +1,10 @@
 # Ambiq HAL Components
 #
-# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+# Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library()
-
-if(CONFIG_SOC_APOLLO4P_BLUE)
-    zephyr_library_sources(bluetooth/am_devices_cooper.c)
-elseif(CONFIG_SOC_APOLLO3P_BLUE OR CONFIG_SOC_APOLLO3_BLUE)
-    zephyr_library_sources(bluetooth/am_apollo3_bt_support.c)
+if(CONFIG_AMBIQ_COMPONENT_USE_BT)
+    add_subdirectory(bluetooth)
+    zephyr_include_directories(bluetooth)
 endif()
-
-zephyr_include_directories(bluetooth)
