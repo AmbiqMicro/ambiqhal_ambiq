@@ -204,9 +204,17 @@
 #define APOLLO3P_SRAM_BASE               0x10010000UL
 #define APOLLO3P_SRAM_SIZE               0xb0000UL
 
-#define APOLLO3P_FLASH                   c000
-#define APOLLO3P_FLASH_BASE              0x0000c000UL
-#define APOLLO3P_FLASH_SIZE              0x1f4000UL
+#define APOLLO3P_FLASH                   0
+#define APOLLO3P_FLASH_BASE              0x00000000UL
+#define APOLLO3P_FLASH_SIZE              0x200000UL
+
+#define APOLLO3P_FLASH_BOOT              0
+#define APOLLO3P_FLASH_BOOT_BASE         0x00000000UL
+#define APOLLO3P_FLASH_BOOT_SIZE         0xc000UL
+
+#define APOLLO3P_FLASH_APP               c000
+#define APOLLO3P_FLASH_APP_BASE          0x0000c000UL
+#define APOLLO3P_FLASH_APP_SIZE          0x1f4000UL
 
 #define APOLLO3P_MSPI0_XIP_APERTURE       2000000
 #define APOLLO3P_MSPI0_XIP_APERTURE_BASE  0x02000000UL
