@@ -570,6 +570,10 @@ typedef enum
     AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_EN,
     // Set MSPI CPU read combining scheme
     AM_HAL_MSPI_REQ_CPU_READ_COMBINE,
+    // Set scrambling config
+    AM_HAL_MSPI_REQ_SCRAMBLE_CONFIG,
+    // Set write latency and turnaround
+    AM_HAL_MSPI_REQ_SET_DATA_LATENCY,
 
     AM_HAL_MSPI_REQ_MAX
 }
