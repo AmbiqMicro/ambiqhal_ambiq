@@ -57,6 +57,9 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
+// Third party software included in this distribution is subject to the
+// additional license terms as defined in the /docs/licenses directory.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -97,13 +100,16 @@
 //
 #define AM_NUM_STACK_RANGES 1
 
-#if defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
+#if defined(AM_PART_APOLLO510)
   #undef  AM_NUM_STACK_RANGES
   #define AM_NUM_STACK_RANGES  2
   #define AM_SP_LOW    ITCM_BASEADDR
   #define AM_SP_HIGH   (ITCM_BASEADDR + ITCM_MAX_SIZE)
   #define AM_SP_LOW2   DTCM_BASEADDR
   #define AM_SP_HIGH2  (DTCM_BASEADDR + DTCM_MAX_SIZE + SSRAM_MAX_SIZE)
+#elif defined(AM_PART_APOLLO510L)
+  #define AM_SP_LOW    DTCM_BASEADDR
+  #define AM_SP_HIGH   (DTCM_BASEADDR + DTCM_MAX_SIZE + SSRAM_MAX_SIZE)
 #elif defined(AM_PART_APOLLO4_API)
   #define AM_SP_LOW    SRAM_BASEADDR
   #define AM_SP_HIGH   (SRAM_BASEADDR + RAM_TOTAL_SIZE)
@@ -213,8 +219,8 @@ HardFault_Handler(void)
           "    mrsne  r0, psp\n");                       // e: bit2=1 indicating PSP stack
 #if !defined(AM_HF_NO_LOCAL_STACK)
     __asm("    ldr    r1, =gFaultStack\n");              // get address of the base of the temp_stack
-#if defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
-    __asm("    MSR msplim, r1\n");                       // for Apollo5 (M55) set MSP stack limit register
+#if defined(AM_PART_APOLLO510) || defined(AM_PART_APOLLO510L)
+    __asm("    MSR msplim, r1\n");                       // for Apollo510 (M55) set MSP stack limit register
 #endif
     __asm("    add    r1, r1, #512\n"                    // address of the top of the stack.
           "    bic    r1, #3\n"                          // make sure the new stack is 8-byte aligned
@@ -365,8 +371,10 @@ am_util_faultisr_collect_data(uint32_t *u32IsrSP)
     //
     sFaultData.u32BFAR = AM_REGVAL(AM_REG_SYSCTRL_BFAR_O);
 
+    //
     // make sure that the SP points to a valid address (so that accessing the stack frame doesn't cause another fault).
-    if (am_valid_sp(u32IsrSP))
+    //
+    if ( am_valid_sp(u32IsrSP) )
     {
         //
         // The address of the instruction that caused the fault is the stacked PC
@@ -405,7 +413,7 @@ am_util_faultisr_collect_data(uint32_t *u32IsrSP)
     // be able to print out the fault information.
     //
     am_util_stdio_printf("** Hard Fault Occurred:\n\n");
-    if (!am_valid_sp(u32IsrSP))
+    if ( !am_valid_sp(u32IsrSP) )
     {
         am_util_stdio_printf("    Invalid SP when Hard Fault occured: 0x%08X (no Stacked data)\n\n");
     }
@@ -465,7 +473,7 @@ am_util_faultisr_collect_data(uint32_t *u32IsrSP)
         u32Mask >>= 1;
     }
 
-#if !defined(AM_PART_APOLLO5A) && !defined(AM_PART_APOLLO5B) // No CPU register block in Apollo5
+#if !defined(AM_PART_APOLLO510) && !defined(AM_PART_APOLLO510L) // No CPU register block in Apollo510
     //
     // Print out any Apollo* Internal fault information - if any
     //
@@ -485,7 +493,7 @@ am_util_faultisr_collect_data(uint32_t *u32IsrSP)
     {
         am_util_stdio_printf("    SYS Fault Address: 0x%08X\n", sHalFaultData.ui32SYS);
     }
-#endif  // !defined(AM_PART_APOLLO5A) && !defined(AM_PART_APOLLO5B)
+#endif  // !defined(AM_PART_APOLLO510) || defined(AM_PART_APOLLO510L)
 
     am_util_stdio_printf("\n\nDone with output. Entering infinite loop.\n\n");
 
@@ -512,23 +520,37 @@ am_util_faultisr_collect_data(uint32_t *u32IsrSP)
 //
 //*****************************************************************************
 bool
-am_valid_sp(uint32_t *u32IsrSP)
+am_valid_sp(uint32_t *pui32IsrSP)
 {
-    // test for valid ranges
-    if ( ((uint32_t) u32IsrSP >= AM_SP_LOW) && ((uint32_t) u32IsrSP < AM_SP_HIGH) )
+    uint32_t ui32IsrSP = (uint32_t)pui32IsrSP;
+
+    //
+    // Test for valid ranges
+    //
+#if (AM_SP_LOW != 0)    // Avoids compiler "pointless comparison" warning
+    if ( (ui32IsrSP >= AM_SP_LOW)  &&  (ui32IsrSP < AM_SP_HIGH) )
     {
         return true;
     }
-#if defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
-    if ( ((uint32_t) u32IsrSP >= AM_SP_LOW2) && ((uint32_t) u32IsrSP < AM_SP_HIGH2) )
+#else
+    if ( ui32IsrSP < AM_SP_HIGH )
     {
         return true;
     }
 #endif
-    return false;  // not in any valid range
-}
-//*****************************************************************************
 
+#if defined(AM_PART_APOLLO510)
+    if ( (ui32IsrSP >= AM_SP_LOW2) && (ui32IsrSP < AM_SP_HIGH2) )
+    {
+        return true;
+    }
+#endif
+
+    return false;   // not in any valid range
+
+} // am_valid_sp()
+
+//*****************************************************************************
 
 //*****************************************************************************
 //
