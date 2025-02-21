@@ -76,7 +76,8 @@ uint32_t am_apollo3_bt_controller_init(void)
     }
     else
     {
-        return AM_HAL_STATUS_FAIL;
+        am_hal_ble_initialize(0, &BLE);
+        am_hal_ble_power_control(BLE, AM_HAL_BLE_POWER_ACTIVE);
     }
 
     //
@@ -157,6 +158,31 @@ uint32_t am_apollo3_bt_controller_init(void)
                                 AM_HAL_BLE_INT_BLECIRQ));
 
     return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+//  Deinitialize the Apollo3x BLE controller driver.
+//
+//*****************************************************************************
+uint32_t am_apollo3_bt_controller_deinit(void)
+{
+    uint32_t ui32Status;
+
+    ui32Status = am_hal_ble_power_control(BLE, AM_HAL_BLE_POWER_OFF);
+    if (ui32Status != AM_HAL_STATUS_SUCCESS)
+    {
+        return ui32Status;
+    }
+
+    //
+    // Give some time to power off the BLE controller
+    //
+    k_sleep(K_SECONDS(1));
+
+    ui32Status = am_hal_ble_deinitialize(BLE);
+
+    return ui32Status;
 }
 
 //*****************************************************************************
