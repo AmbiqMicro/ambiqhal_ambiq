@@ -68,6 +68,15 @@ uint32_t am_apollo3_bt_controller_init(void);
 
 //*****************************************************************************
 //
+//! @brief Deinitialize the Apollo3x BLE controller driver.
+//!
+//! @return status of BLE controller deinitialization.
+//
+//*****************************************************************************
+uint32_t am_apollo3_bt_controller_deinit(void);
+
+//*****************************************************************************
+//
 //! @brief BLE ISR preprocessing.
 //
 //*****************************************************************************
