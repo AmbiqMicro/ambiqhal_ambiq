@@ -32,6 +32,9 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
+// Third party software included in this distribution is subject to the
+// additional license terms as defined in the /docs/licenses directory.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -56,7 +59,6 @@
 extern "C"
 {
 #endif
-
 
 //*****************************************************************************
 //
@@ -96,12 +98,12 @@ extern "C"
 #if defined(AM_PART_APOLLO4L)
 #define AM_ID_APOLLO4L
 #endif
-#if defined(AM_PART_APOLLO5A)
-#define AM_ID_APOLLO5A
+#if defined(AM_PART_APOLLO510)
+#define AM_ID_APOLLO510
 #endif
-#if defined(AM_PART_APOLLO5B)
-#define AM_ID_APOLLO5B
-#endif // AM_PART_APOLLO5A
+#if defined(AM_PART_APOLLO510L)
+#define AM_ID_APOLLO510L
+#endif
 
 
 //
@@ -132,14 +134,13 @@ extern "C"
 #ifndef AM_ID_APOLLO4L
 #define AM_ID_APOLLO4L
 #endif
-#ifndef AM_ID_APOLLO5A
-#define AM_ID_APOLLO5A
+#ifndef AM_ID_APOLLO510
+#define AM_ID_APOLLO510
 #endif
-#ifndef AM_ID_APOLLO5B
-#define AM_ID_APOLLO5B
-#endif // AM_ID_APOLLO5A
+#ifndef AM_ID_APOLLO510L
+#define AM_ID_APOLLO510L
+#endif
 #endif // AM_ID_APOLLO_ALL
-
 
 //*****************************************************************************
 //
@@ -203,8 +204,8 @@ am_util_id_t;
 //! @{
 //
 //*****************************************************************************
-#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO5B    0x10000000
-#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO5A    0x10000000
+#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO510L  0x10000000
+#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO510   0x10000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO4L    0x09000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO4     0x08000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO3P    0x07000000
@@ -231,8 +232,8 @@ am_util_id_t;
 #define AM_UTIL_ID_APOLLO4      0x0004      // Apollo4
 #define AM_UTIL_ID_APOLLO4P     0x0104      // Apollo4 Plus
 #define AM_UTIL_ID_APOLLO4L     0x0204      // Apollo4 Lite
-#define AM_UTIL_ID_APOLLO5A     0x0005      // Apollo5 revA
-#define AM_UTIL_ID_APOLLO5B     0x0105      // Apollo5 revB
+#define AM_UTIL_ID_APOLLO510    0x0105      // Apollo510
+#define AM_UTIL_ID_APOLLO510L   0x0205      // Apollo510 Lite
 //! @}
 
 //*****************************************************************************

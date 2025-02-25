@@ -21,7 +21,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,6 +37,9 @@
 // 3. Neither the name of the copyright holder nor the names of its
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
+//
+// Third party software included in this distribution is subject to the
+// additional license terms as defined in the /docs/licenses directory.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -69,7 +72,11 @@
 am_util_stdio_print_char_t g_pfnCharPrint;
 
 // buffer for printf
+#ifdef AM_PART_APOLLO5_API
+static char g_prfbuf[AM_PRINTF_BUFSIZE] __attribute__((aligned(4096)));
+#else
 static char g_prfbuf[AM_PRINTF_BUFSIZE];
+#endif
 
 // Flag to do conversion of '\n' to '\n\r' in sprintf()
 static bool g_bTxtXlate = false;
@@ -900,6 +907,9 @@ am_util_stdio_vsprintf(char *pcBuf, const char *pcFmt, va_list pArgs)
 
             case 'x':
                 bLower = true;
+                // Intentional fall through. Avoid gcc -Wimplicit-fallthrough
+                //  warning with the following comment.
+                // Fall through.
             case 'X':
                 ui64Val = bLongLong ? va_arg(pArgs, uint64_t) :
                                       va_arg(pArgs, uint32_t);
@@ -1048,7 +1058,6 @@ am_util_stdio_vsprintf(char *pcBuf, const char *pcFmt, va_list pArgs)
 
                 ui32CharCnt += iVal;
                 break;
-
 
             case 'f':
             case 'F':
@@ -1213,7 +1222,6 @@ am_util_stdio_snprintf(char *pcBuf, uint32_t n, const char *pcFmt, ...)
 
     return ui32CharCnt;
 }
-
 
 uint32_t
 am_util_stdio_vprintf(const char *pcFmt, va_list pArgs)
