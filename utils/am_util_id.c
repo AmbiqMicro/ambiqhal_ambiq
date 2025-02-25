@@ -32,6 +32,9 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
+// Third party software included in this distribution is subject to the
+// additional license terms as defined in the /docs/licenses directory.
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -84,12 +87,12 @@ static const uint8_t g_PackageType[][4]            = { "SIP", "SIP2", "BGA", "CS
 #if defined(AM_ID_APOLLO4L)
 static const uint8_t g_DeviceNameApollo4l[]   = "Apollo4 Lite";
 #endif
-#if defined(AM_ID_APOLLO5A)
-static const uint8_t g_DeviceNameApollo5a[]   = "Apollo5 revA";
-#endif // AM_ID_APOLLO5A
-#if defined(AM_ID_APOLLO5B)
-static const uint8_t g_DeviceNameApollo5b[]   = "Apollo5 revB";
-#endif // AM_ID_APOLLO5B
+#if defined(AM_ID_APOLLO510)
+static const uint8_t g_DeviceNameApollo510[]   = "Apollo510";
+#endif // AM_ID_APOLLO510
+#if defined(AM_ID_APOLLO510L)
+static const uint8_t g_DeviceNameApollo510L[] = "Apollo510 Lite";
+#endif // AM_ID_APOLLO510L
 
 static const uint8_t g_TempRange[][11] = { "Commercial", "Military", "Automotive", "Industrial" };
 static const uint8_t g_ui8VendorNameAmbq[]    = "AMBQ";
@@ -183,8 +186,8 @@ am_util_id_device(am_util_id_t *psIDDevice)
     ui32ChipRev = psIDDevice->sMcuCtrlDevice.ui32ChipRev;
 #endif
 
-    if ( ( psIDDevice->sMcuCtrlDevice.ui32VendorID ==
-            (('A' << 24) | ('M' << 16) | ('B' << 8) | ('Q' << 0)) ) )
+    if ( psIDDevice->sMcuCtrlDevice.ui32VendorID ==
+            (('A' << 24) | ('M' << 16) | ('B' << 8) | ('Q' << 0)) )
     {
         //
         // VENDORID is AMBQ. Set the manufacturer string pointer.
@@ -299,27 +302,27 @@ am_util_id_device(am_util_id_t *psIDDevice)
     }
 #endif // AM_ID_APOLLO4L
 
-#if defined(AM_ID_APOLLO5A)
-    if ( ( ui32PN == AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO5A)            &&
-              ((psIDDevice->sMcuCtrlDevice.ui32JedecPN & 0x0FF) == 0x0D2)   &&
-              ( revmaj_get(ui32ChipRev) == 'A' ) )
-    {
-        psIDDevice->ui32Device = AM_UTIL_ID_APOLLO5A;
-        psIDDevice->pui8DeviceName = g_DeviceNameApollo5a;
-        chiprev_set(psIDDevice, 1);
-    }
-#endif // AM_ID_APOLLO5A
-
-#if defined(AM_ID_APOLLO5B)
-        if ( ( ui32PN == AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO5B)            &&
+#if defined(AM_ID_APOLLO510)
+        if ( ( ui32PN == AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO510)            &&
                   ((psIDDevice->sMcuCtrlDevice.ui32JedecPN & 0x0FF) == 0x0D2)   &&
                   ( revmaj_get(ui32ChipRev) == 'B' ) )
         {
-            psIDDevice->ui32Device = AM_UTIL_ID_APOLLO5B;
-            psIDDevice->pui8DeviceName = g_DeviceNameApollo5b;
+            psIDDevice->ui32Device = AM_UTIL_ID_APOLLO510;
+            psIDDevice->pui8DeviceName = g_DeviceNameApollo510;
             chiprev_set(psIDDevice, 1);
         }
-#endif // AM_ID_APOLLO5B
+#endif // AM_ID_APOLLO510
+
+#if defined(AM_ID_APOLLO510L)
+        if ( ( ui32PN == AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO510L)          &&
+                  ((psIDDevice->sMcuCtrlDevice.ui32JedecPN & 0x0FF) == 0x0D2)   &&
+                  ( revmaj_get(ui32ChipRev) == 'B' ) )
+        {
+            psIDDevice->ui32Device = AM_UTIL_ID_APOLLO510L;
+            psIDDevice->pui8DeviceName = g_DeviceNameApollo510L;
+            chiprev_set(psIDDevice, 1);
+        }
+#endif // AM_ID_APOLLO510L
 
     //
     // This section defines the package type
