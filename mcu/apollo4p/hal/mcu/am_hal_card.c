@@ -52,7 +52,6 @@
 #include "am_mcu_apollo.h"
 #include "am_util_stdio.h"
 #include "am_util_debug.h"
-#include "am_util_delay.h"
 
 //
 // Private internal functions
@@ -108,7 +107,7 @@ static inline uint32_t am_hal_sdmmc_cmd1_send_op_cond(am_hal_card_t *pCard)
             break;
         }
 
-        am_util_delay_ms(10);
+        am_hal_delay_us(10000); // 10ms delay
     } while (--ui8Tries != 0);
 
     return ui8Tries == 0x0 ? AM_HAL_CMD_ERR_TIMEOUT : cmd.eError;
@@ -372,7 +371,7 @@ static inline uint32_t am_hal_sdio_cmd5_io_send_op_cond(am_hal_card_t *pCard, ui
             break;
         }
 
-        am_util_delay_ms(10);
+        am_hal_delay_us(10000); // 10ms delay
     } while (--ui8Tries != 0);
 
     return ui8Tries == 0x0 ? AM_HAL_CMD_ERR_TIMEOUT : cmd.eError;
@@ -1046,7 +1045,7 @@ am_hal_sdio_card_func_enable(am_hal_card_t *pCard, uint32_t ui32Func)
             AM_HAL_CARD_DEBUG("SDIO card IO Function %d is ready\n", ui32Func);
             break;
         }
-        am_util_delay_ms(10);
+        am_hal_delay_us(10000); // 10ms delay
     } while (ui8Tries < 100);
 
     return (ui8Tries >= 100) ? AM_HAL_STATUS_TIMEOUT : AM_HAL_STATUS_SUCCESS;
@@ -1758,7 +1757,7 @@ am_hal_sd_card_set_voltage(am_hal_card_t *pCard, am_hal_host_bus_voltage_e eIoVo
     //
     // Wait about 74 cycles after powered on
     //
-    am_util_delay_us(200);
+    am_hal_delay_us(200);
 
     //
     // Reset the card
@@ -2428,7 +2427,7 @@ am_hal_card_type_detect(am_hal_card_t *pCard)
     //
     // Wait about 74 cycles after powered on
     //
-    am_util_delay_us(200);
+    am_hal_delay_us(200);
 
     //
     // Reset the card
@@ -4282,7 +4281,7 @@ am_hal_card_mode_switch(am_hal_card_t *pCard, uint32_t ui32Mode, uint32_t ui32Ti
             AM_HAL_CARD_DEBUG("switch succeeded - mode is 0x%x !\n", ui32Mode);
             return AM_HAL_STATUS_SUCCESS;
         }
-        am_util_delay_ms(1);
+        am_hal_delay_us(1000);
     } while (ui32Timeout--);
 
     return ui32Timeout ? AM_HAL_STATUS_SUCCESS : AM_HAL_STATUS_FAIL;
@@ -4633,7 +4632,7 @@ am_hal_sdio_card_calibrate(am_hal_host_inst_index_e eIndex,
 
         for (int k = 0; k < SDIO_SCAN_RXDELAY_MAX; k++)
         {
-            if ( (ui32MisMatchCnt >= SDIO_CARD_MISMATCH_CNT_MAX) 
+            if ( (ui32MisMatchCnt >= SDIO_CARD_MISMATCH_CNT_MAX)
                  || (ui32WrErrCnt >= SDIO_CARD_MISMATCH_CNT_MAX) )
             {
                 break;
