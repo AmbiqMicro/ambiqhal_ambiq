@@ -868,8 +868,8 @@ typedef struct
 // These macros configure sd card cd and wp pins.
 //
 //*****************************************************************************
-#define am_hal_gpio_cd_pin_config(n)    GPIO->SDIFCDWP_b.SDIFCD = n;
-#define am_hal_gpio_wp_pin_config(n)    GPIO->SDIFCDWP_b.SDIFWP = n;
+#define am_hal_gpio_cd_pin_config(n)    (GPIO->SDIFCDWP_b.SDIFCD = n)
+#define am_hal_gpio_wp_pin_config(n)    (GPIO->SDIFCDWP_b.SDIFWP = n)
 
 //*****************************************************************************
 //
