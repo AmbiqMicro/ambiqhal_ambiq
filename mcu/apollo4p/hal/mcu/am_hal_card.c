@@ -1921,8 +1921,8 @@ am_hal_sd_card_get_block_count(am_hal_card_t *pCard)
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
-    uint32_t ui32CSDVersion;
-    uint32_t ui32MaxBlks;
+    uint32_t ui32CSDVersion = 0;
+    uint32_t ui32MaxBlks = 0;
     ui32CSDVersion = am_hal_card_get_csd_field(pCard, 126, 2);
     if ( ui32CSDVersion == 0 )
     {
