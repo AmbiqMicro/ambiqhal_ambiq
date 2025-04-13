@@ -8,7 +8,7 @@
 //! intended to be as unintrusive as possible and designed to be removed from
 //! the compilation of a project when they are no longer needed.
 //!
-//! @addtogroup debug Debug
+//! @addtogroup debug Debug Utility
 //! @ingroup utils
 //! @{
 //
@@ -16,7 +16,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2025, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_DEBUG_H
@@ -93,7 +93,6 @@ extern "C"
         am_hal_gpio_pin_config(PinNumber, AM_HAL_GPIO_OUTPUT);                \
     }                                                                         \
     while (0)
-
 
 #define am_util_debug_trace_start(PinNumber)                                  \
     am_hal_gpio_out_bit_set(PinNumber)

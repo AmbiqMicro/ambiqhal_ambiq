@@ -15,7 +15,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2024, Ambiq Micro, Inc.
+// Copyright (c) 2025, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-c1f95ddf60 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_ID_H
@@ -56,7 +56,6 @@
 extern "C"
 {
 #endif
-
 
 //*****************************************************************************
 //
@@ -96,13 +95,9 @@ extern "C"
 #if defined(AM_PART_APOLLO4L)
 #define AM_ID_APOLLO4L
 #endif
-#if defined(AM_PART_APOLLO5A)
-#define AM_ID_APOLLO5A
+#if defined(AM_PART_APOLLO510)
+#define AM_ID_APOLLO510
 #endif
-#if defined(AM_PART_APOLLO5B)
-#define AM_ID_APOLLO5B
-#endif // AM_PART_APOLLO5A
-
 
 //
 //! Handle AM_ID_APOLLO_ALL
@@ -132,14 +127,21 @@ extern "C"
 #ifndef AM_ID_APOLLO4L
 #define AM_ID_APOLLO4L
 #endif
-#ifndef AM_ID_APOLLO5A
-#define AM_ID_APOLLO5A
+#ifndef AM_ID_APOLLO510
+#define AM_ID_APOLLO510
 #endif
-#ifndef AM_ID_APOLLO5B
-#define AM_ID_APOLLO5B
-#endif // AM_ID_APOLLO5A
 #endif // AM_ID_APOLLO_ALL
 
+
+//
+// Define a macro for packages for certain devices.
+//
+#if defined(AM_ID_APOLLO4P) || defined(AM_ID_APOLLO510)
+//
+// PKGSTD is SIP, SIP2, BGA, CSP
+//
+#define AM_ID_PKGSTD
+#endif
 
 //*****************************************************************************
 //
@@ -203,8 +205,7 @@ am_util_id_t;
 //! @{
 //
 //*****************************************************************************
-#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO5B    0x10000000
-#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO5A    0x10000000
+#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO510   0x10000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO4L    0x09000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO4     0x08000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO3P    0x07000000
@@ -231,8 +232,7 @@ am_util_id_t;
 #define AM_UTIL_ID_APOLLO4      0x0004      // Apollo4
 #define AM_UTIL_ID_APOLLO4P     0x0104      // Apollo4 Plus
 #define AM_UTIL_ID_APOLLO4L     0x0204      // Apollo4 Lite
-#define AM_UTIL_ID_APOLLO5A     0x0005      // Apollo5 revA
-#define AM_UTIL_ID_APOLLO5B     0x0105      // Apollo5 revB
+#define AM_UTIL_ID_APOLLO510    0x0105      // Apollo510 (revB)
 //! @}
 
 //*****************************************************************************

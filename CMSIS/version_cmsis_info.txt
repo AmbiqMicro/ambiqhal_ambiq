@@ -1,5 +1,5 @@
 
-Last updated: Jun 09 2023
+Last updated: Oct 08 2024
 
 This file contains origination information about the various
 CMSIS header and library files located in this folder.
@@ -39,6 +39,14 @@ iar_cortexM4lf_math.a               Built from CMSIS 5.9.0 in cmsis-dsp repo
 iar_cortexM4l_math.a                Built from CMSIS 5.9.0 in cmsis-dsp repo
 libCMSISDSP_m4.a                    Built from CMSIS 5.9.0 in cmsis-dsp repo
 libCMSISDSP_m55.a                   Built from CMSIS 5.9.0 in cmsis-dsp repo
+arm_cortexM55f_math.lib				Built from CMSIS 5.9.0 in cmsis-dsp repo
+arm_cortexM55_math.lib				Built from CMSIS 5.9.0 in cmsis-dsp repo
+iar_cortexM55_math.a				Built from CMSIS 5.9.0 in cmsis-dsp repo
+iar_cortexM55f_math.a				Built from CMSIS 5.9.0 in cmsis-dsp repo
+libarm_cortexM55lf_math.a			Built from CMSIS 5.9.0 in cmsis-dsp repo
+arm_cortexM55_math.a				Built from CMSIS 5.9.0 in cmsis-dsp repo
+libarm_cortexM55_nn.a				Built from CMSIS 5.9.0 in cmsis-dsp repo
+arm_cortexM55_nn.lib				Built from CMSIS 5.9.0 in cmsis-dsp repo
 
 
 
