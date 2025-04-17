@@ -16,6 +16,7 @@ zephyr_library_sources(hal/am_hal_spotmgr_pcm0_7.c)
 zephyr_library_sources(hal/am_hal_spotmgr_pcm2_0.c)
 zephyr_library_sources(hal/am_hal_spotmgr_pcm2_1.c)
 zephyr_library_sources(hal/am_hal_spotmgr_pcm2_2.c)
+zephyr_library_sources(hal/am_hal_stimer.c)
 zephyr_library_sources(hal/am_hal_queue.c)
 zephyr_library_sources(hal/am_hal_info.c)
 zephyr_library_sources(hal/mcu/am_hal_bootrom_helper.c)
@@ -56,10 +57,6 @@ endif()
 
 if(CONFIG_AMBIQ_HAL_USE_HWINFO)
     zephyr_library_sources(hal/mcu/am_hal_reset.c)
-endif()
-
-if(CONFIG_AMBIQ_HAL_USE_STIMER)
-    zephyr_library_sources(hal/am_hal_stimer.c)
 endif()
 
 if(CONFIG_AMBIQ_HAL_USE_TIMER)
