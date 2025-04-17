@@ -286,7 +286,7 @@ am_hal_triple_read( uint32_t ui32TimerAddr, uint32_t ui32Data[]);
 #elif (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION >= 6000000)
 void
 am_hal_triple_read(uint32_t ui32TimerAddr, uint32_t ui32Data[]);
-#elif defined(__GNUC_STDC_INLINE__)
+#elif defined(__GNUC__)
 __attribute__((naked))
 void
 am_hal_triple_read(uint32_t ui32TimerAddr, uint32_t ui32Data[]);
