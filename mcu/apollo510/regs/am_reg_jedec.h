@@ -85,124 +85,124 @@ typedef struct
 
   union
   {
-    __IM  uint32_t PID4;                /*!< 0xE00FEFD0 (R/ )  PID4 Register */
+    __IOM  uint32_t PID4;                /*!< 0xE00FEFD0 (R/ )  PID4 Register */
 
     struct
     {
-      __IM uint32_t JEPCONT     : 4;    /* [3..0] Contains the JEP Continuation bits. */
+      __IOM uint32_t JEPCONT     : 4;    /* [3..0] Contains the JEP Continuation bits. */
     } PID4_b;
   };
 
   union
   {
-    __IM  uint32_t PID5;                /*!< 0xE00FEFD4 (R/ )  PID5 Register */
+    __IOM  uint32_t PID5;                /*!< 0xE00FEFD4 (R/ )  PID5 Register */
 
     struct
     {
-      __IM uint32_t VALUE       : 32;   /* [31..0] Contains the value of 0x00000000. */
+      __IOM uint32_t VALUE       : 32;   /* [31..0] Contains the value of 0x00000000. */
     } PID5_b;
   };
 
   union
   {
-    __IM  uint32_t PID6;                /*!< 0xE00FEFD8 (R/ )  PID6 Register */
+    __IOM  uint32_t PID6;                /*!< 0xE00FEFD8 (R/ )  PID6 Register */
 
     struct
     {
-      __IM uint32_t VALUE       : 32;   /* [31..0] Contains the value of 0x00000000. */
+      __IOM uint32_t VALUE       : 32;   /* [31..0] Contains the value of 0x00000000. */
     } PID6_b;
   };
 
   union
   {
-    __IM  uint32_t PID7;                /*!< 0xE00FEFDC (R/ )  PID7 Register */
+    __IOM  uint32_t PID7;                /*!< 0xE00FEFDC (R/ )  PID7 Register */
 
     struct
     {
-      __IM uint32_t VALUE       : 32;   /* [31..0] Contains the value of 0x00000000. */
+      __IOM uint32_t VALUE       : 32;   /* [31..0] Contains the value of 0x00000000. */
     } PID7_b;
   };
 
   union
   {
-    __IM  uint32_t PID0;                /*!< 0xE00FEFE0 (R/ )  PID0 Register */
+    __IOM  uint32_t PID0;                /*!< 0xE00FEFE0 (R/ )  PID0 Register */
 
     struct
     {
-      __IM uint32_t PNL8        : 8;    /* [7..0] Contains the low 8 bits of the Ambiq Micro device part number. */
+      __IOM uint32_t PNL8        : 8;    /* [7..0] Contains the low 8 bits of the Ambiq Micro device part number. */
     } PID0_b;
   };
 
   union
   {
-    __IM  uint32_t PID1;                /*!< 0xE00FEFE4 (R/ )  PID1 Register */
+    __IOM  uint32_t PID1;                /*!< 0xE00FEFE4 (R/ )  PID1 Register */
 
     struct
     {
-      __IM uint32_t PNH4        : 4;    /* [3..0] Contains the high 4 bits of the Ambiq Micro device part number. */
-      __IM uint32_t JEPIDL      : 4;    /* [7..4] Contains the low 4 bits of the Ambiq Micro JEDEC JEP-106 ID. The full JEPID is therefore 0x9B. */
+      __IOM uint32_t PNH4        : 4;    /* [3..0] Contains the high 4 bits of the Ambiq Micro device part number. */
+      __IOM uint32_t JEPIDL      : 4;    /* [7..4] Contains the low 4 bits of the Ambiq Micro JEDEC JEP-106 ID. The full JEPID is therefore 0x9B. */
     } PID1_b;
   };
 
   union
   {
-    __IM  uint32_t PID2;                /*!< 0xE00FEFE8 (R/ )  PID2 Register */
+    __IOM  uint32_t PID2;                /*!< 0xE00FEFE8 (R/ )  PID2 Register */
 
     struct
     {
-      __IM uint32_t JEPIDH      : 4;    /* [3..0] Contains the high 3 bits of the Ambiq Micro JEPID. Note that bit3 of this field is hard-coded to 1. The full JEPID is therefore 0x9B. */
-      __IM uint32_t CHIPREVH4   : 4;    /* [7..4] Contains the high 4 bits of the Ambiq Micro CHIPREV (see also MCUCTRL.CHIPREV). Note that this field will change with each revision of the chip. */
+      __IOM uint32_t JEPIDH      : 4;    /* [3..0] Contains the high 3 bits of the Ambiq Micro JEPID. Note that bit3 of this field is hard-coded to 1. The full JEPID is therefore 0x9B. */
+      __IOM uint32_t CHIPREVH4   : 4;    /* [7..4] Contains the high 4 bits of the Ambiq Micro CHIPREV (see also MCUCTRL.CHIPREV). Note that this field will change with each revision of the chip. */
     } PID2_b;
   };
 
   union
   {
-    __IM  uint32_t PID3;                /*!< 0xE00FEFEC (R/ )  PID3 Register */
+    __IOM  uint32_t PID3;                /*!< 0xE00FEFEC (R/ )  PID3 Register */
 
     struct
     {
-      __IM uint32_t ZERO        : 4;    /* [3..0] This field is hard-coded to 0x0. */
-      __IM uint32_t CHIPREVL4   : 4;    /* [7..0] Contains the low 4 bits of the Ambiq Micro CHIPREV (see also MCUCTRL.CHIPREV). Note that this field will change with each revision of the chip. */
+      __IOM uint32_t ZERO        : 4;    /* [3..0] This field is hard-coded to 0x0. */
+      __IOM uint32_t CHIPREVL4   : 4;    /* [7..0] Contains the low 4 bits of the Ambiq Micro CHIPREV (see also MCUCTRL.CHIPREV). Note that this field will change with each revision of the chip. */
     } PID3_b;
   };
 
   union
   {
-    __IM  uint32_t CID0;                /*!< 0xE00FEFF0 (R/ )  CID0 Register */
+    __IOM  uint32_t CID0;                /*!< 0xE00FEFF0 (R/ )  CID0 Register */
 
     struct
     {
-      __IM uint32_t CID         : 8;    /* [7..0] Coresight ROM Table, CID0. */
+      __IOM uint32_t CID         : 8;    /* [7..0] Coresight ROM Table, CID0. */
     } CID0_b;
   };
 
   union
   {
-    __IM  uint32_t CID1;                /*!< 0xE00FEFF4 (R/ )  CID1 Register */
+    __IOM  uint32_t CID1;                /*!< 0xE00FEFF4 (R/ )  CID1 Register */
 
     struct
     {
-      __IM uint32_t CID         : 8;    /* [7..0] Coresight ROM Table, CID1. */
+      __IOM uint32_t CID         : 8;    /* [7..0] Coresight ROM Table, CID1. */
     } CID1_b;
   };
 
   union
   {
-    __IM  uint32_t CID2;                /*!< 0xE00FEFF8 (R/ )  CID2 Register */
+    __IOM  uint32_t CID2;                /*!< 0xE00FEFF8 (R/ )  CID2 Register */
 
     struct
     {
-      __IM uint32_t CID         : 8;    /* [7..0] Coresight ROM Table, CID2. */
+      __IOM uint32_t CID         : 8;    /* [7..0] Coresight ROM Table, CID2. */
     } CID2_b;
   };
 
   union
   {
-    __IM  uint32_t CID3;                /*!< 0xE00FEFFC (R/ )  CID3 Register */
+    __IOM  uint32_t CID3;                /*!< 0xE00FEFFC (R/ )  CID3 Register */
 
     struct
     {
-      __IM uint32_t CID         : 8;    /* [7..0] Coresight ROM Table, CID3. */
+      __IOM uint32_t CID         : 8;    /* [7..0] Coresight ROM Table, CID3. */
     } CID3_b;
   };
 } JEDEC_Type;
