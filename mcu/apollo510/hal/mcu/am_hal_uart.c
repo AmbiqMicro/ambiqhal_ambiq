@@ -540,6 +540,7 @@ am_hal_uart_dma_transfer_complete(void *pHandle)
     //
     UARTn(ui32Module)->RSR_b.DMACPL = 0x0;
     UARTn(ui32Module)->RSR_b.DMAERR = 0x0;
+    pState->bDMABusy = false;
 }
 
 //*****************************************************************************
@@ -717,6 +718,7 @@ am_hal_uart_dma_abort(void *pHandle)
     // DMA count cleared.
     //
     UARTn(ui32Module)->COUNT_b.TOTCOUNT = 0x0;
+    pState->bDMABusy = false;
 }
 
 //*****************************************************************************
@@ -2249,7 +2251,6 @@ am_hal_uart_interrupt_service(void *pHandle, uint32_t ui32Status)
             //
             am_hal_uart_dma_transfer_complete(pHandle);
         }
-        pState->bDMABusy = false;
     }
     else
     {

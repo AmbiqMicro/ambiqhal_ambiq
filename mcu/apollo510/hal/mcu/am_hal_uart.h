@@ -708,6 +708,19 @@ extern uint32_t am_hal_uart_dma_transfer(void *pHandle, am_hal_uart_transfer_t *
 
 //*****************************************************************************
 //
+//! @brief UART DMA transaction completes, clear config and status
+//!
+//! @param pHandle is the UART handle to use.
+//!
+//! This function disables and clears UART DMA.
+//!
+//! @return void.
+//
+//*****************************************************************************
+extern void am_hal_uart_dma_transfer_complete(void *pHandle);
+
+//*****************************************************************************
+//
 //! @brief UART dma full duplex transfer function
 //!
 //! @param pTXHandle       - handle for the TX UART.
