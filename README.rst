@@ -22,7 +22,7 @@ released.
 URL
 ===
 
-   https://github.com/AmbiqMicro/ambiqhal_ambiq/tree/ambiq-stable
+   https://github.com/AmbiqMicro/ambiqhal_ambiq/tree/apollo510-dev
 
 Status
 ======
@@ -30,13 +30,13 @@ Status
 +------------------------+--------------------------------+
 | SOC                    | AmbiqSuite SDK Revision        |
 +========================+================================+
-| Apollo3 Blue           | v3.1.1                         |
+| Apollo3 Blue           | v3.2.0                         |
 +------------------------+--------------------------------+
-| Apollo3 Blue Plus      | v3.1.1                         |
+| Apollo3 Blue Plus      | v3.2.0                         |
 +------------------------+--------------------------------+
-| Apollo4 Blue Plus      | v4.4.0                         |
+| Apollo4 Blue Plus      | v4.5.0                         |
 +------------------------+--------------------------------+
-| Apollo510              | v5.2.0                         |
+| Apollo510              | v5.0.0                         |
 +------------------------+--------------------------------+
 
 Purpose
