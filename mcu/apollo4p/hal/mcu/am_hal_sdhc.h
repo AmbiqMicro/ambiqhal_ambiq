@@ -59,6 +59,16 @@ extern "C"
 //*****************************************************************************
 #define SDHCn(n)                     ((SDIO_Type*)(SDIO_BASE + n))
 
+//
+//! SD Host software reset types
+//
+typedef enum
+{
+    AM_HAL_SDHC_SW_RESET_DATA_LINE = 0U, /**< Reset the data circuit only. */
+    AM_HAL_SDHC_SW_RESET_CMD_LINE  = 1U, /**< Reset the command circuit only. */
+    AM_HAL_SDHC_SW_RESET_ALL       = 2U  /**< Reset the whole SD Host controller. */
+} am_hal_sdhc_sw_reset_e;
+
 //*****************************************************************************
 //
 //! @brief SDHC initialization function
@@ -399,6 +409,24 @@ extern uint32_t am_hal_sdhc_intr_signal_disable(void *pHandle, uint32_t ui32IntM
 //*****************************************************************************
 extern uint32_t am_hal_sdhc_interrupt_service(void *pHandle,
                                               uint32_t ui32IntStatus);
+
+//*****************************************************************************
+//
+//! @brief Reset SDHC host controller or part of data/command circuit.
+//!
+//! @param pSDHC          - Pointer to the SDHC register.
+//! @param eSoftwareReset - Software reset type
+//!    AM_HAL_SDHC_SW_RESET_DATA_LINE = 0U, Reset the data circuit only
+//!    AM_HAL_SDHC_SW_RESET_CMD_LINE  = 1U, Reset the command circuit only
+//!    AM_HAL_SDHC_SW_RESET_ALL       = 2U, Reset the whole SD Host controller
+//!
+//! This function resets SDHC host controller or part of data/command circuit.
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdhc_software_reset(SDIO_Type *pSDHC,
+                                           am_hal_sdhc_sw_reset_e eSoftwareReset);
 
 #ifdef __cplusplus
 }

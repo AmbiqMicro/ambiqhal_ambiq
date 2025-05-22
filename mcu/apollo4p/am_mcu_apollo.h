@@ -81,17 +81,8 @@ extern "C"
 #include <stddef.h>
 #include <stdint.h>
 
-#if !defined(__XTENSA__)
-#define __XTENSA__ 0
-#endif
-
-#if __XTENSA__
-#include "core_ambiq_xtensa.h"
-#include "apollo4_generic.h"
-#else
 #include "apollo4p.h"
 #include "hal/am_hal_usbregs.h"
-#endif
 
 //*****************************************************************************
 //
@@ -113,11 +104,7 @@ extern "C"
 #include "regs/am_reg_macros.h"
 #include "regs/am_reg.h"
 
-#if __XTENSA__
-#include "regs/am_reg_dsp.h"
-#else
 #include "regs/am_reg_mcu.h"
-#endif
 
 //*****************************************************************************
 //
@@ -126,10 +113,6 @@ extern "C"
 //*****************************************************************************
 #include "hal/am_hal_global.h"
 #include "hal/am_hal_status.h"
-
-#if __XTENSA__
-#include "hal/dsp/am_hal_dsp.h"
-#else
 
 //
 // MCU includes
@@ -158,7 +141,6 @@ extern "C"
 #include "hal/mcu/am_hal_card.h"
 #include "hal/mcu/am_hal_sdhc.h"
 #include "hal/mcu/am_hal_mpu.h"
-#endif
 
 //
 // HAL common includes

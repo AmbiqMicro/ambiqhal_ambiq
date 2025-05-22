@@ -50,7 +50,6 @@
 
 #include "am_mcu_apollo.h"
 
-#include "am_util_delay.h"
 #include "am_util_stdio.h"
 #include "am_util_debug.h"
 
@@ -66,15 +65,6 @@
 
 #define AM_HAL_SDHC_DEBUG(fmt, ...) am_util_debug_printf("[SDHC] line %04d - "fmt, __LINE__, ##__VA_ARGS__)
 
-//
-//! SD Host software reset types
-//
-typedef enum
-{
-    AM_HAL_SDHC_SW_RESET_DATA_LINE = 0U, /**< Reset the data circuit only. */
-    AM_HAL_SDHC_SW_RESET_CMD_LINE  = 1U, /**< Reset the command circuit only. */
-    AM_HAL_SDHC_SW_RESET_ALL       = 2U  /**< Reset the whole SD Host controller. */
-} am_hal_sdhc_sw_reset_e;
 
 //
 //! SD Host Register Types
@@ -150,7 +140,7 @@ static am_hal_sdhc_state_t g_SDHCState[AM_REG_SDIO_NUM_MODULES];
 //
 //*****************************************************************************
 
-static uint32_t am_hal_sdhc_software_reset(SDIO_Type *pSDHC, am_hal_sdhc_sw_reset_e eSoftwareReset)
+uint32_t am_hal_sdhc_software_reset(SDIO_Type *pSDHC, am_hal_sdhc_sw_reset_e eSoftwareReset)
 {
     uint32_t ui32Mask;
     uint32_t ui32Timeout;
@@ -172,7 +162,7 @@ static uint32_t am_hal_sdhc_software_reset(SDIO_Type *pSDHC, am_hal_sdhc_sw_rese
             return AM_HAL_STATUS_FAIL;
         }
         ui32Timeout--;
-        am_util_delay_ms(1);
+        am_hal_delay_us(1000);  // 1ms delay
     } while (pSDHC->CLOCKCTRL & ui32Mask);
 
     return AM_HAL_STATUS_SUCCESS;
@@ -771,7 +761,7 @@ static uint32_t am_hal_sdhc_xfer_data(am_hal_sdhc_state_t *pSDHCState,
 
         if ( ui32Timeout-- > 0 )
         {
-            am_util_delay_us(5);
+            am_hal_delay_us(5);
         }
         // AM_HAL_SDHC_DEBUG("INT STATUS 0x%x\n", ui32IntStatus);
     }
@@ -1272,7 +1262,7 @@ uint32_t am_hal_sdhc_set_bus_clock(void *pHandle, uint32_t ui32Clock)
             return AM_HAL_STATUS_FAIL;
         }
         ui32Timeout--;
-        am_util_delay_us(10);
+        am_hal_delay_us(10);
     }
 
     //
@@ -1409,7 +1399,7 @@ uint32_t am_hal_sdhc_enable(void *pHandle)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     SDIO_Type *pSDHC;
-    uint32_t ui32Status;
+    uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1434,7 +1424,7 @@ uint32_t am_hal_sdhc_enable(void *pHandle)
     MCUCTRL->SDIOCTRL |= (MCUCTRL_SDIOCTRL_SDIOSYSCLKEN_Msk | MCUCTRL_SDIOCTRL_SDIOXINCLKEN_Msk);
 
     // Wait some time util clock stable
-    am_util_delay_ms(10);
+    am_hal_delay_us(10000);
 
     //
     // Note SW_RESET_ALL is *only* used here before initializing other registers
@@ -1530,7 +1520,7 @@ uint32_t am_hal_sdhc_disable(void *pHandle)
     //
     // Wait some time until clock is stable
     //
-    am_util_delay_ms(10);
+    am_hal_delay_us(10000);
 
     //
     // Return the status.
@@ -1873,7 +1863,6 @@ uint32_t am_hal_sdhc_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     am_hal_card_host_t *pHost = pSDHCState->pHost;
     SDIO_Type *pSDHC = NULL;
-    am_hal_host_evt_t evt;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1912,12 +1901,12 @@ uint32_t am_hal_sdhc_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
 
         am_hal_sdhc_sdma_xfer_data(pSDHCState);
         // AM_HAL_SDHC_DEBUG("ISR - DMA Xfer BlkCnt %d\n", pSDHCState->ui32BlkCnt);
-        evt.eType = AM_HAL_EVT_SDMA_DONE;
-        evt.pCtx = pSDHCState->pHost;
-        evt.ui32BlkCnt = pSDHCState->ui32BlksPerSDMA;
+        pHost->Evt.eType = AM_HAL_EVT_SDMA_DONE;
+        pHost->Evt.pCtx = pSDHCState->pHost;
+        pHost->Evt.ui32BlkCnt = pSDHCState->ui32BlksPerSDMA;
         if ( pSDHCState->pHost->pfunEvtCallback )
         {
-            pSDHCState->pHost->pfunEvtCallback(&evt);
+            pSDHCState->pHost->pfunEvtCallback(&pHost->Evt);
         }
     }
 
@@ -1929,12 +1918,12 @@ uint32_t am_hal_sdhc_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
         // Invalidate DAXI to make sure CPU sees the new data when loaded
         am_hal_daxi_control(AM_HAL_DAXI_CONTROL_INVALIDATE, 0);
 
-        evt.eType = AM_HAL_EVT_XFER_COMPLETE;
-        evt.pCtx = pSDHCState->pHost;
-        evt.ui32BlkCnt = pSDHCState->ui32BlkCnt;
+        pHost->Evt.eType = AM_HAL_EVT_XFER_COMPLETE;
+        pHost->Evt.pCtx = pSDHCState->pHost;
+        pHost->Evt.ui32BlkCnt = pSDHCState->ui32BlkCnt;
         if ( pSDHCState->pHost->pfunEvtCallback )
         {
-            pSDHCState->pHost->pfunEvtCallback(&evt);
+            pSDHCState->pHost->pfunEvtCallback(&pHost->Evt);
         }
         AM_HAL_SDHC_DEBUG("ISR - Xfer Completion BlkCnt %d\n", pSDHCState->ui32BlkNum);
         pSDHCState->bAsyncCmdIsDone = true;
@@ -1954,15 +1943,15 @@ uint32_t am_hal_sdhc_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
                          SDIO_INTSTAT_DATATIMEOUTERROR_Msk  |
                          SDIO_INTSTAT_DATAENDBITERROR_Msk))
     {
-        evt.eType = AM_HAL_EVT_DAT_ERR;
-        evt.pCtx = pSDHCState->pHost;
-        evt.ui32BlkCnt = pSDHCState->ui32BlkCnt;
+        pHost->Evt.eType = AM_HAL_EVT_DAT_ERR;
+        pHost->Evt.pCtx = pSDHCState->pHost;
+        pHost->Evt.ui32BlkCnt = pSDHCState->ui32BlkCnt;
         pHost->AsyncCmdData.eDataError = am_hal_sdhc_check_data_error_type(ui32IntStatus);
         pSDHCState->bDataErr = true;
         pSDHCState->ui32DataErrCnt++;
         if ( pSDHCState->pHost->pfunEvtCallback )
         {
-            pSDHCState->pHost->pfunEvtCallback(&evt);
+            pSDHCState->pHost->pfunEvtCallback(&pHost->Evt);
         }
         AM_HAL_SDHC_DEBUG("Xfer ERR INT 0x%x\n", ui32IntStatus);
         pSDHCState->bAsyncCmdIsDone = true;
@@ -1978,6 +1967,23 @@ uint32_t am_hal_sdhc_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
     }
 
     //
+    // SDIO Card interrupt
+    //
+    if (ui32IntStatus & SDIO_INTSIG_CARDINTEN_Msk)
+    {
+        pHost->Evt.eType = AM_HAL_EVT_CARD_INT;
+        pHost->Evt.pCtx = pSDHCState->pHost;
+
+        if ( pSDHCState->pHost->pfunEvtCallback )
+        {
+            pSDHCState->pHost->pfunEvtCallback(&pHost->Evt);
+        }
+
+        AM_HAL_SDHC_DEBUG("SDIO Card INT 0x%x\n", ui32IntStatus);
+        am_hal_sdhc_intr_status_disable(pHost->pHandle, SDIO_INTENABLE_CARDINTERRUPTSTATUSENABLE_Msk);
+    }
+
+    //
     // SD Card insert or removal interrupt
     //
     if (ui32IntStatus & ( SDIO_INTSTAT_CARDREMOVAL_Msk |
@@ -1987,21 +1993,21 @@ uint32_t am_hal_sdhc_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
 
         if ( ui32IntStatus & SDIO_INTSTAT_CARDREMOVAL_Msk )
         {
-            evt.eType = AM_HAL_EVT_CARD_NOT_PRESENT;
+            pHost->Evt.eType = AM_HAL_EVT_CARD_NOT_PRESENT;
         }
 
        if ( (ui32IntStatus & SDIO_INTSTAT_CARDINSERTION_Msk) && (ui32PresentState & SDIO_PRESENT_CARDINSERTED_Msk) )
         {
-            evt.eType = AM_HAL_EVT_CARD_PRESENT;
+            pHost->Evt.eType = AM_HAL_EVT_CARD_PRESENT;
         }
         else
         {
-            evt.eType = AM_HAL_EVT_CARD_NOT_PRESENT;
+            pHost->Evt.eType = AM_HAL_EVT_CARD_NOT_PRESENT;
         }
 
         if ( pSDHCState->pHost->pfunEvtCallback )
         {
-            pSDHCState->pHost->pfunEvtCallback(&evt);
+            pSDHCState->pHost->pfunEvtCallback(&pHost->Evt);
         }
 
         AM_HAL_SDHC_DEBUG("SD Card INT 0x%x\n", ui32IntStatus);

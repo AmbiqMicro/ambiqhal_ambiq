@@ -40,7 +40,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2024, Ambiq Micro, Inc.
+// Copyright (c) 2025, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -57,9 +57,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -72,7 +69,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-c1f95ddf60 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -107,10 +104,7 @@
   #define AM_SP_HIGH   (ITCM_BASEADDR + ITCM_MAX_SIZE)
   #define AM_SP_LOW2   DTCM_BASEADDR
   #define AM_SP_HIGH2  (DTCM_BASEADDR + DTCM_MAX_SIZE + SSRAM_MAX_SIZE)
-#elif defined(AM_PART_APOLLO510L)
-  #define AM_SP_LOW    DTCM_BASEADDR
-  #define AM_SP_HIGH   (DTCM_BASEADDR + DTCM_MAX_SIZE + SSRAM_MAX_SIZE)
-#elif defined(AM_PART_APOLLO4_API)
+#elif defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
   #define AM_SP_LOW    SRAM_BASEADDR
   #define AM_SP_HIGH   (SRAM_BASEADDR + RAM_TOTAL_SIZE)
 #elif defined(AM_PART_APOLLO3P)
@@ -219,8 +213,8 @@ HardFault_Handler(void)
           "    mrsne  r0, psp\n");                       // e: bit2=1 indicating PSP stack
 #if !defined(AM_HF_NO_LOCAL_STACK)
     __asm("    ldr    r1, =gFaultStack\n");              // get address of the base of the temp_stack
-#if defined(AM_PART_APOLLO510) || defined(AM_PART_APOLLO510L)
-    __asm("    MSR msplim, r1\n");                       // for Apollo510 (M55) set MSP stack limit register
+#if defined(AM_PART_APOLLO510)
+    __asm("    MSR msplim, r1\n");                       // for Apollo5 (M55) set MSP stack limit register
 #endif
     __asm("    add    r1, r1, #512\n"                    // address of the top of the stack.
           "    bic    r1, #3\n"                          // make sure the new stack is 8-byte aligned
@@ -473,7 +467,8 @@ am_util_faultisr_collect_data(uint32_t *u32IsrSP)
         u32Mask >>= 1;
     }
 
-#if !defined(AM_PART_APOLLO510) && !defined(AM_PART_APOLLO510L) // No CPU register block in Apollo510
+#if !defined(AM_PART_APOLLO510)
+    // No CPU register block in Apollo5
     //
     // Print out any Apollo* Internal fault information - if any
     //
@@ -493,7 +488,7 @@ am_util_faultisr_collect_data(uint32_t *u32IsrSP)
     {
         am_util_stdio_printf("    SYS Fault Address: 0x%08X\n", sHalFaultData.ui32SYS);
     }
-#endif  // !defined(AM_PART_APOLLO510) || defined(AM_PART_APOLLO510L)
+#endif
 
     am_util_stdio_printf("\n\nDone with output. Entering infinite loop.\n\n");
 
