@@ -3,15 +3,15 @@
 //! @file am_util_pmu.c
 //!
 //! @brief The Performance Monitors Extension describes an optional non-invasive
-//! component that allows performance events to be identified and counterd.This
-//! enables software to get information about events that are taking place in the
-//! processor and can be used for performance analysis and system debug.
+//! component that allows performance events to be identified and countered.
+//! This enables software to get information about events that are taking place
+//! in the processor and can be used for performance analysis and system debug.
 //!
 //! The PMU supports eight 16-bit event counters and one 32-bit cycle counter.
-//! The PMU also supports a chain function which allows the PMU to cascade two of
-//! the 16-bit counters into one 32-bit counter.only odd event counter support the
-//! chain feature.that means by chaining counters in pairs,the counter range can be
-//! increased by halving the number of counters.
+//! The PMU also supports a chain function which allows the PMU to cascade two
+//! of the 16-bit counters into one 32-bit counter.only odd event counter support
+//! the chain feature. That means by chaining counters in pairs, the counter
+//! range can be increased by halving the number of counters.
 //!
 //! @addtogroup pmu PMU Functionality
 //! @ingroup utils
@@ -21,7 +21,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2024, Ambiq Micro, Inc.
+// Copyright (c) 2025, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -53,7 +50,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1-3021d0c7ea of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -76,7 +73,8 @@ static uint32_t pui32CycOvfCnt[__PMU_NUM_EVENTCNT + 1];
 // Local functions and ISRs
 //
 //*****************************************************************************
-void DebugMon_Handler(void)
+void
+DebugMon_Handler(void)
 {
     uint32_t ui32CntrOvs = ARM_PMU_Get_CNTR_OVS();
     uint32_t i;

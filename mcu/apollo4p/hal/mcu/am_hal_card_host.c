@@ -154,7 +154,7 @@ static uint32_t am_hal_sdhc_host_deinit(void *pHandle)
 //*****************************************************************************
 static uint32_t am_hal_sdhc_host_execute_cmd(void *pHandle, am_hal_card_cmd_t *pCmd, am_hal_card_cmd_data_t *pCmdData)
 {
-    uint32_t ui32Status;
+    uint32_t ui32Status = 0;
     uint8_t ui8Retries = 3;
 
     while (ui8Retries--)

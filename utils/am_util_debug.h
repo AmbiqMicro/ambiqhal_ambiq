@@ -8,7 +8,7 @@
 //! intended to be as unintrusive as possible and designed to be removed from
 //! the compilation of a project when they are no longer needed.
 //!
-//! @addtogroup debug Debug
+//! @addtogroup debug Debug Utility
 //! @ingroup utils
 //! @{
 //
@@ -16,7 +16,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2024, Ambiq Micro, Inc.
+// Copyright (c) 2025, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -33,9 +33,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -48,7 +45,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_0-3c5977e664 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_DEBUG_H

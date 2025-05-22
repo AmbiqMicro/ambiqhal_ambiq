@@ -197,6 +197,7 @@ typedef enum
     AM_HAL_EVT_XFER_COMPLETE,
     AM_HAL_EVT_CMD_ERR,
     AM_HAL_EVT_DAT_ERR,
+    AM_HAL_EVT_CARD_INT,
 } am_hal_host_evt_type_e;
 
 //
@@ -234,6 +235,7 @@ typedef struct am_hal_card_host
     am_hal_card_cmd_data_t AsyncCmdData;
     am_hal_card_host_ops_t *ops;
     am_hal_host_event_cb_t pfunEvtCallback;
+    am_hal_host_evt_t Evt;
 } am_hal_card_host_t;
 
 //
