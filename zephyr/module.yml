@@ -1,0 +1,9 @@
+name: hal_ambiq
+build:
+  cmake: .
+  kconfig-ext: True
+  settings:
+    # Zephyr will use the `<dts_root>/dts` for additional dts files and
+    # `<dts_root>/dts/bindings` for additional dts binding files. The `.` is
+    # the root of this repository.
+    dts_root: .
