@@ -146,6 +146,7 @@ typedef struct
 //*****************************************************************************
 //! Trim Version booleans for optimization of trim version eval
 bool g_bIsPCM2p1;
+bool g_bIsPCM1p0OrPCM1p1;
 bool g_bIsB0PCM1p1OrNewer;
 bool g_bIsPCM2p0;
 bool g_bIsPCM2p2OrNewer;
@@ -642,6 +643,8 @@ am_hal_spotmgr_init(void)
     g_bIsPCM2p2OrNewer = APOLLO5_B2_GE_PCM2P2 || APOLLO5_GT_B2;
     // B1 PCM2.1 and B2 PCM2.1
     g_bIsPCM2p1 = APOLLO5_B1_PCM2P1 || APOLLO5_B2_PCM2P1;
+    // B0 PCM1.0/1.1 and B1 PCM1.1
+    g_bIsPCM1p0OrPCM1p1 = APOLLO5_B0_PCM1P0 || APOLLO5_B0_PCM1P1 || APOLLO5_B1_PCM1P1;
     // B0 PCM1.1 and newer trim
     g_bIsB0PCM1p1OrNewer = APOLLO5_B0_GE_PCM1P1;
     // B1 PCM2.0, B2 PCM2.0
@@ -650,7 +653,7 @@ am_hal_spotmgr_init(void)
     g_bIsPCM2p1WoPatch = (APOLLO5_B1_PCM2P1 || APOLLO5_B2_PCM2P1) && ((g_sINFO1regs.ui32PATCH_TRACKER0 & 0x1) == 0);
 
 
-    if (g_bIsPCM2p0 || g_bIsPCM2p1WoPatch)
+    if (g_bIsPCM1p0OrPCM1p1 || g_bIsPCM2p0 || g_bIsPCM2p1WoPatch)
     {
         //
         // Powers up ACRG bias current (required when forcing ANALDO into active mode when entering Sleep mode).

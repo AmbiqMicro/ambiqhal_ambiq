@@ -833,7 +833,26 @@ extern void am_hal_usb_interrupt_service(void *pHandle,
                                          uint32_t ui32IntrInStatus,
                                          uint32_t ui32IntrOutStatus);
 
-
+//****************************************************************************
+//
+//! @brief Macro to read and handle USB interrupts
+//!
+//! Application / USB stack can either call this macro, or implement its custom
+//! handling when usb isr is received
+//
+//****************************************************************************
+#define am_hal_usb_handle_isr(pHandle)                  \
+    {                                                   \
+        uint32_t int_status[3];                         \
+        am_hal_usb_intr_status_get(pHandle,             \
+                                    &int_status[0],     \
+                                    &int_status[1],     \
+                                    &int_status[2]);    \
+        am_hal_usb_interrupt_service(pHandle,           \
+                                     int_status[0],     \
+                                     int_status[1],     \
+                                     int_status[2]);    \
+    }
 
 //*****************************************************************************
 //
