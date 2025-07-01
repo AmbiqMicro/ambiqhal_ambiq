@@ -113,12 +113,13 @@ __attribute__((weak)) void am_hal_PRE_SLEEP_PROCESSING(void){}
 void
 am_hal_sysctrl_sleep(bool bSleepDeep)
 {
-    bool bBuckIntoLPinDS = false, bSimobuckAct = false;
+    bool bBuckIntoLPinDS = false, bSimobuckAct = false, bPeriphOff = false;
     am_hal_pwrctrl_pwrmodctl_cpdlp_t sActCpdlpConfig;
     bool bReportedDeepSleep = false, bVDDCACTLOWTONTRIMChanged = false;
     uint32_t ui32CurVDDCACTLOWTONTRIM = 0, ui32CpdlpConfig = 0;
+    uint32_t ui32InternalTimerAIRQNum = TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A + NVIC_USER_IRQ_OFFSET;
     am_hal_spotmgr_cpu_state_e eCpuSt;
-    bool bSetPwrSwOverrideAtWake = false;
+    bool bSetPwrSwOverrideAtWake = false, bOtherIsrPending = false;
 
     //
     // Disable interrupts and save the previous interrupt state.
@@ -242,6 +243,7 @@ am_hal_sysctrl_sleep(bool bSleepDeep)
                 //
                 ( MCUCTRL->PLLCTL0_b.SYSPLLPDB != MCUCTRL_PLLCTL0_SYSPLLPDB_ENABLE )))
             {
+                bPeriphOff = true;
                 if (!g_bAppFrcBuckAct && !g_bFrcBuckAct)
                 {
                     //
@@ -383,11 +385,6 @@ am_hal_sysctrl_sleep(bool bSleepDeep)
             MCUCTRL->PWRSW0_b.PWRSWVDDCAOROVERRIDE = 1;
         }
         MCUCTRL->SIMOBUCK14_b.VDDFCOMPTRIMMINUS = 0;
-        //
-        // Clear this bit after setting the Vddcaor Vddcpu Override back and CPU exits deepsleep then enters HP mode.
-        //
-        g_bHpToDeepSleep = false;
-        g_bVddcaorVddcpuOverride = false;
     }
     //
     // After exiting deepsleep in CPU LP mode, the simobuck VDDF LP minus offset trim must be set back to 0.
@@ -395,8 +392,166 @@ am_hal_sysctrl_sleep(bool bSleepDeep)
     if (g_bVddfLpMinusForLp)
     {
         MCUCTRL->SIMOBUCK14_b.VDDFCOMPTRIMMINUS = 0;
+    }
+    //
+    // Check if the wake-up was caused by AM_HAL_INTERNAL_TIMER_NUM_A interrupt; if so, attempt to re-enter deep sleep.
+    //
+    if ((g_bIsPCM2p1 || g_bIsPCM2p2OrNewer) &&
+        (_FLD2VAL(SCB_ICSR_VECTPENDING, SCB->ICSR) == ui32InternalTimerAIRQNum))
+    {
+        //
+        // Call am_hal_spotmgr_boost_timer_interrupt_service manually, we stopped the timer and cleared the timer interrupt status in this fucntion.
+        //
+        am_hal_spotmgr_boost_timer_interrupt_service();
+        if (!(_FLD2VAL(SCB_ICSR_VECTPENDING, SCB->ICSR)))
+        {
+            if (bSleepDeep == AM_HAL_SYSCTRL_SLEEP_DEEP)
+            {
+                //
+                // If in HP mode, we need to wait till HFRC2 is ready and CPU is fully back in HP mode, before attempting deepsleep
+                //
+                if (PWRCTRL->MCUPERFREQ_b.MCUPERFREQ == AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE)
+                {
+                    while ( PWRCTRL->MCUPERFREQ_b.MCUPERFSTATUS != AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE )
+                    {
+                        //
+                        // Check if any other interrupts are pending.
+                        //
+                        if (_FLD2VAL(SCB_ICSR_VECTPENDING, SCB->ICSR))
+                        {
+                            bOtherIsrPending = true;
+                            break;
+                        }
+                        else
+                        {
+                            am_hal_delay_us(1);
+                        }
+                    }
+                }
+            }
+
+            //
+            // Enter sleep mode again only if no other interrupts are pending.
+            //
+            if (!bOtherIsrPending)
+            {
+                if (bReportedDeepSleep)
+                {
+                    am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_CPU_STATE, false, (void *) &eCpuSt);
+                    //
+                    // Report deepsleep state again to update global variables (g_bVddcaorVddcpuOverride, g_bHpToDeepSleep...)
+                    //
+                    eCpuSt = AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP;
+                    am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_CPU_STATE, false, (void *) &eCpuSt);
+                }
+                //
+                // Remove overrides to allow buck to go in LP mode
+                //
+                if (bPeriphOff)
+                {
+                    if (!g_bAppFrcBuckAct && !g_bFrcBuckAct)
+                    {
+                        //
+                        // This implies upon deepsleep, buck can transition into LP mode
+                        //
+                        bBuckIntoLPinDS = true;
+                        //
+                        // Remove overrides to allow buck to go in LP mode
+                        //
+                        buck_ldo_update_override(false);
+#if AM_HAL_PWRCTRL_SIMOLP_AUTOSWITCH
+                        am_hal_spotmgr_simobuck_lp_autosw_enable();
+#endif
+                    }
+                }
+                //
+                // Clear PWRSWVDDCAOROVERRIDE and PWRSWVDDCPUOVERRIDE
+                //
+                if (g_bHpToDeepSleep)
+                {
+                    MCUCTRL->SIMOBUCK14_b.VDDFCOMPTRIMMINUS = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.VDDFCOMPTRIMMINUS;
+                    if (g_bVddcaorVddcpuOverride)
+                    {
+                        MCUCTRL->PWRSW0_b.PWRSWVDDCPUOVERRIDE = 0;
+                        MCUCTRL->PWRSW0_b.PWRSWVDDCAOROVERRIDE = 0;
+                    }
+                }
+                //
+                // If entering deepsleep in CPU LP mode, and STM state was collapsed to STM+periph state,
+                // the simobuck VDDF LP minus offset trim must be set to reduce VDDF to reduce the power consumption.
+                //
+                if (g_bVddfLpMinusForLp)
+                {
+                    MCUCTRL->SIMOBUCK14_b.VDDFCOMPTRIMMINUS = 11;
+                }
+                //
+                // If current VDDCACTLOWTONTRIM is > GPULPCPUHPVDDCTON in INFO1, set it to GPULPCPUHPVDDCTON in INFO1.
+                //
+                if (bVDDCACTLOWTONTRIMChanged)
+                {
+                    MCUCTRL->SIMOBUCK2_b.VDDCACTLOWTONTRIM = g_sSpotMgrINFO1regs.sGpuVddcTon.GPUVDDCTON_b.GPULPCPUHPVDDCTON;
+                }
+
+                //
+                // Before executing WFI, flush APB writes.
+                //
+                am_hal_sysctrl_sysbus_write_flush();
+
+                //
+                // Execute the sleep instruction.
+                //
+                __WFI();
+
+                //
+                // Upon wake, execute the Instruction Sync Barrier instruction.
+                //
+                __ISB();
+
+                //
+                // If VDDCACTLOWTONTRIM was changed before deepsleep, restore it.
+                //
+                if (bVDDCACTLOWTONTRIMChanged)
+                {
+                    MCUCTRL->SIMOBUCK2_b.VDDCACTLOWTONTRIM = ui32CurVDDCACTLOWTONTRIM;
+                }
+                //
+                // Set PWRSWVDDCAOROVERRIDE and PWRSWVDDCPUOVERRIDE
+                //
+                if (g_bHpToDeepSleep)
+                {
+                    if (bSetPwrSwOverrideAtWake)
+                    {
+                        MCUCTRL->PWRSW0_b.PWRSWVDDCPUOVERRIDE = 1;
+                        MCUCTRL->PWRSW0_b.PWRSWVDDCAOROVERRIDE = 1;
+                    }
+                    MCUCTRL->SIMOBUCK14_b.VDDFCOMPTRIMMINUS = 0;
+                }
+                //
+                // After exiting deepsleep in CPU LP mode, the simobuck VDDF LP minus offset trim must be set back to 0.
+                //
+                if (g_bVddfLpMinusForLp)
+                {
+                    MCUCTRL->SIMOBUCK14_b.VDDFCOMPTRIMMINUS = 0;
+                }
+            }
+        }
+    }
+    if (g_bHpToDeepSleep)
+    {
+        //
+        // Clear this bit after setting the Vddcaor Vddcpu Override back and CPU exits deepsleep then enters HP mode.
+        //
+        g_bHpToDeepSleep = false;
+        g_bVddcaorVddcpuOverride = false;
+    }
+    //
+    // Clear flag g_bVddfLpMinusForLp.
+    //
+    if (g_bVddfLpMinusForLp)
+    {
         g_bVddfLpMinusForLp = false;
     }
+
     //
     // Report CPU state change
     //

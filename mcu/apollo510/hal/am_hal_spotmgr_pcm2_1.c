@@ -404,10 +404,13 @@ spotmgr_internal_power_domain_set(am_hal_spotmgr_cpu_state_e eCpuState, am_hal_s
     //
     if ((eLastCpuState == AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_HP) && (eCpuState == AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP))
     {
-        //
-        // Set this bit to enable Vddcaor Vddcpu Override clear and set when switching between HP and deepsleep.
-        //
-        g_bHpToDeepSleep = true;
+        if (!g_bSwitchingToHp)
+        {
+            //
+            // Set this bit to enable Vddcaor Vddcpu Override clear and set when switching between HP and deepsleep.
+            //
+            g_bHpToDeepSleep = true;
+        }
     }
     //
     // When switching from CPU HP mode to LP mode the following fields must be cleared after entering CPU LP mode
@@ -1443,7 +1446,9 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                         if (sPwrStatus.eCpuState == AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP)
                         {
                             spotmgr_buck_deepsleep_state_determine(&sPwrStatus);
-                            if ((g_ui32CurPowerStateStatic != 8) && (g_ui32CurPowerStateStatic != 12))
+                            if ((g_ui32CurPowerStateStatic != 8)  &&
+                                (g_ui32CurPowerStateStatic != 12) &&
+                                (!TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0EN) )
                             {
                                 g_bVddcaorVddcpuOverride = true;
                             }

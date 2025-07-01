@@ -2605,7 +2605,13 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                         if (sPwrStatus.eCpuState == AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP)
                         {
                             spotmgr_buck_deepsleep_state_determine(&sPwrStatus);
-                            if ((g_ui32CurPowerStateStatic >= 9) && (g_ui32CurPowerStateStatic <= 11))
+                            //
+                            // Make sure current power state is 9-11,
+                            // and the power state transition to 9-11 is completed.
+                            //
+                            if ((g_ui32CurPowerStateStatic >= 9)  &&
+                                (g_ui32CurPowerStateStatic <= 11) &&
+                                (eOngoingSeq != AM_HAL_SPOTMGR_TRANS_SEQ_7))
                             {
                                 g_bVddcaorVddcpuOverride = true;
                             }
