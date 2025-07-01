@@ -639,10 +639,16 @@ trim_version_get(am_hal_mcuctrl_feature_t *psFeature)
         {
             //
             // This is a PCM 2.x device
-            // Apollo510 B1 PCM trim is numbered as 1-based.
-            // Thereafter, revB device trims are 0-based.
+            // Apollo510 B2 PCM trim is numbered as 0-based.
+            // All other Apollo510 chip revisions are 1-based.
             //
-            ui32TrimVer += ( MCUCTRL->CHIPREV_b.REVMIN == MCUCTRL_CHIPREV_REVMIN_REV1 ) ? 1 : 0;
+            if ( MCUCTRL->CHIPREV_b.REVMIN != MCUCTRL_CHIPREV_REVMIN_REV2 )
+            {
+                //
+                // Trimcode is 1-based, 0-base it (only B2 is 0-based).
+                //
+                --ui32TrimVer;
+            }
             psFeature->trimver_b.ui8TrimVerMaj = 2;
             psFeature->trimver_b.ui8TrimVerMin = (uint8_t)ui32TrimVer;
             psFeature->trimver_b.bTrimVerPCM   = 1;
@@ -658,6 +664,13 @@ trim_version_get(am_hal_mcuctrl_feature_t *psFeature)
             psFeature->trimver_b.bTrimVerPCM   = 0;
             psFeature->trimver_b.bTrimVerValid = 1;
         }
+    }
+    else
+    {
+        psFeature->trimver_b.ui8TrimVerMaj = 0;
+        psFeature->trimver_b.ui8TrimVerMin = (uint8_t)ui32TrimVer;
+        psFeature->trimver_b.bTrimVerPCM   = 0;
+        psFeature->trimver_b.bTrimVerValid = 0;
     }
 
     return ui32Ret;
