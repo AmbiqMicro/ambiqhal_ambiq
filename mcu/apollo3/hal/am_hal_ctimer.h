@@ -1075,6 +1075,8 @@ extern void am_hal_ctimer_int_service(uint32_t ui32Status);
 //*****************************************************************************
 extern void am_hal_triple_read(uint32_t ui32TimerAddr, uint32_t ui32Data[]);
 
+extern uint32_t am_hal_ctimer_read_both(void);
+
 #ifdef __cplusplus
 }
 #endif
