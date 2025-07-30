@@ -8,3 +8,7 @@ if(CONFIG_AMBIQ_COMPONENT_USE_BT)
     add_subdirectory(bluetooth)
     zephyr_include_directories(bluetooth)
 endif()
+
+if(CONFIG_AMBIQ_COMPONENT_USE_NEMASDK)
+    add_subdirectory(graphics/NemaGFX_SDK)
+endif()
