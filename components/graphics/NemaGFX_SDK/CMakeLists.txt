@@ -5,23 +5,14 @@
 #
 zephyr_library()
 
-# Extract current SOC and its family.
-set(SOC_NAME ${CONFIG_SOC})
-set(SOC_SERIES_NAME ${CONFIG_SOC_SERIES})
-
-if(SOC_SERIES_NAME STREQUAL "apollo5x")
-    set(NEMA_LIB_SOC apollo510)
-# elseif(SOC_SERIES_NAME STREQUAL "apollo4x")
-#     set(NEMA_LIB_SOC apollo4p)
-else()
-    message(FATAL_ERROR "Unsupported SOC_SERIES: ${SOC_SERIES_NAME}")
-endif()
-
 zephyr_include_directories(port)
-
-include(include_sub_dirs.cmake)
-# Include all subdirs
-include_all_subdirs(headers)
+zephyr_include_directories(headers/common/mem)
+zephyr_include_directories(headers/include/tsi/common)
+zephyr_include_directories(headers/include/tsi/NemaDC)
+zephyr_include_directories(headers/include/tsi/NemaGFX)
+zephyr_include_directories(headers/include/tsi/NemaVG)
+zephyr_include_directories(headers/NemaDC)
+zephyr_include_directories(headers/NemaGFX/Nema)
 
 # Include all used C sources.
 zephyr_library_sources(
@@ -30,4 +21,4 @@ zephyr_library_sources(
     )
 
 # Include the library in project
-zephyr_library_import(nemasdk_lib ${CMAKE_CURRENT_SOURCE_DIR}/libraries/lib_nema_${NEMA_LIB_SOC}_nemagfx.a)
+zephyr_link_libraries_ifdef(CONFIG_SOC_SERIES_APOLLO5X, ${CMAKE_CURRENT_SOURCE_DIR}/libraries/lib_nema_apollo510_nemagfx.a)
