@@ -251,30 +251,6 @@ wait_dbi_idle(uint32_t ui32Mask, uint32_t ui32Value)
     //
     return am_hal_delay_us_status_change(ui32usMaxDelay, (uint32_t)&DC->STATUS, ui32Mask, ui32Value);
 }
-//*****************************************************************************
-//
-//! @brief wait jdi idle
-//!
-//! Please wait a time before executing functions nemadc_set_mode() and
-//! nemadc_set_mip_panel_parameters() after the frame ends when enabling RTOS.
-//!
-//! @return AM_HAL_STATUS_SUCCESS.
-//
-//*****************************************************************************
-static uint32_t
-wait_mip_idle(void)
-{
-    //
-    // Wait the real frame end of MiP(JDI) interface.
-    //
-    am_hal_delay_us((uint32_t)(fFormatPeriod * sMiPConfig.VCK_GCK_closing_pulses * sMiPConfig.VCK_GCK_width));
-    //
-    // Recover parameters before the next transmission.
-    //
-    nemadc_set_mode(0);
-    nemadc_set_mip_panel_parameters(&sMiPConfig);
-    return AM_HAL_STATUS_SUCCESS;
-}
 
 //*****************************************************************************
 //
@@ -1929,5 +1905,3 @@ nemadc_reg_write(uint32_t reg, uint32_t value)
     volatile uint32_t *ptr = (volatile uint32_t *)(nemadc_regs + reg);
     *ptr = value;
 }
-
-
