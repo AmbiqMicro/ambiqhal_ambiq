@@ -2049,7 +2049,7 @@ uint32_t am_hal_mspi_control(void *pHandle,
         }
         break;
 
-        case AM_HAL_MSPI_REQ_TIMING_SCAN:
+        case AM_HAL_MSPI_REQ_TIMING_SCAN_SET:
         {
             am_hal_mspi_timing_scan_t *pTimingScan = (am_hal_mspi_timing_scan_t *)pConfig;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -2809,6 +2809,49 @@ uint32_t am_hal_mspi_control(void *pHandle,
             //
             MSPIn(ui32Module)->DEV0XIP_b.XIPSENDA0 = 1;
             break;
+        case AM_HAL_MSPI_REQ_SCRAMBLE_CONFIG:
+        //
+        // Configure Scrambling addresses
+        //
+        {
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+            if (!pConfig)
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+            am_hal_mspi_xip_config_t *pXipConfig = ((am_hal_mspi_xip_config_t *)pConfig);
+
+            //
+            // Set the configuration in the MSPI peripheral.
+            // Set the scrambling start and end addresses aligned to 64K region.
+            //
+            MSPIn(ui32Module)->DEV0SCRAMBLING_b.SCRSTART0 = pXipConfig->scramblingStartAddr >> 16;
+            MSPIn(ui32Module)->DEV0SCRAMBLING_b.SCREND0   = pXipConfig->scramblingEndAddr >> 16;
+        }
+        break;
+
+        case AM_HAL_MSPI_REQ_SET_DATA_LATENCY:
+        //
+        // Configure write latency and turnaround
+        //
+        {
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+            if (!pConfig)
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+            am_hal_mspi_dev_config_t *pDevConfig = (am_hal_mspi_dev_config_t*)pConfig;
+
+            MSPIn(ui32Module)->DEV0CFG_b.WRITELATENCY0    = pDevConfig->ui8WriteLatency;
+            MSPIn(ui32Module)->DEV0XIP_b.XIPWRITELATENCY0 = pDevConfig->ui8WriteLatency;
+            MSPIn(ui32Module)->DEV0CFG_b.TURNAROUND0      = pDevConfig->ui8TurnAround;
+            MSPIn(ui32Module)->DEV0XIP_b.XIPTURNAROUND0   = pDevConfig->ui8TurnAround;
+        }
+        break;
         default:
             return AM_HAL_STATUS_INVALID_ARG;
     }
