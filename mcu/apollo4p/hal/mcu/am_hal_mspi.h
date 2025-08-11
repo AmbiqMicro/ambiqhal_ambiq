@@ -436,7 +436,7 @@ typedef enum
     // Pass am_hal_mspi_rxcfg_t * as pConfig
     AM_HAL_MSPI_REQ_RXCFG,
     // Pass am_hal_mspi_timimg_scan_t * as pConfig
-    AM_HAL_MSPI_REQ_TIMING_SCAN,
+    AM_HAL_MSPI_REQ_TIMING_SCAN_SET,
     // Pass am_hal_mspi_timimg_scan_t * as pConfig
     AM_HAL_MSPI_REQ_TIMING_SCAN_GET,
     // pConfig am_hal_mspi_xip_config_t *
@@ -487,9 +487,14 @@ typedef enum
     AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_DIS,
     // Enable send flash row address
     AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_EN,
-
+    // Set scrambling config
+    AM_HAL_MSPI_REQ_SCRAMBLE_CONFIG,
+    // Set write latency and turnaround
+    AM_HAL_MSPI_REQ_SET_DATA_LATENCY,
     AM_HAL_MSPI_REQ_MAX
 } am_hal_mspi_request_e;
+
+#define AM_HAL_MSPI_REQ_TIMING_SCAN AM_HAL_MSPI_REQ_TIMING_SCAN_SET
 
 //
 //! MSPI Boundary Size
@@ -1037,4 +1042,3 @@ extern uint32_t am_hal_mspi_highprio_transfer(void *pHandle,
 //! @}
 //
 //*****************************************************************************
-
