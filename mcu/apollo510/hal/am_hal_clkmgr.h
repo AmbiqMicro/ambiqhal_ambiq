@@ -5,7 +5,7 @@
 //! @brief Clock manager functions that manage system clocks and minimize
 //!        power consumption by powering down clocks when possible.
 //!
-//! @addtogroup clkmgr5b CLKMGR - Clock Manager
+//! @addtogroup clkmgr_ap510 CLKMGR - Clock Manager
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -42,7 +42,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CLKMGR_H
@@ -173,6 +173,26 @@ typedef enum
     AM_HAL_CLKMGR_XTAL_LS_MODE_EXT,
 } am_hal_clkmgr_xtalls_mode_e;
 
+// ****************************************************************************
+//!
+//! @enum am_hal_clkmgr_control_e
+//! @brief Clock manager control function request types for
+//!        am_hal_clkmgr_control().
+//!
+//! AM_HAL_CLKMGR_DISABLE_HFADJ_ON_FULL_RELEASE:
+//!     - Configuration to disable HFADJ on full release (No more active users
+//!       for the HFRC clock).
+//!     - pArgs must a pointer to boolean variable.
+//!         - When set to `true`, HFADJ will be disabled on full released.
+//!         - When set to `false`, HFADJ will be maintained on full released
+//!           (Default behavior)
+//!
+// ****************************************************************************
+typedef enum
+{
+    AM_HAL_CLKMGR_DISABLE_HFADJ_ON_FULL_RELEASE,
+} am_hal_clkmgr_control_e;
+
 //
 //! HFRC clock supported clock rates
 //
@@ -212,6 +232,7 @@ typedef struct
     am_hal_clkmgr_board_info_xtalhs_t   sXtalHs;
     am_hal_clkmgr_board_info_xtalls_t   sXtalLs;
     uint32_t                            ui32ExtRefClkFreq;
+    bool                                bIsSipEnabled;
 } am_hal_clkmgr_board_info_t;
 
 //
@@ -354,6 +375,21 @@ extern uint32_t am_hal_clkmgr_board_info_set(am_hal_clkmgr_board_info_t *psBoard
 //
 //*****************************************************************************
 extern uint32_t am_hal_clkmgr_board_info_get(am_hal_clkmgr_board_info_t *psClkMgrCfg);
+
+//*****************************************************************************
+//
+//! @brief Apply various specific commands/controls on the CLKMGR module.
+//!
+//! @param eControl - One of the following:
+//! @parblock
+//!     - AM_HAL_CLKMGR_DISABLE_HFADJ_ON_FULL_RELEASE
+//! @endparblock
+//! @param pArgs - Pointer to Args
+//!
+//! @return status - Status for the operation, as defined in am_hal_status_e
+//
+//*****************************************************************************
+extern uint32_t am_hal_clkmgr_control(am_hal_clkmgr_control_e eControl, void *pArgs);
 
 #ifdef __cplusplus
 }

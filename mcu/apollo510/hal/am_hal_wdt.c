@@ -4,10 +4,45 @@
 //!
 //! @brief Watchdog Timer
 //!
-//! @addtogroup wdt WDT - Watchdog Timer Functionality
+//! @addtogroup wdt_ap510 WDT - Watchdog Timer Functionality
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides watchdog timer functionality for Apollo5
+//! devices, supporting system monitoring, fault detection, and automatic
+//! recovery mechanisms. It enables reliable system operation through
+//! configurable timeout periods, interrupt generation, and reset capabilities.
+//!
+//! @section hal_wdt_features Key Features
+//!
+//! 1. @b System @b Reset: Automatic system reset on timer expiration.
+//! 2. @b Interrupt @b Support: Configurable interrupt generation before reset.
+//! 3. @b Flexible @b Timing: Multiple clock sources and timing configurations.
+//! 4. @b Lock @b Protection: Optional configuration locking for security.
+//! 5. @b Status @b Monitoring: Real-time timer status and value reading.
+//!
+//! @section hal_wdt_functionality Functionality
+//!
+//! - Configure watchdog timer parameters and clock sources
+//! - Start, stop, and restart watchdog operations
+//! - Handle watchdog interrupts and status monitoring
+//! - Support for configuration locking and protection
+//! - Read timer values and monitor system health
+//!
+//! @section hal_wdt_usage Usage
+//!
+//! 1. Configure the watchdog using am_hal_wdt_config()
+//! 2. Start the watchdog with am_hal_wdt_start()
+//! 3. Service the watchdog periodically to prevent reset
+//! 4. Handle watchdog interrupts if enabled
+//! 5. Monitor watchdog status as needed
+//!
+//! @section hal_wdt_configuration Configuration
+//!
+//! - @b Clock @b Sources: Select from LFRC-based clock options
+//! - @b Timing @b Values: Configure interrupt and reset timing
+//! - @b Interrupts: Enable/disable watchdog interrupts
+//! - @b Reset @b Control: Enable/disable system reset on timeout
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

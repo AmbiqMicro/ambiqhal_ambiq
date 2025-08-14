@@ -2,14 +2,53 @@
 //
 //! @file am_util_delay.c
 //!
-//! @brief A few useful delay functions.
+//! @brief Delay Utility Functions
 //!
-//! Functions for fixed delays.
-//!
-//! @addtogroup delay Delay Functionality
+//! @addtogroup delay_utils Delay Utility Functions
 //! @ingroup utils
 //! @{
-//
+//!
+//! Purpose: This module provides delay utility functions for timing control
+//!          across Ambiq Micro devices. It enables accurate software delays,
+//!          cycle counting, and timing operations for embedded applications
+//!          requiring precise timing control. The utilities support both
+//!          microsecond and millisecond delays with calibration options.
+//!
+//! @section delay_features Key Features
+//!
+//! 1. @b Cycle @b Delays: Precise cycle-based timing control.
+//! 2. @b Millisecond @b Delays: High-level millisecond delay functions.
+//! 3. @b Microsecond @b Delays: Precise microsecond timing operations.
+//! 4. @b Frequency @b Adaptive: Automatic timing adjustment based on system clock.
+//! 5. @b Device @b Specific: Optimized implementations for different Apollo families.
+//! 6. @b Power @b Efficient: Low-power delay operations for battery applications.
+//!
+//! @section delay_functionality Functionality
+//!
+//! - Provide cycle-based delay functions for precise timing
+//! - Support millisecond and microsecond delay operations
+//! - Adapt timing based on system clock frequency
+//! - Optimize delays for different Apollo device families
+//! - Enable power-efficient timing operations
+//! - Support hardware-specific delay implementations
+//! - Provide consistent timing across device variations
+//! - Handle clock frequency variations automatically
+//!
+//! @section delay_usage Usage
+//!
+//! 1. Use am_util_delay_cycles() for precise cycle-based delays
+//! 2. Call am_util_delay_ms() for millisecond timing
+//! 3. Use am_util_delay_us() for microsecond precision
+//! 4. System automatically adapts to device clock frequency
+//! 5. No manual configuration required for different devices
+//!
+//! @section delay_configuration Configuration
+//!
+//! - @b Device @b Support: Apollo3, Apollo4, Apollo5 family compatibility
+//! - @b Clock @b Detection: Automatic system clock frequency detection
+//! - @b Hardware @b Optimization: Device-specific delay implementations
+//! - @b Power @b Management: Low-power delay operations
+//! - @b Timing @b Precision: Cycle-accurate timing control
 //*****************************************************************************
 
 //*****************************************************************************
@@ -43,7 +82,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

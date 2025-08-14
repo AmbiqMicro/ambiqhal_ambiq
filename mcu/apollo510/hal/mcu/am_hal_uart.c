@@ -4,9 +4,45 @@
 //!
 //! @brief Hardware abstraction for the UART
 //!
-//! @addtogroup uart UART Functionality
+//! @addtogroup uart_ap510 UART Functionality
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides comprehensive UART (Universal Asynchronous
+//!          Receiver/Transmitter) hardware abstraction for Apollo5 devices.
+//!          It supports UART configuration, data transfer, interrupt handling,
+//!          and DMA operations for serial communication applications.
+//!
+//! @section hal_uart_features Key Features
+//!
+//! 1. @b UART @b Configuration: Flexible baud rate and parameter configuration.
+//! 2. @b Data @b Transfer: Support for blocking and non-blocking data transfer.
+//! 3. @b DMA @b Support: High-speed DMA-based data transfer operations.
+//! 4. @b Interrupt @b Handling: Comprehensive interrupt management for UART events.
+//! 5. @b FIFO @b Management: Advanced FIFO handling and buffer management.
+//!
+//! @section hal_uart_functionality Functionality
+//!
+//! - Initialize and configure UART peripheral
+//! - Handle data transfer operations (blocking/non-blocking)
+//! - Support DMA-based high-speed transfers
+//! - Manage FIFO buffers and data flow
+//! - Handle UART interrupts and status monitoring
+//!
+//! @section hal_uart_usage Usage
+//!
+//! 1. Initialize UART using am_hal_uart_initialize()
+//! 2. Configure UART parameters and baud rate
+//! 3. Set up DMA or interrupt handling as needed
+//! 4. Perform data transfer operations
+//! 5. Handle UART events and status monitoring
+//!
+//! @section hal_uart_configuration Configuration
+//!
+//! - @b Baud @b Rate: Configure UART baud rate and timing
+//! - @b Data @b Format: Set up data bits, parity, and stop bits
+//! - @b DMA @b Settings: Configure DMA transfer parameters
+//! - @b Interrupts: Set up interrupt sources and handlers
 //
 //*****************************************************************************
 
@@ -29,9 +65,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -44,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -70,7 +103,8 @@
 //! UART FIFO Size
 //
 //*****************************************************************************
-#define AM_HAL_UART_FIFO_MAX 32
+#define AM_HAL_UART_FIFO_MAX               32
+#define AM_HAL_MAX_UART_DMA_SIZE           4095
 
 //*****************************************************************************
 //
@@ -146,14 +180,16 @@ typedef struct
     //
     uint32_t ui32BaudRate;
 
+
+    am_hal_queue_t sTxQueue;
+    am_hal_queue_t sRxQueue;
+
+
     am_hal_uart_transfer_t sActiveRead;
     volatile uint32_t ui32BytesRead;
 
     am_hal_uart_transfer_t sActiveWrite;
     volatile uint32_t ui32BytesWritten;
-
-    am_hal_queue_t sTxQueue;
-    am_hal_queue_t sRxQueue;
 
     //
     //! Queued write/read implementation
@@ -178,6 +214,11 @@ typedef struct
     //
     am_hal_clkmgr_clock_id_e eClkSrc;
 
+    //
+    //! UART Dma mode
+    //
+
+    //am_hal_uart_streaming_dma_mode_e eStreamingDmaMode;
 
     bool bCurrentlyWriting;
 
@@ -189,7 +230,7 @@ typedef struct
     //
     //! DMA transaction in progress.
     //
-    bool                bDMABusy;
+    volatile bool                bDMABusy;
 }
 am_hal_uart_state_t;
 
@@ -201,32 +242,94 @@ am_hal_uart_state_t g_am_hal_uart_states[AM_REG_UART_NUM_MODULES];
 // Static function prototypes.
 //
 //*****************************************************************************
-static uint32_t config_baudrate(uint32_t ui32Module,
-                                uint32_t ui32DesiredBaudrate,
-                                uint32_t *pui32ActualBaud);
 
+//*****************************************************************************
+//
+//! @brief Perform blocking write operation.
+//!
+//! @param pHandle - UART handle.
+//! @param psTransfer - Pointer to transfer configuration.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t blocking_write(void *pHandle,
                                const am_hal_uart_transfer_t *psTransfer);
 
+//*****************************************************************************
+//
+//! @brief Perform blocking read operation.
+//!
+//! @param pHandle - UART handle.
+//! @param psTransfer - Pointer to transfer configuration.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t blocking_read(void *pHandle,
                               const am_hal_uart_transfer_t *psTransfer);
 
+//*****************************************************************************
+//
+//! @brief Perform non-blocking write operation.
+//!
+//! @param pHandle - UART handle.
+//! @param psTransfer - Pointer to transfer configuration.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t nonblocking_write(void *pHandle,
                                   const am_hal_uart_transfer_t *psTransfer);
 
+//*****************************************************************************
+//
+//! @brief Perform non-blocking read operation.
+//!
+//! @param pHandle - UART handle.
+//! @param psTransfer - Pointer to transfer configuration.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t nonblocking_read(void *pHandle,
                                  const am_hal_uart_transfer_t *psTransfer);
 
+//*****************************************************************************
+//
+//! @brief Non-blocking write state machine.
+//!
+//! @param pHandle - UART handle.
+//!
+//*****************************************************************************
 static void nonblocking_write_sm(void *pHandle);
+
+//*****************************************************************************
+//
+//! @brief Non-blocking read state machine.
+//!
+//! @param pHandle - UART handle.
+//!
+//*****************************************************************************
 static void nonblocking_read_sm(void *pHandle);
+
+//*****************************************************************************
+//
+//! @brief Transfer data from TX queue to TX FIFO.
+//!
+//! @param pHandle - UART handle.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t tx_queue_update(void *pHandle);
-static uint32_t rx_queue_update(void *pHandle);
 
 //*****************************************************************************
 //
 // Initialize the UART
 //
 //*****************************************************************************
+
 uint32_t
 am_hal_uart_initialize(uint32_t ui32Module, void **ppHandle)
 {
@@ -820,8 +923,14 @@ am_hal_uart_buffer_configure(void *pHandle, uint8_t *pui8TxBuffer,
 
 //*****************************************************************************
 //
-// Set Baud Rate based on the UART clock frequency.
-//
+//! @brief Configure UART baud rate based on clock frequency.
+//!
+//! @param ui32Module - UART module number.
+//! @param ui32DesiredBaudrate - Desired baud rate.
+//! @param pui32ActualBaud - Pointer to store actual baud rate.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 #define BAUDCLK     (16) // Number of UART clocks needed per bit.
 static uint32_t
@@ -1532,7 +1641,7 @@ am_hal_uart_transfer(void *pHandle,
 // Note: When returning from blocking_write, the Tx data is still in UART queues
 //   (software or hardware queues).
 //*****************************************************************************
-uint32_t
+static uint32_t
 blocking_write(void *pHandle, const am_hal_uart_transfer_t *psTransfer)
 {
     uint32_t ui32Status;
@@ -1574,7 +1683,7 @@ blocking_write(void *pHandle, const am_hal_uart_transfer_t *psTransfer)
 // Blocking UART read.
 //
 //*****************************************************************************
-uint32_t
+static uint32_t
 blocking_read(void *pHandle, const am_hal_uart_transfer_t *psTransfer)
 {
     uint32_t ui32Status;
@@ -1647,7 +1756,7 @@ blocking_read(void *pHandle, const am_hal_uart_transfer_t *psTransfer)
 // Note: The transmit data is always written to the software queue first
 // because old data may be already in the software queue.
 //*****************************************************************************
-uint32_t
+static uint32_t
 nonblocking_write(void *pHandle, const am_hal_uart_transfer_t *psTransfer)
 {
     uint32_t ui32ErrorStatus;
@@ -1682,7 +1791,7 @@ nonblocking_write(void *pHandle, const am_hal_uart_transfer_t *psTransfer)
 // Non-blocking UART read.
 //
 //*****************************************************************************
-uint32_t
+static uint32_t
 nonblocking_read(void *pHandle, const am_hal_uart_transfer_t *psTransfer)
 {
     uint32_t ui32ErrorStatus = AM_HAL_STATUS_SUCCESS;
@@ -1726,7 +1835,7 @@ nonblocking_read(void *pHandle, const am_hal_uart_transfer_t *psTransfer)
 // appropriate callback if the active transaction is completed.
 //
 //*****************************************************************************
-void
+static void
 nonblocking_write_sm(void *pHandle)
 {
     am_hal_uart_state_t *pState = (am_hal_uart_state_t *) pHandle;
@@ -1873,7 +1982,7 @@ nonblocking_write_sm(void *pHandle)
 // appropriate callback if the active transaction is completed.
 //
 //*****************************************************************************
-void
+static void
 nonblocking_read_sm(void *pHandle)
 {
     am_hal_uart_state_t *pState = (am_hal_uart_state_t *) pHandle;
@@ -1995,62 +2104,82 @@ nonblocking_read_sm(void *pHandle)
 //*****************************************************************************
 //
 // Wait for all of the traffic in the TX pipeline to be sent.
+// This function does not block forever
+// returns timeout error, if it detects a timeout
 //
 //*****************************************************************************
 uint32_t
 am_hal_uart_tx_flush(void *pHandle)
 {
+    uint32_t ui32RetStat = AM_HAL_STATUS_SUCCESS;
     am_hal_uart_state_t *pState = (am_hal_uart_state_t *) pHandle;
     uint32_t ui32Module = pState->ui32Module;
 
     //
-    // If our state variable says we're done, we're done.
+    // Ultimately need to wait for tx busy to complete
+    // First, wait for tx queue to empty, (the isr or dma should be emptying it into the fifo)
     //
-    if (pState->bLastTxComplete == true)
-    {
-        return AM_HAL_STATUS_SUCCESS;
-    }
+    am_hal_queue_t *pTxQ = &pState->sTxQueue;
 
     //
-    // If our state variable doesn't say we're done, we need to check to make
-    // sure this program is actually capable of using the state variable.
-    // Checking the interrupt enable bit isn't a perfect test, but it will give
-    // us a reasonable guess about whether the bLastTxComplete flag might be
-    // updated in the future.
+    // find the remaining queue size and double the max wait time,
+    // allowing for ISR and other unexpected delays
     //
-    if (UARTn(ui32Module)->IER & AM_HAL_UART_INT_TXCMP)
+    int32_t i32NumLeftInQueue = (int32_t) (pTxQ->ui32Length * 2);
+    if (i32NumLeftInQueue)
     {
-        while(pState->bLastTxComplete == false)
+        while (pTxQ->ui32Length)
         {
-            ONE_BYTE_DELAY(pState);
-        }
-    }
-    else
-    {
-        //
-        // If we don't know the UART status by now, the best we can do is check
-        // to see if the queue is empty, or it the busy bit is still set.
-        //
-        // If we have a TX queue, we should wait for it to empty.
-        //
-        if (pState->bEnableTxQueue)
-        {
-            while (am_hal_queue_data_left(&(pState->sTxQueue)))
+            if ( --i32NumLeftInQueue <= 0)
             {
-                ONE_BYTE_DELAY(pState);
+                ui32RetStat = AM_HAL_STATUS_TIMEOUT;
+                break;
             }
-        }
-
-        //
-        // Wait for the TX busy bit to go low.
-        //
-        while ( UARTn(ui32Module)->FR_b.BUSY )
-        {
             ONE_BYTE_DELAY(pState);
         }
     }
 
-    return AM_HAL_STATUS_SUCCESS;
+    //
+    // now if there is DMA running, wait for that
+    //
+
+    if (pState->bDMABusy)
+    {
+        //
+        // pad a little extra time to allow for unexpected delays
+        //
+        int32_t maxDmaSize = (AM_HAL_MAX_UART_DMA_SIZE + AM_HAL_MAX_UART_DMA_SIZE / 4);
+        while (pState->bDMABusy)
+        {
+            if ( --maxDmaSize <= 0)
+            {
+                ui32RetStat = AM_HAL_STATUS_TIMEOUT;
+                break;
+            }
+            ONE_BYTE_DELAY(pState);
+        }
+    }
+
+
+    //
+    // Now wait for fifo to empty.
+    // Use generous doubled max fifo size to allow for unexpected delays
+    // Waiting the full time is a timeout error.
+    //
+    int32_t i32GenerousFifoSize = AM_HAL_UART_FIFO_MAX * 2;
+
+    while ( UARTn(ui32Module)->FR_b.BUSY )
+    {
+        if ( --i32GenerousFifoSize <= 0 )
+        {
+            ui32RetStat = AM_HAL_STATUS_TIMEOUT;
+            break;
+        }
+        ONE_BYTE_DELAY(pState);
+    }
+
+    return ui32RetStat;
+
 }
 
 //*****************************************************************************
@@ -2204,7 +2333,7 @@ am_hal_uart_interrupt_status_get(void *pHandle, uint32_t *pui32Status,
 
 //*****************************************************************************
 //
-// Read interrupt status.
+// UART Interrupt Service Routine
 //
 //*****************************************************************************
 uint32_t

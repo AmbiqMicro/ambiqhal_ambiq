@@ -4,11 +4,46 @@
 //!
 //! @brief Functions for interfacing with the CLKGEN.
 //!
-//! @addtogroup clkgen4 CLKGEN - Clock Generator
+//! @addtogroup clkgen4_ap510 CLKGEN - Clock Generator
 //! @ingroup apollo510_hal
 //! @{
-//
-// ****************************************************************************
+//!
+//! Purpose: This module provides functions for interfacing with the Clock
+//!          Generator (CLKGEN) on Apollo5 devices. It supports clock source
+//!          control, frequency adjustment, clock output configuration, and
+//!          interrupt handling for flexible clock generation and management.
+//!
+//! @section hal_clkgen_features Key Features
+//!
+//! 1. @b Clock @b Source @b Control: Manage various clock sources and frequencies.
+//! 2. @b Frequency @b Adjustment: HFRC and HFRC2 frequency adjustment capabilities.
+//! 3. @b Clock @b Output: Configurable clock output generation.
+//! 4. @b Interrupt @b Support: Interrupt handling for clock events.
+//! 5. @b Power @b Management: Clock power control and management.
+//!
+//! @section hal_clkgen_functionality Functionality
+//!
+//! - Control clock sources and frequency generation
+//! - Adjust HFRC and HFRC2 frequencies
+//! - Configure clock output parameters
+//! - Handle clock interrupts and status monitoring
+//! - Manage clock power states
+//!
+//! @section hal_clkgen_usage Usage
+//!
+//! 1. Control clock sources using am_hal_clkgen_control()
+//! 2. Adjust frequencies with am_hal_clkgen_hfrcadj_target_calculate()
+//! 3. Configure clock outputs as needed
+//! 4. Handle clock interrupts and status
+//! 5. Manage clock power states
+//!
+//! @section hal_clkgen_configuration Configuration
+//!
+//! - @b Clock @b Sources: Configure HFRC, HFRC2, and other clock sources
+//! - @b Frequency @b Adjustment: Set up frequency adjustment parameters
+//! - @b Clock @b Output: Configure clock output generation
+//! - @b Interrupts: Set up interrupt sources and handlers
+//*****************************************************************************
 
 // ****************************************************************************
 //
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -262,6 +297,15 @@ am_hal_clkgen_status_get(am_hal_clkgen_status_t *psStatus)
 
 } // am_hal_clkgen_status_get()
 
+//*****************************************************************************
+//
+//! @brief Get clock manager clock ID for clock generator clock selection.
+//!
+//! @param clk - Clock generator clock selection value.
+//!
+//! @return Returns the corresponding clock manager clock ID.
+//!
+//*****************************************************************************
 static am_hal_clkmgr_clock_id_e
 am_hal_clkgen_clksrc_get(uint32_t clk)
 {
@@ -430,7 +474,8 @@ am_hal_clkgen_hfrcadj_target_calculate(uint32_t ui32RefFreq, uint32_t ui32Target
 //  Application/BSP.
 //
 // ****************************************************************************
-uint32_t am_hal_clkgen_private_hfrc_force_on(bool bForceOn)
+uint32_t
+am_hal_clkgen_private_hfrc_force_on(bool bForceOn)
 {
     CLKGEN->MISC_b.FRCHFRC = bForceOn ? CLKGEN_MISC_FRCHFRC_FRC: CLKGEN_MISC_FRCHFRC_NOFRC;
     return AM_HAL_STATUS_SUCCESS;
@@ -444,7 +489,8 @@ uint32_t am_hal_clkgen_private_hfrc_force_on(bool bForceOn)
 //  Application/BSP.
 //
 // ****************************************************************************
-uint32_t am_hal_clkgen_private_hfadj_apply(uint32_t ui32RegVal)
+uint32_t
+am_hal_clkgen_private_hfadj_apply(uint32_t ui32RegVal)
 {
     //
     // Make sure the ENABLE bit is set, and set config into register
@@ -462,7 +508,8 @@ uint32_t am_hal_clkgen_private_hfadj_apply(uint32_t ui32RegVal)
 //  Application/BSP.
 //
 // ****************************************************************************
-uint32_t am_hal_clkgen_private_hfadj_disable()
+uint32_t
+am_hal_clkgen_private_hfadj_disable()
 {
     CLKGEN->HFADJ_b.HFADJEN = CLKGEN_HFADJ_HFADJEN_DIS;
     return AM_HAL_STATUS_SUCCESS;
@@ -477,7 +524,8 @@ uint32_t am_hal_clkgen_private_hfadj_disable()
 //  Application/BSP.
 //
 // ****************************************************************************
-uint32_t am_hal_clkgen_private_hfrc2_force_on(bool bForceOn)
+uint32_t
+am_hal_clkgen_private_hfrc2_force_on(bool bForceOn)
 {
     if (bForceOn)
     {
@@ -508,7 +556,8 @@ uint32_t am_hal_clkgen_private_hfrc2_force_on(bool bForceOn)
 //  Application/BSP.
 //
 // ****************************************************************************
-uint32_t am_hal_clkgen_private_hf2adj_apply(am_hal_clkgen_hfrc2adj_t* psHFRC2Adj)
+uint32_t
+am_hal_clkgen_private_hf2adj_apply(am_hal_clkgen_hfrc2adj_t* psHFRC2Adj)
 {
     //
     // Check pointer validity
@@ -538,7 +587,8 @@ uint32_t am_hal_clkgen_private_hf2adj_apply(am_hal_clkgen_hfrc2adj_t* psHFRC2Adj
 //  Application/BSP.
 //
 // ****************************************************************************
-uint32_t am_hal_clkgen_private_hf2adj_disable()
+uint32_t
+am_hal_clkgen_private_hf2adj_disable()
 {
     CLKGEN->HF2ADJ0_b.HF2ADJEN = CLKGEN_HF2ADJ0_HF2ADJEN_DIS;
     return AM_HAL_STATUS_SUCCESS;

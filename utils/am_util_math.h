@@ -2,11 +2,9 @@
 //
 //! @file am_util_math.h
 //!
-//! @brief A few useful math functions.
+//! @brief Mathematical Utility Functions
 //!
-//! Functions for performing some number manipulation.
-//!
-//! @addtogroup math Math Functions
+//! @addtogroup math_utils Math Utility Functions
 //! @ingroup utils
 //! @{
 //
@@ -43,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_MATH_H

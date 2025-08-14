@@ -2,9 +2,9 @@
 //
 //! @file am_hal_timer.h
 //!
-//! @brief
+//! @brief Functions for interfacing with the timer (TIMER).
 //!
-//! @addtogroup timer Timer Functionality
+//! @addtogroup timer_ap510 Timer Functionality
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_TIMER_H
@@ -133,7 +133,7 @@ typedef enum
     AM_HAL_TIMER_CLOCK_TMR13_OUT0   = TIMER_CTRL0_TMR0CLK_TMR130,
     AM_HAL_TIMER_CLOCK_TMR13_OUT1   = TIMER_CTRL0_TMR0CLK_TMR131,
     AM_HAL_TIMER_CLOCK_TMR14_OUT0   = TIMER_CTRL0_TMR0CLK_TMR140,
-    AM_HAL_TIMER_CLOCK_TMR14_OUT1   = TIMER_CTRL0_TMR0CLK_TMR140,
+    AM_HAL_TIMER_CLOCK_TMR14_OUT1   = TIMER_CTRL0_TMR0CLK_TMR141,
     AM_HAL_TIMER_CLOCK_TMR15_OUT0   = TIMER_CTRL0_TMR0CLK_TMR150,
     AM_HAL_TIMER_CLOCK_TMR15_OUT1   = TIMER_CTRL0_TMR0CLK_TMR151,
     AM_HAL_TIMER_CLOCK_GPIO0        = TIMER_CTRL0_TMR0CLK_GPIO0,
@@ -804,16 +804,13 @@ am_hal_timer_config_t;
 
 //*****************************************************************************
 //
-//! @brief Configure a TIMER
+//! @brief Configure a timer with the specified parameters.
 //!
-//! @param ui32TimerNumber refers to one of the numbered TIMERs in the module.
-//! @param psTimerConfig is a structure describing a timer configuration.
+//! @param ui32TimerNumber - Timer number to configure.
+//! @param psTimerConfig - Pointer to timer configuration structure.
 //!
-//! Use this function to set important qualities about a TIMER, such as its
-//! clock, compare values, and output pin configuration.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//! @return Standard HAL status code.
-//
 //*****************************************************************************
 extern uint32_t am_hal_timer_config(uint32_t ui32TimerNumber,
                                     am_hal_timer_config_t *psTimerConfig);

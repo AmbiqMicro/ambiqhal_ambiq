@@ -2,13 +2,9 @@
 //
 //! @file am_util_ble.h
 //!
-//! @brief Useful BLE functions not covered by the HAL.
+//! @brief Utility functions for the BLE module.
 //!
-//! This file contains functions for interacting with the BLE hardware
-//! that are not already covered by the HAL. Most of these commands either
-//! adjust RF settings or facilitate RF testing operations.
-//!
-//! @addtogroup ble BLE Utility
+//! @addtogroup ble_utils BLE Utility Functions
 //! @ingroup utils
 //! @{
 //
@@ -45,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

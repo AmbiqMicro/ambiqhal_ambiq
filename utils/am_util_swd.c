@@ -2,14 +2,53 @@
 //
 //! @file am_util_swd.c
 //!
-//! @brief Bit-bang SWD utility.
+//! @brief Serial Wire Debug Utility Functions
 //!
-//! This file provides the interface for bit-bang SWD functions.
-//!
-//! @addtogroup swd SWD Utility
+//! @addtogroup swd_utils SWD Utility Functions
 //! @ingroup utils
 //! @{
-//
+//!
+//! Purpose: This module provides Serial Wire Debug utilities for
+//!          Ambiq Micro devices. It enables debug interface configuration,
+//!          communication, and control for development and debugging
+//!          applications. The utilities support SWD protocol operations
+//!          and debug access port management.
+//!
+//! @section swd_features Key Features
+//!
+//! 1. @b Bit-Bang @b Communication: Direct GPIO control for SWD protocol.
+//! 2. @b Memory @b Access: Read/write operations to target device memory.
+//! 3. @b Register @b Access: Core register read/write capabilities.
+//! 4. @b Debug @b Control: Halt, run, and status monitoring functions.
+//! 5. @b Error @b Handling: Comprehensive error detection and recovery.
+//! 6. @b Connection @b Management: SWD connection establishment and maintenance.
+//!
+//! @section swd_functionality Functionality
+//!
+//! - Initialize and configure SWD communication interface
+//! - Establish connection with target device
+//! - Perform memory read/write operations (8-bit and 32-bit)
+//! - Access core registers for debugging
+//! - Control target execution (halt, run, status check)
+//! - Handle SWD protocol timing and signal management
+//! - Provide error detection and recovery mechanisms
+//! - Support multiple Apollo device families
+//!
+//! @section swd_usage Usage
+//!
+//! 1. Initialize SWD interface using am_util_swd_initialize()
+//! 2. Connect to target device with am_util_swd_connect()
+//! 3. Perform debug operations (halt, run, memory access)
+//! 4. Access registers using am_util_swd_reg_read/write()
+//! 5. Read/write memory using am_util_swd_mem_read/write()
+//!
+//! @section swd_configuration Configuration
+//!
+//! - @b SWD @b Pins: Configurable SWDIO and SWCLK pin assignments
+//! - @b Device @b Support: Apollo3, Apollo4, Apollo5 family compatibility
+//! - @b Memory @b Pools: Configurable buffer sizes for data transfer
+//! - @b Error @b Handling: Optional halt-on-error functionality
+//! - @b Timing @b Control: Adjustable clock delays for signal integrity
 //*****************************************************************************
 
 //*****************************************************************************
@@ -43,7 +82,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for interfacing with the IO Slave module
 //!
-//! @addtogroup ios4 IOS - IO Slave (SPI/I2C)
+//! @addtogroup ios4_ap510 IOS - IO Slave (SPI/I2C)
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//!          the IO Slave (IOS) module on Apollo5 devices. It supports SPI and
+//!          I2C slave communication, DMA transfers, FIFO management, and
+//!          interrupt handling for flexible serial slave operations.
+//!
+//! @section hal_ios_features Key Features
+//!
+//! 1. @b SPI/I2C @b Slave: Support for SPI and I2C slave modes.
+//! 2. @b DMA @b Transfer: High-speed DMA-based data transfer operations.
+//! 3. @b FIFO @b Management: Advanced FIFO buffer management.
+//! 4. @b Interrupt @b Handling: Comprehensive interrupt management for IOS events.
+//! 5. @b Power @b Management: Power control and save/restore functionality.
+//!
+//! @section hal_ios_functionality Functionality
+//!
+//! - Initialize and configure IOS peripheral
+//! - Handle SPI and I2C slave data transfer operations
+//! - Support DMA-based high-speed transfers
+//! - Manage FIFO buffers and data flow
+//! - Handle IOS interrupts and status monitoring
+//!
+//! @section hal_ios_usage Usage
+//!
+//! 1. Initialize IOS using am_hal_ios_initialize()
+//! 2. Configure IOS parameters and device settings
+//! 3. Set up DMA or FIFO operations
+//! 4. Perform data transfer operations
+//! 5. Handle IOS interrupts and status monitoring
+//!
+//! @section hal_ios_configuration Configuration
+//!
+//! - @b Interface @b Mode: Configure SPI or I2C slave mode
+//! - @b FIFO @b Settings: Set up FIFO buffer parameters
+//! - @b DMA @b Parameters: Configure DMA transfer settings
+//! - @b Interrupts: Set up interrupt sources and handlers
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -153,9 +188,10 @@ am_hal_ios_state_t g_IOShandles[AM_REG_IOSLAVE_NUM_MODULES + AM_REG_IOSLAVEFD_NU
 // IOS power control function
 //
 //*****************************************************************************
-uint32_t am_hal_ios_power_ctrl(void *pHandle,
-                               am_hal_sysctrl_power_state_e ePowerState,
-                               bool bRetainState)
+uint32_t
+am_hal_ios_power_ctrl(void *pHandle,
+                      am_hal_sysctrl_power_state_e ePowerState,
+                      bool bRetainState)
 {
     am_hal_ios_state_t *pIOSState = (am_hal_ios_state_t*)pHandle;
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
@@ -181,7 +217,14 @@ uint32_t am_hal_ios_power_ctrl(void *pHandle,
             //
             // Enable power control.
             //
-            am_hal_pwrctrl_periph_enable((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_IOS0 + pIOSState->ui32Module));
+            if (pIOSState->ui32Module == 0)
+            {
+                am_hal_pwrctrl_periph_enable((am_hal_pwrctrl_periph_e)AM_HAL_PWRCTRL_PERIPH_IOS0);
+            }
+            else
+            {
+                am_hal_pwrctrl_periph_enable((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_IOSFD0 + pIOSState->ui32Module - 1));
+            }
 
             if (bRetainState)
             {
@@ -225,7 +268,14 @@ uint32_t am_hal_ios_power_ctrl(void *pHandle,
             //
             // Disable power control.
             //
-            am_hal_pwrctrl_periph_disable((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_IOS0 + pIOSState->ui32Module));
+            if (pIOSState->ui32Module == 0)
+            {
+                am_hal_pwrctrl_periph_disable((am_hal_pwrctrl_periph_e)AM_HAL_PWRCTRL_PERIPH_IOS0);
+            }
+            else
+            {
+                am_hal_pwrctrl_periph_disable((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_IOSFD0 + pIOSState->ui32Module - 1));
+            }
 
             //
             // IOS clock release
@@ -250,15 +300,11 @@ uint32_t am_hal_ios_power_ctrl(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief IOS DMA configuration function
+//! @brief Configure DMA for IOS transfer.
 //!
-//! @param pHandle    - handle for the ios instance.
-//! @param pTransferCfg - pointer to the configuration structure.
+//! @param pHandle - IOS handle.
+//! @param pTransferCfg - Pointer to transfer configuration.
 //!
-//! This function configures the IOS DMA for operation.
-//!
-//! @return status    - generic or interface specific status.
-//
 //*****************************************************************************
 static void am_hal_ios_dma_configure(void *pHandle, am_hal_ios_transfer_t *pTransferCfg)
 {
@@ -301,7 +347,9 @@ static void am_hal_ios_dma_configure(void *pHandle, am_hal_ios_transfer_t *pTran
         IOSLAVEn(ui32Module)->DMACFG =
             (_VAL2FLD(IOSLAVE_DMACFG_DMAQUAD,   IOSLAVE_DMACFG_DMAQUAD_QUAD)                    |
              _VAL2FLD(IOSLAVE_DMACFG_DMAPRI,    pTransferCfg->ui8Priority)                      |
-             _VAL2FLD(IOSLAVE_DMACFG_DMADIR,    ui32Dir) );
+             _VAL2FLD(IOSLAVE_DMACFG_DMADIR,    ui32Dir)                                        |
+             _VAL2FLD(IOSLAVE_DMACFG_FRCDMA,    IOSLAVE_DMACFG_FRCDMA_NOFORCE)                  |
+             _VAL2FLD(IOSLAVE_DMACFG_PADBYTEEN, IOSLAVE_DMACFG_PADBYTEEN_DIS) );
     }
     // Full duplex
     else
@@ -351,15 +399,11 @@ static void am_hal_ios_dma_configure(void *pHandle, am_hal_ios_transfer_t *pTran
 
 //*****************************************************************************
 //
-//! @brief IOS DMA nonblocking transfer start function
+//! @brief Start DMA transfer for IOS.
 //!
-//! @param pHandle    - handle for the ios instance.
-//! @param pTransferCfg - pointer to the configuration structure.
+//! @param pHandle - IOS handle.
+//! @param pTransferCfg - Pointer to transfer configuration.
 //!
-//! This function enables IOS DMA.
-//!
-//! @return N/A.
-//
 //*****************************************************************************
 static void am_hal_ios_dma_transfer_start(void *pHandle, am_hal_ios_transfer_t *pTransferCfg)
 {
@@ -384,14 +428,12 @@ static void am_hal_ios_dma_transfer_start(void *pHandle, am_hal_ios_transfer_t *
 
 //*****************************************************************************
 //
-//! @brief IOS DMA nonblocking transfer complete function
+//! @brief Complete DMA transfer for IOS.
 //!
-//! @param pHandle    - handle for the ios instance.
+//! @param pHandle - IOS handle.
 //!
-//! This function terminates IOS DMA.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//! @return N/A.
-//
 //*****************************************************************************
 static uint32_t am_hal_ios_dma_transfer_complete(void *pHandle)
 {
@@ -484,14 +526,40 @@ am_hal_ios_dma_fullduplex_transfer_abort(void *pTXHandle,
 
 //*****************************************************************************
 //
-//! @brief Validate an IOS transaction.
-//!
-//! @param psTransaction  - pointer to IOS transaction.
-//!
-//! This function validates the configuration structure.
-//!
-//! @return HAL status of the operation.
+// IOS get dma status
 //
+//*****************************************************************************
+uint32_t am_hal_ios_dma_status_get(void *pHandle, uint32_t *pui32DmaStatus)
+{
+    uint32_t ui32Module;
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    if ( !AM_HAL_IOS_CHK_HANDLE(pHandle) )
+    {
+        return AM_HAL_STATUS_INVALID_HANDLE;
+    }
+
+    if ( !pui32DmaStatus )
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+    ui32Module = ((am_hal_ios_state_t*)pHandle)->ui32Module;
+
+    *pui32DmaStatus = IOSLAVEn(ui32Module)->DMASTAT;
+
+    return AM_HAL_STATUS_SUCCESS;
+} // am_hal_ios_dma_status_get()
+
+//*****************************************************************************
+//
+//! @brief Validate IOS transaction parameters.
+//!
+//! @param psTransaction - Pointer to transaction structure.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 static uint32_t am_hal_ios_validate_transaction(am_hal_ios_transfer_t *psTransaction)
 {
@@ -635,16 +703,14 @@ am_hal_ios_dma_fullduplex_transfer(void *pTXHandle, void *pRXHandle,
 
 //*****************************************************************************
 //
-//! @brief IOS internal error mapping
+//! @brief Get IOS error status from interrupt and DMA status.
 //!
-//! @param ui32Module    - ios instance number.
-//! @param ui32IntStatus - ios interrupt status.
-//! @param ui32DmaStatus - ios dma status.
+//! @param ui32Module - IOS module number.
+//! @param ui32IntStatus - Interrupt status.
+//! @param ui32DmaStatus - DMA status.
 //!
-//! This function maps IOS status to internal error numbers
+//! @return Returns error status.
 //!
-//! @return status    - generic or interface specific status.
-//
 //*****************************************************************************
 static uint32_t internal_ios_get_err(uint32_t ui32Module, uint32_t ui32IntStatus, uint32_t ui32DmaStatus)
 {
@@ -656,12 +722,7 @@ static uint32_t internal_ios_get_err(uint32_t ui32Module, uint32_t ui32IntStatus
     ui32IntStatus |= IOSLAVEn(ui32Module)->INTSTAT;
     ui32DmaStatus |= IOSLAVEn(ui32Module)->DMASTAT;
 
-    // DMA overflow and FIFO has been overwritten
-    if (ui32DmaStatus & IOSLAVE_DMASTAT_DMAFOVF_Msk)
-    {
-        ui32Status = AM_HAL_IOS_STATUS_DMA_OVERFLOW;
-    }
-    else if (ui32IntStatus & AM_HAL_IOS_INT_DERR)
+    if (ui32IntStatus & AM_HAL_IOS_INT_DERR)
     {
         ui32Status = AM_HAL_IOS_STATUS_DMA_ERROR;
     }
@@ -682,6 +743,11 @@ static uint32_t internal_ios_get_err(uint32_t ui32Module, uint32_t ui32IntStatus
     {
         ui32Status = AM_HAL_IOS_STATUS_FIFO_READ_ERROR;
     }
+    // DMA overflow and FIFO has been overwritten
+    else if (ui32DmaStatus & IOSLAVE_DMASTAT_DMAFOVF_Msk)
+    {
+        ui32Status = AM_HAL_IOS_STATUS_DMA_OVERFLOW;
+    }
 
     return ui32Status;
 } // internal_ios_get_err()
@@ -691,7 +757,8 @@ static uint32_t internal_ios_get_err(uint32_t ui32Module, uint32_t ui32IntStatus
 // IOS uninitialize function
 //
 //*****************************************************************************
-uint32_t am_hal_ios_uninitialize(void *pHandle)
+uint32_t
+am_hal_ios_uninitialize(void *pHandle)
 {
     am_hal_ios_state_t *pIOSState = (am_hal_ios_state_t*)pHandle;
 
@@ -717,7 +784,8 @@ uint32_t am_hal_ios_uninitialize(void *pHandle)
 // IOS initialization function
 //
 //*****************************************************************************
-uint32_t am_hal_ios_initialize(uint32_t ui32Module, void **ppHandle)
+uint32_t
+am_hal_ios_initialize(uint32_t ui32Module, void **ppHandle)
 {
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -761,7 +829,8 @@ uint32_t am_hal_ios_initialize(uint32_t ui32Module, void **ppHandle)
 // IOS enable function
 //
 //*****************************************************************************
-uint32_t am_hal_ios_enable(void *pHandle)
+uint32_t
+am_hal_ios_enable(void *pHandle)
 {
     am_hal_ios_state_t *pIOSState = (am_hal_ios_state_t*)pHandle;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -788,7 +857,8 @@ uint32_t am_hal_ios_enable(void *pHandle)
 // IOS disable function
 //
 //*****************************************************************************
-uint32_t am_hal_ios_disable(void *pHandle)
+uint32_t
+am_hal_ios_disable(void *pHandle)
 {
     am_hal_ios_state_t *pIOSState = (am_hal_ios_state_t*)pHandle;
 
@@ -817,7 +887,8 @@ uint32_t am_hal_ios_disable(void *pHandle)
 // IOS configuration function.
 //
 //*****************************************************************************
-uint32_t am_hal_ios_configure(void *pHandle, am_hal_ios_config_t *psConfig)
+uint32_t
+am_hal_ios_configure(void *pHandle, am_hal_ios_config_t *psConfig)
 {
     uint32_t ui32LRAMConfig = 0;
     am_hal_ios_state_t *pIOSState = (am_hal_ios_state_t*)pHandle;
@@ -941,7 +1012,8 @@ uint32_t am_hal_ios_configure(void *pHandle, am_hal_ios_config_t *psConfig)
 // IOS enable interrupts function
 //
 //*****************************************************************************
-uint32_t am_hal_ios_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
+uint32_t
+am_hal_ios_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
 {
     uint32_t ui32Module;
 
@@ -967,7 +1039,8 @@ uint32_t am_hal_ios_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
 // IOS disable interrupts function
 //
 //*****************************************************************************
-uint32_t am_hal_ios_interrupt_disable(void *pHandle, uint32_t ui32IntMask)
+uint32_t
+am_hal_ios_interrupt_disable(void *pHandle, uint32_t ui32IntMask)
 {
     uint32_t ui32Module;
 
@@ -993,7 +1066,8 @@ uint32_t am_hal_ios_interrupt_disable(void *pHandle, uint32_t ui32IntMask)
 // IOS interrupt clear
 //
 //*****************************************************************************
-uint32_t am_hal_ios_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
+uint32_t
+am_hal_ios_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
 {
     uint32_t ui32Module;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -1018,8 +1092,9 @@ uint32_t am_hal_ios_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
 // IOS get interrupt status
 //
 //*****************************************************************************
-uint32_t am_hal_ios_interrupt_status_get(void *pHandle, bool bEnabledOnly,
-                                         uint32_t *pui32IntStatus)
+uint32_t
+am_hal_ios_interrupt_status_get(void *pHandle, bool bEnabledOnly,
+                                uint32_t *pui32IntStatus)
 {
     uint32_t ui32IntStatus = 0;
     uint32_t ui32Module;
@@ -1055,7 +1130,8 @@ uint32_t am_hal_ios_interrupt_status_get(void *pHandle, bool bEnabledOnly,
 // Check the amount of space used in the FIFO
 //
 //*****************************************************************************
-uint32_t am_hal_ios_fifo_space_used(void *pHandle, uint32_t *pui32UsedSpace)
+uint32_t
+am_hal_ios_fifo_space_used(void *pHandle, uint32_t *pui32UsedSpace)
 {
     uint32_t ui32Module;
     uint32_t ui32Val = 0;
@@ -1096,7 +1172,8 @@ uint32_t am_hal_ios_fifo_space_used(void *pHandle, uint32_t *pui32UsedSpace)
 // Check the amount of space left in the FIFO
 //
 //*****************************************************************************
-uint32_t am_hal_ios_fifo_space_left(void *pHandle, uint32_t *pui32LeftSpace)
+uint32_t
+am_hal_ios_fifo_space_left(void *pHandle, uint32_t *pui32LeftSpace)
 {
     uint32_t ui32Module;
     uint32_t ui32Val = 0;
@@ -1202,7 +1279,8 @@ static void fifo_write(void *pHandle, uint8_t *pui8Data, uint32_t ui32NumBytes)
 // IOS interrupt service routine
 //
 //*****************************************************************************
-uint32_t am_hal_ios_interrupt_service(void *pHandle, uint32_t ui32IntMask)
+uint32_t
+am_hal_ios_interrupt_service(void *pHandle, uint32_t ui32IntMask)
 {
     uint32_t thresh;
     uint32_t freeSpace, usedSpace, chunk1, chunk2, ui32WriteIndex;
@@ -1351,7 +1429,8 @@ uint32_t am_hal_ios_interrupt_service(void *pHandle, uint32_t ui32IntMask)
 // Writes the specified number of bytes to the IOS fifo.
 //
 //*****************************************************************************
-uint32_t am_hal_ios_fifo_write(void *pHandle, uint8_t *pui8Data, uint32_t ui32NumBytes, uint32_t *pui32WrittenBytes)
+uint32_t
+am_hal_ios_fifo_write(void *pHandle, uint8_t *pui8Data, uint32_t ui32NumBytes, uint32_t *pui32WrittenBytes)
 {
     uint32_t ui32FIFOSpace = 0;
     uint32_t ui32SRAMSpace;
@@ -1493,13 +1572,13 @@ uint32_t am_hal_ios_fifo_write(void *pHandle, uint8_t *pui8Data, uint32_t ui32Nu
 
 //*****************************************************************************
 //
-//! @brief Sets the IOS FIFO pointer to the specified LRAM offset.
+//! @brief Set FIFO pointer offset.
 //!
-//! @param pHandle - handle for the IOS.
-//! @param ui32Offset is LRAM offset to set the FIFO pointer to.
+//! @param pHandle - IOS handle.
+//! @param ui32Offset - FIFO offset.
 //!
-//! @return success or error code
-//
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 static uint32_t am_hal_ios_fifo_ptr_set(void *pHandle, uint32_t ui32Offset)
 {
@@ -1579,7 +1658,8 @@ static void am_hal_ios_buffer_init(am_hal_ios_buffer_t *psBuffer, void *pvArray,
 // IOS control function
 //
 //*****************************************************************************
-uint32_t am_hal_ios_control(void *pHandle, am_hal_ios_request_e eReq, void *pArgs)
+uint32_t
+am_hal_ios_control(void *pHandle, am_hal_ios_request_e eReq, void *pArgs)
 {
     am_hal_ios_state_t *pIOSState = (am_hal_ios_state_t*)pHandle;
     uint32_t ui32Val = 0;

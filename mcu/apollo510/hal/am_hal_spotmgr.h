@@ -4,7 +4,7 @@
 //!
 //! @brief SPOT manager functions that manage power states.
 //!
-//! @addtogroup spotmgr5b SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr5b_ap510 SPOTMGR - SPOT Manager
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SPOTMGR_H
@@ -83,9 +83,12 @@ extern "C"
 #define AM_HAL_SPOTMGR_PCM2_2_DISABLE    1
 #endif
 
+//! Control whether SPOTMGR delay uses TIMER (true) or blocking delay (false)
+#define AM_HAL_SPOTMANAGER_USE_TIMER_OR_BLOCKING_DELAY true
 //! Macros to indicate whether Internal Timer is required by SPOT manager
-#define AM_HAL_SPOTMGR_INTERNAL_TIMER_NEEDED    ((!AM_HAL_SPOTMGR_PCM2_1_DISABLE) || (!AM_HAL_SPOTMGR_PCM2_2_DISABLE))
-
+#define AM_HAL_SPOTMGR_INTERNAL_TIMER_NEEDED \
+    (((!AM_HAL_SPOTMGR_PCM2_1_DISABLE) || (!AM_HAL_SPOTMGR_PCM2_2_DISABLE)) \
+     && AM_HAL_SPOTMANAGER_USE_TIMER_OR_BLOCKING_DELAY)
 //*****************************************************************************
 //
 //! Defines
@@ -110,6 +113,8 @@ extern "C"
 #define MAX_VDDC_LV_TRIM (MCUCTRL_VREFGEN3_TVRGCLVVREFTRIM_Msk >> MCUCTRL_VREFGEN3_TVRGCLVVREFTRIM_Pos)
 //! Replace the 50us blocking delay with WFI in am_hal_spotmgr_pcm2_2
 #define AM_HAL_SPOTMGR_REPLACE_DELAY_WITH_WFI false
+//! Control whether SPOTMGR uses double boost mode for transitions using timer delay
+#define AM_HAL_SPOTMANAGER_TIMER_DOUBLEBOOST true
 
 //*****************************************************************************
 //
@@ -217,6 +222,26 @@ typedef union
     } MEMLDOCONFIG_b;
 } am_hal_spotmgr_memldo_settings_t;
 
+typedef union
+{
+    uint32_t E_TRIMCODE;
+    struct
+    {
+        uint32_t L16                 : 16;
+        uint32_t H16                 : 16;
+    } E_TRIMCODE_b;
+} am_hal_spotmgr_e_trim_settings_t;
+
+typedef union
+{
+    uint32_t L_TRIMCODE;
+    struct
+    {
+        uint32_t L16                 : 16;
+        uint32_t H16                 : 16;
+    } L_TRIMCODE_b;
+} am_hal_spotmgr_l_trim_settings_t;
+
 //
 //! Struct for VDDCLVACTTRIMADJ INFO1 regs and global variables
 //
@@ -239,13 +264,15 @@ typedef union
 typedef struct
 {
     uint32_t ui32SpotMgrINFO1GlobalValid;
-    am_hal_spotmgr_trim_settings_t         sPowerStateArray[20]; // 0x1370 ~ 0x13BC
+    am_hal_spotmgr_trim_settings_t         sPowerStateArray[21]; // 0x1370 ~ 0x13BC
     am_hal_spotmgr_gpu_vddc_ton_settings_t          sGpuVddcTon; // 0x13C0
     am_hal_spotmgr_gpu_vddf_ton_settings_t          sGpuVddfTon; // 0x13C4
     am_hal_spotmgr_stm_ton_settings_t                   sStmTon; // 0x13C8
     am_hal_spotmgr_default_ton_settings_t           sDefaultTon; // 0x13CC
     am_hal_spotmgr_vddclv_trim_settings_t     sVddclvActTrimAdj; // 0x13D0
     am_hal_spotmgr_memldo_settings_t                 sMemldoCfg; // 0x13E0
+    am_hal_spotmgr_l_trim_settings_t                     sLtrim; // 0x131C
+    am_hal_spotmgr_e_trim_settings_t                     sEtrim; // 0x1320
 } am_hal_spotmgr_info1_regs_t;
 
 //*****************************************************************************
@@ -302,7 +329,9 @@ typedef enum
     AM_HAL_SPOTMGR_TEMPCO_RANGE_MID,
     //! > 50C
     AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH,
-    AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE
+    AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE,
+    //! Default temperature value.
+    AM_HAL_SPOTMGR_TEMPCO_UNKNOWN
 } am_hal_spotmgr_tempco_range_e;
 
 //
@@ -351,6 +380,10 @@ typedef enum
     AM_HAL_SPOTMGR_STIM_MEMPWR, // Place holder - may be used in the future
     //! SSRAM power state included in SSRAMPWRST regs.
     AM_HAL_SPOTMGR_STIM_SSRAMPWR, // Place holder - may be used in the future
+    //! Reset MCU power state in spotmgr_default_reset() function.
+    AM_HAL_SPOTMGR_STIM_BACK_TO_DEFAULT_STATE,
+    //! Initialise MCU power state after SPOTMGR and SIMOBUCK are both initialised.
+    AM_HAL_SPOTMGR_STIM_INIT_STATE,
 } am_hal_spotmgr_stimulus_e;
 
 //
@@ -430,6 +463,7 @@ extern bool g_bIsPCM2p1;
 extern bool g_bIsB0PCM1p1OrNewer;
 extern bool g_bIsPCM2p0;
 extern bool g_bIsPCM2p1WoPatch;
+extern bool g_bCallPcm2p0Spotmgr;
 
 extern am_hal_spotmgr_profile_t g_sSpotMgrProfile;
 extern am_hal_spotmgr_info1_regs_t g_sSpotMgrINFO1regs;
@@ -747,5 +781,3 @@ extern void am_hal_spotmgr_log_change(am_hal_spotmgr_changelog_t *pChangeLog);
 //! @}
 //
 //*****************************************************************************
-
-

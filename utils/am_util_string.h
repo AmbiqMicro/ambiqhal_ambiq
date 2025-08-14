@@ -2,12 +2,9 @@
 //
 //! @file am_util_string.h
 //!
-//! @brief A subset of the functions provided in the C standard string library.
+//! @brief String Manipulation Utility Functions
 //!
-//! The functions here are reimplementation of some of the standard "string"
-//! functions.
-//!
-//! @addtogroup string String - Ambiq subset of C String Library
+//! @addtogroup string_utils String Utility Functions
 //! @ingroup utils
 //! @{
 //
@@ -44,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_STRING_H

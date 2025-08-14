@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for operating the instrumentation trace macrocell
 //!
-//! @addtogroup itm4 ITM - Instrumentation Trace Macrocell
+//! @addtogroup itm4_ap510 ITM - Instrumentation Trace Macrocell
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for operating the Instrumentation
+//!          Trace Macrocell (ITM) on Apollo5 devices. It supports trace
+//!          port configuration, stimulus register operations, print functions,
+//!          and trace synchronization for debugging and development tools.
+//!
+//! @section hal_itm_features Key Features
+//!
+//! 1. @b Debug @b Tracing: Comprehensive debug trace functionality.
+//! 2. @b Stimulus @b Ports: Multiple stimulus port operations.
+//! 3. @b Trace @b Transmission: Real-time trace data transmission.
+//! 4. @b TPIU @b Integration: Integration with Trace Port Interface Unit.
+//! 5. @b Baud @b Rate: Configurable trace transmission baud rates.
+//!
+//! @section hal_itm_functionality Functionality
+//!
+//! - Enable and disable ITM functionality
+//! - Configure trace parameters and baud rates
+//! - Handle stimulus port operations
+//! - Manage trace data transmission
+//! - Integrate with TPIU for trace output
+//!
+//! @section hal_itm_usage Usage
+//!
+//! 1. Set ITM parameters using am_hal_itm_parameters_set()
+//! 2. Enable ITM with am_hal_itm_enable()
+//! 3. Configure stimulus ports and trace operations
+//! 4. Handle trace data transmission
+//! 5. Disable ITM when no longer needed
+//!
+//! @section hal_itm_configuration Configuration
+//!
+//! - @b Baud @b Rates: Configure trace transmission baud rates
+//! - @b Stimulus @b Ports: Set up stimulus port operations
+//! - @b TPIU @b Integration: Configure TPIU interface parameters
+//! - @b Trace @b Parameters: Set up trace data format and timing
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

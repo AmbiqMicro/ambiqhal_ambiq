@@ -4,10 +4,43 @@
 //!
 //! @brief Functions for DCU functions
 //!
-//! @addtogroup dcu DCU - Debug Control Unit
+//! @addtogroup dcu_ap510 DCU - Debug Control Unit
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for managing the Debug Control Unit
+//! (DCU) which controls debug access and security features on Apollo5 devices.
+//! It handles DCU locking, unlocking, status checking, and configuration for
+//! secure debug operations.
+//!
+//! @section hal_dcu_features Key Features
+//!
+//! 1. @b Debug @b Control: Manage debug access permissions and security.
+//! 2. @b Lock/Unlock: Control DCU locking mechanisms for security.
+//! 3. @b Status @b Monitoring: Check DCU status and configuration.
+//! 4. @b Security @b Management: Handle debug security features.
+//! 5. @b Raw @b Access: Direct access to DCU registers and masks.
+//!
+//! @section hal_dcu_functionality Functionality
+//!
+//! - Lock and unlock DCU for security control
+//! - Read DCU status and configuration
+//! - Manage debug access permissions
+//! - Handle raw DCU register access
+//! - Support for security override operations
+//!
+//! @section hal_dcu_usage Usage
+//!
+//! 1. Check DCU status using am_hal_dcu_get()
+//! 2. Lock/unlock DCU as needed for security
+//! 3. Monitor DCU configuration and status
+//! 4. Handle security overrides when required
+//!
+//! @section hal_dcu_configuration Configuration
+//!
+//! - @b Security @b Level: Configure debug access permissions
+//! - @b Lock @b Masks: Set up DCU locking patterns
+//! - @b Override @b Support: Enable security override features
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include "am_mcu_apollo.h"
@@ -60,11 +93,17 @@ typedef union
 {
     uint64_t u64;
     uint32_t u32[2];
-} am_hal_64b_dcu_t;
+}
+am_hal_64b_dcu_t;
 
 //*****************************************************************************
 //
 //! @brief Get the Current RAW DCU Mask
+//!
+//! @param ui32DcuMask - single word DCU Mask.
+//! @param threeBitVal - 3-bit value.
+//!
+//! @return Returns ui64 DCU Mask
 //
 //*****************************************************************************
 static uint64_t
@@ -89,6 +128,13 @@ get_raw_dcu_mask(uint32_t ui32DcuMask, uint8_t threeBitVal)
 //*****************************************************************************
 //
 //! @brief Get the Current DCU Mask
+//!
+//! @param ui64DcuMask - double word DCU Mask.
+//! @param threeBitVal - 3-bit value.
+//!
+//! This will retrieve the DCU Lock information.
+//!
+//! @return Returns ui32 DCU Mask
 //
 //*****************************************************************************
 static uint32_t
@@ -110,17 +156,17 @@ get_ui32_dcu_mask(uint64_t ui64DcuMask, uint8_t threeBitVal)
 
 //*****************************************************************************
 //
-//! @brief  Read DCU Lock
+//! @brief Read DCU Lock status.
 //!
-//! @param  pui64Val -  Pointer to double word for returned data
+//! @param pui64Val - Pointer to double word for returned data.
 //!
-//! This will retrieve the DCU Lock information
+//! This will retrieve the DCU Lock information.
 //!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //
 //*****************************************************************************
-static
-uint32_t am_hal_dcu_raw_lock_status_get(uint64_t *pui64Val)
+static uint32_t
+am_hal_dcu_raw_lock_status_get(uint64_t *pui64Val)
 {
     am_hal_64b_dcu_t value;
     value.u32[0] = AM_REGVAL(gpDcuLock);
@@ -131,16 +177,11 @@ uint32_t am_hal_dcu_raw_lock_status_get(uint64_t *pui64Val)
 
 //*****************************************************************************
 //
-//! @brief  Read DCU Lock
-//!
-//! @param  pui32Val -  Pointer to word for returned data (Qualified DCU Mask)
-//!
-//! This will retrieve the DCU Lock information
-//!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success
+// Get DCU lock status.
 //
 //*****************************************************************************
-uint32_t am_hal_dcu_lock_status_get(uint32_t *pui32Val)
+uint32_t
+am_hal_dcu_lock_status_get(uint32_t *pui32Val)
 {
     uint64_t ui64Lock;
     uint32_t ui32Status;
@@ -165,8 +206,8 @@ uint32_t am_hal_dcu_lock_status_get(uint32_t *pui32Val)
 //! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
-static
-uint32_t am_hal_dcu_raw_lock(uint64_t ui64Mask)
+static uint32_t
+am_hal_dcu_raw_lock(uint64_t ui64Mask)
 {
     //
     // copy_words((uint32_t *)gpDcuLock, (uint32_t *)&ui64Mask, sizeof(uint64_t) / 4);
@@ -184,16 +225,11 @@ uint32_t am_hal_dcu_raw_lock(uint64_t ui64Mask)
 
 //*****************************************************************************
 //
-//! @brief  Write DCU Lock (Qualified Values)
-//!
-//! @param  ui32Mask -  Mask for lock values
-//!
-//! This will lock the DCU from further changes
-//!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success
+// Lock DCU with specified mask.
 //
 //*****************************************************************************
-uint32_t am_hal_dcu_lock(uint32_t ui32Mask)
+uint32_t
+am_hal_dcu_lock(uint32_t ui32Mask)
 {
     uint64_t ui64Lock;
     if ((PWRCTRL->DEVPWRSTATUS_b.PWRSTCRYPTO == 0) || (CRYPTO->HOSTCCISIDLE_b.HOSTCCISIDLE == 0))
@@ -216,8 +252,8 @@ uint32_t am_hal_dcu_lock(uint32_t ui32Mask)
 //! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
-static
-uint32_t am_hal_dcu_raw_get(uint64_t *pui64Val)
+static uint32_t
+am_hal_dcu_raw_get(uint64_t *pui64Val)
 {
     am_hal_64b_dcu_t value;
     value.u32[0] = AM_REGVAL(gpDcuEnable);
@@ -228,16 +264,11 @@ uint32_t am_hal_dcu_raw_get(uint64_t *pui64Val)
 
 //*****************************************************************************
 //
-//! @brief  Read DCU Enables (Qualified Values)
-//!
-//! @param  pui32Val -  Pointer to Mask for returned data
-//!
-//! This will get the current DCU Enable settings
-//!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success
+// Get DCU status.
 //
 //*****************************************************************************
-uint32_t am_hal_dcu_get(uint32_t *pui32Val)
+uint32_t
+am_hal_dcu_get(uint32_t *pui32Val)
 {
     uint64_t ui64Enable;
     uint32_t ui32Status;
@@ -263,8 +294,8 @@ uint32_t am_hal_dcu_get(uint32_t *pui32Val)
 //! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
-static
-uint32_t am_hal_dcu_raw_update(bool bEnable, uint64_t ui64Mask)
+static uint32_t
+am_hal_dcu_raw_update(bool bEnable, uint64_t ui64Mask)
 {
     am_hal_64b_dcu_t dcuVal;
     am_hal_64b_dcu_t dcuLock;
@@ -292,12 +323,11 @@ uint32_t am_hal_dcu_raw_update(bool bEnable, uint64_t ui64Mask)
 
 //*****************************************************************************
 //
-// Update DCU Enable (Qualified Values)
-//
-// This will update the DCU Enable settings, if not locked
+// Update DCU with enable/disable and mask.
 //
 //*****************************************************************************
-uint32_t am_hal_dcu_update(bool bEnable, uint32_t ui32Mask)
+uint32_t
+am_hal_dcu_update(bool bEnable, uint32_t ui32Mask)
 {
     uint64_t ui64Mask;
     if ((PWRCTRL->DEVPWRSTATUS_b.PWRSTCRYPTO == 0) || (CRYPTO->HOSTCCISIDLE_b.HOSTCCISIDLE == 0))
@@ -317,7 +347,8 @@ uint32_t am_hal_dcu_update(bool bEnable, uint32_t ui32Mask)
 // This can only further lock things if the corresponding DCU Enable was open
 //
 //*****************************************************************************
-uint32_t am_hal_dcu_mcuctrl_override(uint32_t ui32Mask)
+uint32_t
+am_hal_dcu_mcuctrl_override(uint32_t ui32Mask)
 {
     MCUCTRL->DEBUGGER = ui32Mask;
     return AM_HAL_STATUS_SUCCESS;

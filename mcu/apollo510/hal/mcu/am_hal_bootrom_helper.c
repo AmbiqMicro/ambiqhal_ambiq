@@ -4,10 +4,45 @@
 //!
 //! @brief BootROM Helper Function Table
 //!
-//! @addtogroup bootrom4 Bootrom Functionality
+//! @addtogroup bootrom4_ap510 Bootrom Functionality
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides BootROM helper functions for Apollo5 devices.
+//!          It supports non-volatile memory programming, utility functions,
+//!          and bootrom integration for system initialization and memory
+//!          management operations.
+//!
+//! @section hal_bootrom_helper_features Key Features
+//!
+//! 1. @b Non-Volatile @b Programming: INFO0 and main NVRAM programming support.
+//! 2. @b Utility @b Functions: Word read/write and address validation utilities.
+//! 3. @b BootROM @b Integration: Integration with bootrom helper functions.
+//! 4. @b Memory @b Management: Memory state clearing and management.
+//! 5. @b Version @b Support: BootROM version information access.
+//!
+//! @section hal_bootrom_helper_functionality Functionality
+//!
+//! - Program INFO0 and main NVRAM areas
+//! - Provide utility functions for memory operations
+//! - Integrate with bootrom helper functions
+//! - Handle memory state management
+//! - Support bootrom version information
+//!
+//! @section hal_bootrom_helper_usage Usage
+//!
+//! 1. Program INFO0 using nv_program_info_area()
+//! 2. Program main NVRAM using nv_program_main2()
+//! 3. Use utility functions for memory operations
+//! 4. Access bootrom version information
+//! 5. Handle memory state management
+//!
+//! @section hal_bootrom_helper_configuration Configuration
+//!
+//! - @b Programming @b Areas: Configure INFO0 and NVRAM programming
+//! - @b Utility @b Functions: Set up memory utility operations
+//! - @b BootROM @b Integration: Configure bootrom helper integration
+//! - @b Memory @b Management: Set up memory state management
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

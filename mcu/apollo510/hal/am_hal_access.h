@@ -4,7 +4,7 @@
 //!
 //! @brief This file controls peripheral access in Apollo5.
 //!
-//! @addtogroup access Access - Peripheral Access
+//! @addtogroup access_ap510 Access - Peripheral Access
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_ACCESS_H
@@ -212,6 +212,22 @@ extern uint32_t am_hal_access_deinitialize(void *pvHandle);
 //*****************************************************************************
 extern uint32_t am_hal_access_config(void *pvHandle,
                                      am_hal_access_t *psGlobalAccess);
+
+//*****************************************************************************
+//
+//! @brief Check if access to a peripheral is available.
+//!
+//! @param pvHandle is the handle for this access structure.
+//! @param ePeripheral is the peripheral to check access for.
+//!
+//! This function checks if access to a particular peripheral is available
+//! without actually claiming it.
+//!
+//! @return Status code indicating if access is available.
+//
+//*****************************************************************************
+extern uint32_t am_hal_access_check(void *pvHandle,
+                                    am_hal_access_periph_e ePeripheral);
 
 //*****************************************************************************
 //

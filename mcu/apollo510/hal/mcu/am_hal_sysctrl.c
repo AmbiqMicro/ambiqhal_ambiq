@@ -2,12 +2,47 @@
 //
 //! @file am_hal_sysctrl.c
 //!
-//! @brief Functions for interfacing with the M4F system control registers
+//! @brief Functions for interfacing with the M55 system control registers
 //!
-//! @addtogroup sysctrl5 SYSCTRL - System Control
+//! @addtogroup sysctrl4_ap510 SYSCTRL - System Control
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides system control functions for Apollo5
+//! devices, including power management, sleep mode control, and system
+//! bus synchronization. It enables efficient power management and
+//! reliable system operation across different power states.
+//!
+//! @section hal_sysctrl_features Key Features
+//!
+//! 1. @b Sleep @b Management: Control normal and deep sleep modes.
+//! 2. @b Power @b Control: Manage buck converter and power states.
+//! 3. @b FPU @b Control: Enable/disable floating-point unit operations.
+//! 4. @b System @b Reset: Provide system reset functionality.
+//! 5. @b Clock @b Management: Control clock multiplexer and reset operations.
+//!
+//! @section hal_sysctrl_functionality Functionality
+//!
+//! - Control system sleep and deep sleep modes
+//! - Manage power states and buck converter operation
+//! - Enable/disable FPU and configure stacking
+//! - Handle system reset operations
+//! - Control clock multiplexer and reset functionality
+//!
+//! @section hal_sysctrl_usage Usage
+//!
+//! 1. Configure sleep modes using am_hal_sysctrl_sleep()
+//! 2. Control FPU operations as needed
+//! 3. Manage power states and buck converter
+//! 4. Handle system reset when required
+//! 5. Configure clock multiplexer operations
+//!
+//! @section hal_sysctrl_configuration Configuration
+//!
+//! - @b Sleep @b Modes: Configure normal and deep sleep parameters
+//! - @b Power @b States: Set up buck converter and power management
+//! - @b FPU @b Settings: Configure floating-point unit operations
+//! - @b Clock @b Control: Set up clock multiplexer and reset operations
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -323,13 +358,13 @@ am_hal_sysctrl_sleep(bool bSleepDeep)
         if (PWRCTRL->CPUPWRCTRL_b.SLEEPMODE) // ARM sleep
         {
             sNSCpdlpConfig.eRlpConfig = sActCpdlpConfig.eRlpConfig;
-            sNSCpdlpConfig.eElpConfig = AM_HAL_PWRCTRL_ELP_ON_CLK_OFF;
+            sNSCpdlpConfig.eElpConfig = AM_HAL_PWRCTRL_ELP_RET;
             sNSCpdlpConfig.eClpConfig = AM_HAL_PWRCTRL_CLP_ON_CLK_OFF;
         }
         else // Ambiq sleep
         {
             sNSCpdlpConfig.eRlpConfig = sActCpdlpConfig.eRlpConfig;
-            sNSCpdlpConfig.eElpConfig = AM_HAL_PWRCTRL_ELP_ON_CLK_OFF; // or can leave at 0x0 as we will turn the clocks off at the source
+            sNSCpdlpConfig.eElpConfig = AM_HAL_PWRCTRL_ELP_RET; // or can leave at 0x0 as we will turn the clocks off at the source
             sNSCpdlpConfig.eClpConfig = AM_HAL_PWRCTRL_CLP_ON_CLK_OFF; // or can leave at 0x0 as we will turn the clocks off at the source
         }
         //
@@ -441,8 +476,8 @@ am_hal_sysctrl_sleep(bool bSleepDeep)
                     //
                     // Report deepsleep state again to update global variables (g_bVddcaorVddcpuOverride, g_bHpToDeepSleep...)
                     //
-                    eCpuSt = AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP;
-                    am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_CPU_STATE, false, (void *) &eCpuSt);
+                    am_hal_spotmgr_cpu_state_e eCpuSleepDeep = AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP;
+                    am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_CPU_STATE, false, (void *) &eCpuSleepDeep);
                 }
                 //
                 // Remove overrides to allow buck to go in LP mode
@@ -692,7 +727,8 @@ am_hal_sysctrl_aircr_reset(void)
 // Update clocks needed for clock muxes reset operation
 //
 //*****************************************************************************
-void am_hal_sysctrl_clkmuxrst_audadc_clkgen_off_update(bool bClkgenOff)
+void
+am_hal_sysctrl_clkmuxrst_audadc_clkgen_off_update(bool bClkgenOff)
 {
     AM_CRITICAL_BEGIN
     HALSTATE_b.AUDADC_CLKGEN_OFF = bClkgenOff;
@@ -704,7 +740,8 @@ void am_hal_sysctrl_clkmuxrst_audadc_clkgen_off_update(bool bClkgenOff)
 // Update clocks needed for clock muxes reset operation
 //
 //*****************************************************************************
-void am_hal_sysctrl_clkmuxrst_pll_fref_update(MCUCTRL_PLLCTL0_FREFSEL_Enum eFref)
+void
+am_hal_sysctrl_clkmuxrst_pll_fref_update(MCUCTRL_PLLCTL0_FREFSEL_Enum eFref)
 {
     AM_CRITICAL_BEGIN
     HALSTATE_b.PLL_FREFSEL = (uint8_t)eFref;
@@ -716,7 +753,8 @@ void am_hal_sysctrl_clkmuxrst_pll_fref_update(MCUCTRL_PLLCTL0_FREFSEL_Enum eFref
 // Update clocks needed for clock muxes reset operation
 //
 //*****************************************************************************
-void am_hal_sysctrl_clkmuxrst_clkneeded_update(am_hal_sysctrl_clkmuxrst_clk_e eClk, uint8_t ui8ClkSrcBm)
+void
+am_hal_sysctrl_clkmuxrst_clkneeded_update(am_hal_sysctrl_clkmuxrst_clk_e eClk, uint8_t ui8ClkSrcBm)
 {
     uint8_t ui8Idx;
     uint8_t ui8ClockNeeded = 0;
@@ -749,8 +787,10 @@ void am_hal_sysctrl_clkmuxrst_clkneeded_update(am_hal_sysctrl_clkmuxrst_clk_e eC
 // Handle clock muxes reset during low_power_init
 //
 //*****************************************************************************
-void am_hal_sysctrl_clkmuxrst_low_power_init()
+void
+am_hal_sysctrl_clkmuxrst_low_power_init()
 {
+    am_hal_clkmgr_board_info_t sClkmgrBoardInfo;
     //
     // Execute clock mux reset if this is not a POA reset and SNVR2 signature
     // matches
@@ -809,6 +849,18 @@ void am_hal_sysctrl_clkmuxrst_low_power_init()
             if (HALSTATE_b.EXTCLK_NEEDED ||
                 (HALSTATE_b.PLL_NEEDED && HALSTATE_b.PLL_FREFSEL == MCUCTRL_PLLCTL0_FREFSEL_EXTREFCLK))
             {
+                //
+                // Check if this is a SIP device(Apollo510B) and is it enabled
+                //
+                am_hal_clkmgr_board_info_get(&sClkmgrBoardInfo);
+                if (sClkmgrBoardInfo.bIsSipEnabled)
+                {
+                    //
+                    // Request clock from SIP and wait 1ms for the clock to propagate through
+                    //
+                    am_hal_gpio_output_set(136);
+                    am_hal_delay_us(1000);
+                }
                 am_hal_gpio_pincfg_t sExtRefClkCfg;
                 sExtRefClkCfg.GP.cfg_b.uFuncSel = AM_HAL_PIN_15_REFCLK_EXT;
                 am_hal_gpio_pinconfig_get(15, &sGpio15Cfg);
@@ -894,6 +946,13 @@ void am_hal_sysctrl_clkmuxrst_low_power_init()
             if (HALSTATE_b.EXTCLK_NEEDED ||
                 (HALSTATE_b.PLL_NEEDED && HALSTATE_b.PLL_FREFSEL == MCUCTRL_PLLCTL0_FREFSEL_EXTREFCLK))
             {
+                if (sClkmgrBoardInfo.bIsSipEnabled)
+                {
+                    //
+                    // Stop clock from SIP
+                    //
+                    am_hal_gpio_output_clear(136);
+                }
                 am_hal_gpio_pinconfig(15, sGpio15Cfg);
             }
 

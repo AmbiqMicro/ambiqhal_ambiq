@@ -4,12 +4,45 @@
 //!
 //! @brief Support functions for the Arm TPIU module
 //!
-//! Provides support functions for configuring the Arm TPIU module
-//!
-//! @addtogroup tpiu4 TPIU - Trace Port Interface Unit
+//! @addtogroup tpiu4_ap510 TPIU - Trace Port Interface Unit
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides support functions for configuring and managing
+//!          the Arm TPIU (Trace Port Interface Unit) module on Apollo5 devices.
+//!          It enables debug trace functionality, SWO (Serial Wire Output) support,
+//!          and trace data formatting for development and debugging applications.
+//!
+//! @section hal_tpiu_features Key Features
+//!
+//! 1. @b Debug @b Trace: Support for Arm debug trace functionality.
+//! 2. @b SWO @b Output: Serial Wire Output for debug data transmission.
+//! 3. @b Trace @b Formatting: Configurable trace data formatting.
+//! 4. @b Clock @b Configuration: Flexible clock source selection.
+//! 5. @b Pin @b Protocol: Support for various pin protocols and modes.
+//!
+//! @section hal_tpiu_functionality Functionality
+//!
+//! - Configure TPIU module and trace parameters
+//! - Enable/disable debug trace functionality
+//! - Set up SWO output and data formatting
+//! - Configure clock sources and pin protocols
+//! - Handle trace data flow and formatting
+//!
+//! @section hal_tpiu_usage Usage
+//!
+//! 1. Configure TPIU using am_hal_tpiu_config()
+//! 2. Enable TPIU with am_hal_tpiu_enable()
+//! 3. Set up trace parameters and formatting
+//! 4. Configure SWO output as needed
+//! 5. Disable TPIU when no longer needed
+//!
+//! @section hal_tpiu_configuration Configuration
+//!
+//! - @b Clock @b Sources: Select TPIU clock sources
+//! - @b Trace @b Formatting: Configure trace data format
+//! - @b Pin @b Protocols: Set up pin protocols and modes
+//! - @b SWO @b Settings: Configure Serial Wire Output parameters
 //*****************************************************************************
 
 //*****************************************************************************
@@ -43,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

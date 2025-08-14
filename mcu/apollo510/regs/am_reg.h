@@ -2,11 +2,50 @@
 //
 //! @file am_reg.h
 //!
-//! @brief Apollo510 register macros
+//! @brief Apollo510 register macros and peripheral instance definitions.
 //!
 //! @addtogroup reg_macros_5 Apollo510 Register Macros
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides comprehensive register definitions and instance
+//!          finders for all Apollo510 peripherals. It enables direct hardware
+//!          access through well-defined macros, supporting peripheral
+//!          initialization, configuration, and runtime operations.
+//!
+//! @section hal_reg_features Key Features
+//!
+//! 1. @b Instance @b Management: Defines number of instances for each peripheral
+//! 2. @b Base @b Addressing: Provides macros for peripheral base address calculation
+//! 3. @b Memory @b Mapping: Complete peripheral register space definitions
+//! 4. @b Peripheral @b Access: Direct hardware access through standardized macros
+//! 5. @b Module @b Discovery: Instance finder macros for all peripherals
+//!
+//! @section hal_reg_functionality Functionality
+//!
+//! - Define number of available instances per peripheral
+//! - Calculate base addresses for peripheral instances
+//! - Enable direct register access through standard naming
+//! - Support peripheral configuration and control
+//! - Provide consistent interface across all modules
+//!
+//! @section hal_reg_usage Usage
+//!
+//! 1. Include am_reg.h in peripheral driver implementations
+//! 2. Use NUM_MODULES defines to iterate over instances
+//! 3. Access peripheral registers via base address macros
+//! 4. Configure and control peripheral operation
+//!
+//! @section hal_reg_modules Supported Modules
+//!
+//! - System: SYSPLL, CLKGEN, RSTGEN, MCUCTRL, PWRCTRL
+//! - Memory: MRAM, OTP
+//! - Communication: UART, IOM, MSPI, SDIO, USB
+//! - Audio/Video: I2S, PDM, AUDADC, DSI, GPU
+//! - Analog: ADC, VCOMP
+//! - Timing: RTC, WDT, STIMER, TIMER
+//! - Security: CRYPTO, SSC
+//! - IO: GPIO, FPIO, IOSLAVE
 //
 //*****************************************************************************
 
@@ -41,7 +80,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_REG_H
@@ -214,6 +253,16 @@
 #define AM_REG_MCUCTRL_NUM_MODULES                   1
 #define AM_REG_MCUCTRLn(n) \
     (MCUCTRL_BASE + 0x00000000 * n)
+
+//*****************************************************************************
+//
+//! @brief MRAM
+//! Instance finder. (1 instance(s) available)
+//
+//*****************************************************************************
+#define AM_REG_MRAM_NUM_MODULES                      1
+#define AM_REG_MRAMn(n) \
+    (MRAM_BASE + 0x00001000 * n)
 
 //*****************************************************************************
 //

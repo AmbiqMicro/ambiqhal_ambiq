@@ -2,15 +2,47 @@
 //
 //! @file am_util_debug.c
 //!
-//! @brief Useful functions for debugging.
+//! @brief Debug and Diagnostic Utility Functions
 //!
-//! These functions and macros were created to assist with debugging. They are
-//! intended to be as unintrusive as possible and designed to be removed from
-//! the compilation of a project when they are no longer needed.
-//!
-//! @addtogroup debug Debug Utility
+//! @addtogroup debug_utils Debug Utility Functions
 //! @ingroup utils
 //! @{
+//!
+//! Purpose: This module provides debug and diagnostic utility functions
+//!          for development and troubleshooting across Ambiq Micro devices.
+//!          It enables printf-style debugging, ITM/SWO trace support, and
+//!          diagnostic features for monitoring system behavior and debugging
+//!          application code.
+//!
+//! @section utils_debug_features Key Features
+//!
+//! 1. @b Printf @b Support: Debug message output capabilities.
+//! 2. @b ITM/SWO: Trace and debug interface support.
+//! 3. @b Diagnostics: System monitoring and analysis.
+//! 4. @b Error @b Tracking: Debug error logging and reporting.
+//! 5. @b Performance: Debug impact control options.
+//!
+//! @section utils_debug_functionality Functionality
+//!
+//! - Initialize debug interfaces
+//! - Output debug messages
+//! - Configure trace settings
+//! - Monitor system behavior
+//! - Track error conditions
+//!
+//! @section utils_debug_usage Usage
+//!
+//! 1. Initialize debug with am_util_debug_init()
+//! 2. Configure output options
+//! 3. Use debug functions as needed
+//! 4. Monitor system state
+//!
+//! @section utils_debug_configuration Configuration
+//!
+//! - Set up debug interface options
+//! - Configure trace parameters
+//! - Define error handling behavior
+//! - Set performance impact limits
 //
 //*****************************************************************************
 
@@ -45,11 +77,20 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
 #include "am_util_debug.h"
+
+//
+// Include a dummy function just to avoid the pedantic error, "ISO C forbids
+// an empty translation unit".
+//
+void
+am_util_debug_avoidpedanticerror(void)
+{
+}
 
 //*****************************************************************************
 //

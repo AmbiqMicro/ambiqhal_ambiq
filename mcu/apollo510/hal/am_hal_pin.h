@@ -2,15 +2,11 @@
 //
 //! @file am_hal_pin.h
 //!
-//! @brief Function select information for Apollo510 GPIOs
+//! @brief Function select information for Apollo510 GPIOs.
 //!
-//! Date: 02/13/2024
-//!
-//! @addtogroup pin Pin Functionality
+//! @addtogroup pin_ap510 Pin Functionality
 //! @ingroup apollo510_hal
 //! @{
-//
-// This is a generated file, do not modify!
 //
 //*****************************************************************************
 
@@ -45,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
