@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -140,6 +140,15 @@
 //! input xtal variable used when computing hfrc2 clock in USB highspeed mode
 //
 static uint32_t g_ui32XtalFreq = 32000000;
+
+const am_hal_clockgen_hf2adj_compute_t tHfadj_USB_HFRC2_start_default =
+{
+    .eHF2AdjType = AM_HAL_CLKGEN_HF2ADJ_COMP_COMP_FREQ,
+    .ui32Source_freq_in_hz = 32000000,
+    .ui32Target_freq_in_hz = 24000000,
+    .ui32TrimValue = 0,
+    .ui8TrimSetting = CLKGEN_HF2ADJ1_HF2ADJTRIMEN_TRIM_EN1 | CLKGEN_HF2ADJ1_HF2ADJTRIMEN_TRIM_EN4,
+};
 
 //*****************************************************************************
 //
@@ -1852,7 +1861,7 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
     {
 #ifndef  AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK
         case AM_HAL_USB_EP0_STATE_IDLE:
-            if ((pState->bPendingInEndData || pState->bPendingOutEndData) && (ui16Len == 0))
+            if ( (pState->bPendingInEndData || pState->bPendingOutEndData) && (ui16Len == 0) )
             {
                 // Reset EP0 state and wait for the next command from host.
                 am_hal_usb_ep0_state_reset(pState);
@@ -1879,7 +1888,7 @@ am_hal_usb_ep0_xfer(am_hal_usb_state_t *pState, uint8_t ui8EpNum, uint8_t ui8EpD
                 //    back to IDLE so that it is able to receive next SETUP correctly.
 
                 // Case 1:
-                if (pState->bPendingOutEndData || pState->bPendingInEndData)
+                if ( pState->bPendingOutEndData || pState->bPendingInEndData )
                 {
                     am_hal_usb_xfer_reset(&pState->ep0_xfer);
                     pState->bPendingOutEndData = false;
@@ -3134,9 +3143,11 @@ am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType)
                 ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HF2ADJ_DISABLE, NULL);
             }
             break;
+        case AM_HAL_USB_HS_CLK_HFRC2_ADJ_EXTERN_CLK:
+            ui32Status = AM_HAL_STATUS_INVALID_ARG;
+            break;
 
         case AM_HAL_USB_HS_CLK_HFRC2_ADJ:
-        case AM_HAL_USB_HS_CLK_HFRC2_ADJ_EXTERN_CLK:
             //
             // the HFRC2 clock is going to be enabled
             // if here the caller has selected to use HFRC2 adjust, this also requires using the
@@ -3147,51 +3158,49 @@ am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType)
             {
                 break;
             }
+
             {
                 am_hal_mcuctrl_control_arg_t ctrlArgs = g_amHalMcuctrlArgDefault;
                 ctrlArgs.ui32_arg_hfxtal_user_mask = 1 << AM_HAL_HFXTAL_USB_PHI_EN;
-                am_hal_mcuctrl_control_e eMcuControlType;
-                if (AM_HAL_USB_HS_CLK_HFRC2_ADJ_EXTERN_CLK == tUsbHsClockType)
-                {
-                    ctrlArgs.b_arg_apply_ext_source = true;
-                    eMcuControlType = AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL;
-                }
-                else
-                {
-                    ctrlArgs.b_arg_apply_ext_source = false;
-                    eMcuControlType = AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START;
-                }
-                ui32Status = am_hal_mcuctrl_control(eMcuControlType, &ctrlArgs);
+                ctrlArgs.b_arg_apply_ext_source = false;
+
+                ui32Status = am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START, &ctrlArgs);
                 if (ui32Status != AM_HAL_STATUS_SUCCESS)
                 {
                     break;
                 }
+
                 //
-                // add a short wait for clock to start, before start adjust FLL
+                // setup data struct to pass to clock config (control)
                 //
-                am_hal_delay_us(50);
+                am_hal_clockgen_hf2adj_compute_t tHFRC2_control = tHfadj_USB_HFRC2_start_default;
+
+                tHFRC2_control.ui32Source_freq_in_hz = g_ui32XtalFreq;
+
+                ui32Status = am_hal_hfrc2_adj_control((const am_hal_clockgen_hf2adj_compute_t *) &tHFRC2_control);
+                if (ui32Status != AM_HAL_STATUS_SUCCESS)
+                {
+                    break;
+                }
+
+                am_hal_delay_us(1000);
+
+                uint32_t status = am_hal_clkgen_HFRC2_adj_recompute(&tReComputeCtrlDefault);
+                if ( status == AM_HAL_STATUS_SUCCESS )
+                {
+
+                    am_hal_delay_us(1000);
+
+                    am_hal_clkgen_HFRC2_adj_recompute(&tReComputeCtrlDefault);
+                }
+
             }
 
-            //
-            // setup data struct to pass to clock config (control)
-            //
-            am_hal_clockgen_hf2adj_compute_t tHfadj_cmp;
-
-            tHfadj_cmp.eHF2AdjType = AM_HAL_CLKGEN_HF2ADJ_COMP_COMP_FREQ;
-            tHfadj_cmp.ui32Source_freq_in_hz = g_ui32XtalFreq;
-            tHfadj_cmp.ui32Target_freq_in_hz = 24000000;
-
-            ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE, (void *) &tHfadj_cmp);
-            if (ui32Status != AM_HAL_STATUS_SUCCESS)
-            {
-                break;
-            }
-            ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HFRC2_START, NULL);
             break;
 
         case AM_HAL_USB_HS_CLK_HFRC2:
             //
-            // HFRC2 enabled with no adjust FLL, this is the default for HIGH_SPEED USB
+            // HFRC2 enabled with no adjust FLL
             //
             ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HFRC2_START, NULL);
             break;

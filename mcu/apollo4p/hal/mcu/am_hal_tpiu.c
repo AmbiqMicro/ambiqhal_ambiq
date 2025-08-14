@@ -68,12 +68,12 @@ am_hal_tpiu_enable(uint32_t ui32SetItmBaud)
     //
     // TPIU formatter & flush control register.
     //
-    TPI->FFCR = 0;
+    TPIU->FFCR = 0;
 
     //
     // Set the Current Parallel Port Size (note - only 1 bit can be set).
     //
-    TPI->CSPSR = TPI_CSPSR_CWIDTH_1BIT;
+    TPIU->CSPSR = TPI_CSPSR_CWIDTH_1BIT;
 
     //
     // Use some default assumptions to set the ITM frequency.
@@ -110,18 +110,18 @@ am_hal_tpiu_enable(uint32_t ui32SetItmBaud)
 #define TPI_ACPR_SWOSCALER_Pos              0U                                         /*!< TPI ACPR: SWOSCALER Position */
 #define TPI_ACPR_SWOSCALER_Msk             (0xFFFFUL /*<< TPI_ACPR_SWOSCALER_Pos*/)    /*!< TPI ACPR: SWOSCALER Mask */
 #endif
-    TPI->ACPR = _VAL2FLD(TPI_ACPR_SWOSCALER, ui32SWOscaler);
+    TPIU->ACPR = _VAL2FLD(TPI_ACPR_SWOSCALER, ui32SWOscaler);
 
     //
     // Set the Pin Protocol.
     //
-    TPI->SPPR = _VAL2FLD( TPI_SPPR_TXMODE, TPI_SPPR_TXMODE_UART);  // NRZ
+    TPIU->SPPR = _VAL2FLD( TPIU_SPPR_TXMODE, TPI_SPPR_TXMODE_UART);  // NRZ
 
     //
     // Make sure we are not in test mode (important for proper deep sleep
     // operation).
     //
-    TPI->ITCTRL = _VAL2FLD(TPI_ITCTRL_Mode, TPI_ITCTRL_Mode_NORMAL);
+    TPIU->ITCTRL = _VAL2FLD(TPIU_ITCTRL_Mode, TPI_ITCTRL_Mode_NORMAL);
 
     //
     // Enable the TPIU clock source in MCU control.

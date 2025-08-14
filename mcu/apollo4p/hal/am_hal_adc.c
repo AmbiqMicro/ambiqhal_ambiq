@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -547,8 +547,7 @@ am_hal_adc_configure_slot(void *pHandle,
         return AM_HAL_STATUS_OUT_OF_RANGE;
     }
 
-    if ( (pSlotConfig->ui32TrkCyc < AM_HAL_ADC_MIN_TRKCYC) ||
-         (pSlotConfig->ui32TrkCyc > _FLD2VAL(ADC_SL0CFG_TRKCYC0, 0xFFFFFFFF)) )
+    if (pSlotConfig->ui32TrkCyc > _FLD2VAL(ADC_SL0CFG_TRKCYC0, 0xFFFFFFFF))
     {
         return AM_HAL_STATUS_INVALID_ARG;
     }
@@ -556,7 +555,6 @@ am_hal_adc_configure_slot(void *pHandle,
 
     am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
     uint32_t            ui32Module = pADCState->ui32Module;
-
 
     ui32Config = 0;
 
