@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -441,8 +441,8 @@ am_hal_sysctrl_sleep(bool bSleepDeep)
                     //
                     // Report deepsleep state again to update global variables (g_bVddcaorVddcpuOverride, g_bHpToDeepSleep...)
                     //
-                    eCpuSt = AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP;
-                    am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_CPU_STATE, false, (void *) &eCpuSt);
+                    am_hal_spotmgr_cpu_state_e eCpuSleepDeep = AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP;
+                    am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_CPU_STATE, false, (void *) &eCpuSleepDeep);
                 }
                 //
                 // Remove overrides to allow buck to go in LP mode
@@ -751,6 +751,7 @@ void am_hal_sysctrl_clkmuxrst_clkneeded_update(am_hal_sysctrl_clkmuxrst_clk_e eC
 //*****************************************************************************
 void am_hal_sysctrl_clkmuxrst_low_power_init()
 {
+    am_hal_clkmgr_board_info_t sClkmgrBoardInfo;
     //
     // Execute clock mux reset if this is not a POA reset and SNVR2 signature
     // matches
@@ -809,6 +810,18 @@ void am_hal_sysctrl_clkmuxrst_low_power_init()
             if (HALSTATE_b.EXTCLK_NEEDED ||
                 (HALSTATE_b.PLL_NEEDED && HALSTATE_b.PLL_FREFSEL == MCUCTRL_PLLCTL0_FREFSEL_EXTREFCLK))
             {
+                //
+                // Check if this is a SIP device(Apollo510B) and is it enabled
+                //
+                am_hal_clkmgr_board_info_get(&sClkmgrBoardInfo);
+                if (sClkmgrBoardInfo.bIsSipEnabled)
+                {
+                    //
+                    // Request clock from SIP and wait 1ms for the clock to propagate through
+                    //
+                    am_hal_gpio_output_set(136);
+                    am_hal_delay_us(1000);
+                }
                 am_hal_gpio_pincfg_t sExtRefClkCfg;
                 sExtRefClkCfg.GP.cfg_b.uFuncSel = AM_HAL_PIN_15_REFCLK_EXT;
                 am_hal_gpio_pinconfig_get(15, &sGpio15Cfg);
@@ -894,6 +907,13 @@ void am_hal_sysctrl_clkmuxrst_low_power_init()
             if (HALSTATE_b.EXTCLK_NEEDED ||
                 (HALSTATE_b.PLL_NEEDED && HALSTATE_b.PLL_FREFSEL == MCUCTRL_PLLCTL0_FREFSEL_EXTREFCLK))
             {
+                if (sClkmgrBoardInfo.bIsSipEnabled)
+                {
+                    //
+                    // Stop clock from SIP
+                    //
+                    am_hal_gpio_output_clear(136);
+                }
                 am_hal_gpio_pinconfig(15, sGpio15Cfg);
             }
 

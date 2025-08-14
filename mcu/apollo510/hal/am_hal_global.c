@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -79,24 +79,11 @@ const am_hal_version_t g_ui32HALversion =
 // Static function for reading the timer value.
 //
 //*****************************************************************************
-#if (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION < 6000000)
-__asm void
-am_hal_triple_read( uint32_t ui32TimerAddr, uint32_t ui32Data[])
-{
-    push    {r1, r4}                // Save r1=ui32Data, r4
-    mrs     r4, PRIMASK             // Save current interrupt state
-    cpsid   i                       // Disable INTs while reading the reg
-    ldr     r1, [r0, #0]            // Read the designated register 3 times
-    ldr     r2, [r0, #0]            //  "
-    ldr     r3, [r0, #0]            //  "
-    msr     PRIMASK, r4             // Restore interrupt state
-    pop     {r0, r4}                // Get r0=ui32Data, restore r4
-    str     r1, [r0, #0]            // Store 1st read value to array
-    str     r2, [r0, #4]            // Store 2nd read value to array
-    str     r3, [r0, #8]            // Store 3rd read value to array
-    bx      lr                      // Return to caller
-}
-#elif (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION >= 6000000)
+#if defined (__GNUC__)          // ARM6 and GCC compiler
+#ifndef __ARMCC_VERSION         // naked attribute with input parameter only
+                                // allowed on gcc compiler
+__attribute__((naked))
+#endif
 void
 am_hal_triple_read(uint32_t ui32TimerAddr, uint32_t ui32Data[])
 {
@@ -113,32 +100,18 @@ am_hal_triple_read(uint32_t ui32TimerAddr, uint32_t ui32Data[])
     " str   R1, [R0, #0]\n"
     " str   R2, [R0, #4]\n"
     " str   R3, [R0, #8]\n"
+#ifndef __ARMCC_VERSION
+    " bx    lr          \n"     // Return to caller, required for naked attribute function
+#endif
+#ifdef  __ARMCC_VERSION         // Clobber register list and input operand assignment
+                                // valid for ARMCC compiler only. GCC compiler directly
+                                // utilizes the register because of its naked attribute
     :
     : [ui32TimerAddr] "r" (ui32TimerAddr),
       [ui32Data] "r" (&ui32Data[0])
     : "r0", "r1", "r2", "r3", "r4"
+#endif
   );
-}
-#elif defined(__GNUC_STDC_INLINE__)
-__attribute__((naked))
-void
-am_hal_triple_read(uint32_t ui32TimerAddr, uint32_t ui32Data[])
-{
-    __asm
-    (
-        "   push    {r1, r4}\n"                 // Save r1=ui32Data, r4
-        "   mrs     r4, PRIMASK \n"             // Save current interrupt state
-        "   cpsid   i           \n"             // Disable INTs while reading the reg
-        "   ldr     r1, [r0, #0]\n"             // Read the designated register 3 times
-        "   ldr     r2, [r0, #0]\n"             //  "
-        "   ldr     r3, [r0, #0]\n"             //  "
-        "   msr     PRIMASK, r4 \n"             // Restore interrupt state
-        "   pop     {r0, r4}\n"                 // Get r0=ui32Data, restore r4
-        "   str     r1, [r0, #0]\n"             // Store 1st read value to array
-        "   str     r2, [r0, #4]\n"             // Store 2nd read value to array
-        "   str     r3, [r0, #8]\n"             // Store 3rd read value to array
-        "   bx      lr          \n"             // Return to caller
-    );
 }
 #elif defined(__IAR_SYSTEMS_ICC__)
 #pragma diag_suppress = Pe940   // Suppress IAR compiler warning about missing

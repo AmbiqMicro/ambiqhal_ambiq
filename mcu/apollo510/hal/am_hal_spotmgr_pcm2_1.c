@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -331,12 +331,13 @@ spotmgr_buck_deepsleep_state_determine(am_hal_spotmgr_power_status_t * psPwrStat
 {
     //
     // Check temperature range and peripherals power status, if there is any
-    // peripheral enabled in deepsleep or temperature range is HIGH, the
+    // peripheral or SYSPLL enabled in deepsleep or temperature range is HIGH, the
     // simobuck must be forced to stay in active mode in deepsleep.
     //
-    if ((psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH) ||
-        (psPwrStatus->ui32DevPwrSt & DEVPWRST_MONITOR_PERIPH_MASK)    ||
-        (psPwrStatus->ui32AudSSPwrSt & AUDSSPWRST_MONITOR_PERIPH_MASK))
+    if ((psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH)   ||
+        (psPwrStatus->ui32DevPwrSt & DEVPWRST_MONITOR_PERIPH_MASK)      ||
+        (psPwrStatus->ui32AudSSPwrSt & AUDSSPWRST_MONITOR_PERIPH_MASK)  ||
+        (MCUCTRL->PLLCTL0_b.SYSPLLPDB == MCUCTRL_PLLCTL0_SYSPLLPDB_ENABLE))
     {
         g_bFrcBuckAct = true;
         return;
@@ -1446,9 +1447,8 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                         if (sPwrStatus.eCpuState == AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP)
                         {
                             spotmgr_buck_deepsleep_state_determine(&sPwrStatus);
-                            if ((g_ui32CurPowerStateStatic != 8)  &&
-                                (g_ui32CurPowerStateStatic != 12) &&
-                                (!TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0EN) )
+                            if ((g_ui32CurPowerStateStatic != 8) &&
+                                (g_ui32CurPowerStateStatic != 12))
                             {
                                 g_bVddcaorVddcpuOverride = true;
                             }
@@ -1666,11 +1666,14 @@ uint32_t am_hal_spotmgr_pcm2_1_simobuck_init_aft_enable(void)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//
+// Fort PCM2.1, this function is not working. Please keep NO_TEMPSENSE_IN_DEEPSLEEP as false.
+//
 #if NO_TEMPSENSE_IN_DEEPSLEEP
 //*****************************************************************************
 //
 //! @brief Prepare SPOT manager for suspended tempco during deep sleep for
-//!        PCM2.1
+//!        PCM2.1.
 //!
 //! @return SUCCESS or other Failures.
 //
@@ -1685,7 +1688,7 @@ uint32_t am_hal_spotmgr_pcm2_1_tempco_suspend(void)
         // Fix the temperature range to the highest and update the SPOT Manager before going to deepsleep.
         //
         sTempCo.fTemperature = VDDC_VDDF_TEMPCO_THRESHOLD_HIGH + 1.0f;
-        am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
+        return am_hal_spotmgr_pcm2_1_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
     }
     else
     {
@@ -1694,9 +1697,8 @@ uint32_t am_hal_spotmgr_pcm2_1_tempco_suspend(void)
         // Fix the temperature range to the lowest and update the SPOT Manager before going to deepsleep.
         //
         sTempCo.fTemperature =  VDDC_VDDF_TEMPCO_THRESHOLD_LOW - 1.0f;
-        am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
+        return am_hal_spotmgr_pcm2_1_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
     }
-    return AM_HAL_STATUS_SUCCESS;
 }
 #endif
 

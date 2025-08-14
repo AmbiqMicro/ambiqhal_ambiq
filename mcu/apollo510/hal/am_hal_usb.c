@@ -29,9 +29,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -44,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -542,6 +539,11 @@ static bool g_bUSBDMA0Busy = false;
 //
 // IDX0 registers
 //
+#define IDX0_NO_SET_BITMASK                 (USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
+#define IDX0_NO_CLEAR_BITMASK               (USB_IDX0_UnderRunSentStall_Msk)
+#define USB_IDX0_GET_MASK(msk)              (pUSB->IDX0 & msk)
+#define USB_IDX0_SET_MASK_WITH_PROTECT(msk) (pUSB->IDX0 = ((pUSB->IDX0 & ~IDX0_NO_SET_BITMASK) | IDX0_NO_CLEAR_BITMASK) |  (msk))
+#define USB_IDX0_CLR_MASK_WITH_PROTECT(msk) (pUSB->IDX0 = ((pUSB->IDX0 & ~IDX0_NO_SET_BITMASK) | IDX0_NO_CLEAR_BITMASK) & ~(msk))
 
 //*****************************************************************************
 //
@@ -549,22 +551,21 @@ static bool g_bUSBDMA0Busy = false;
 //! @{
 //
 //*****************************************************************************
-#define CSR0_ServicedSetupEnd_Set(pUSB)         pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_IncompTxServiceSetupEnd_Msk
-#define CSR0_ServicedOutPktRdy_Set(pUSB)        pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_ClrDataTogServicedOutPktRdy_Msk
-#define CSR0_ServicedOutPktRdy(pUSB)            pUSB->IDX0 & USB_IDX0_ClrDataTogServicedOutPktRdy_Msk
-#define CSR0_SendStall_Set(pUSB)                pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_SentStallSendStall_Msk
-#define CSR0_SetupEnd(pUSB)                    (pUSB->IDX0 &   USB_IDX0_SendStallSetupEnd_Msk)
-
-#define CSR0_DataEnd_Set(pUSB)                  pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_FlushFIFODataEnd_Msk
-#define CSR0_SentStall(pUSB)                   (pUSB->IDX0 &   USB_IDX0_UnderRunSentStall_Msk)
-#define CSR0_SentStall_Clear(pUSB)              pUSB->IDX0 &= ~(USB_IDX0_UnderRunSentStall_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define CSR0_InPktRdy(pUSB)                    (pUSB->IDX0 &   USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define CSR0_InPktRdy_Set(pUSB)                 pUSB->IDX0 = (pUSB->IDX0 & ~USB_IDX0_InPktRdyOutPktRdy_Msk) | USB_IDX0_FIFONotEmptyInPktRdy_Msk
-#define CSR0_OutPktRdy(pUSB)                   (pUSB->IDX0 &   USB_IDX0_InPktRdyOutPktRdy_Msk)
-#define CSR0_OutPktRdy_Set(pUSB)                pUSB->IDX0 = (pUSB->IDX0 & ~USB_IDX0_FIFONotEmptyInPktRdy_Msk) | USB_IDX0_InPktRdyOutPktRdy_Msk
-#define CSR0_ServicedOutPktRdyAndDataEnd_Set(pUSB)    pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | (USB_IDX0_ClrDataTogServicedOutPktRdy_Msk | USB_IDX0_FlushFIFODataEnd_Msk)
-#define CSR0_InPktRdyAndDataEnd_Set(pUSB)             pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | (USB_IDX0_FIFONotEmptyInPktRdy_Msk | USB_IDX0_FlushFIFODataEnd_Msk)
-#define CSR0_ServicedOutPktRdyAndSendStall_Set(pUSB)  pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | (USB_IDX0_ClrDataTogServicedOutPktRdy_Msk | USB_IDX0_SentStallSendStall_Msk)
+#define CSR0_ServicedSetupEnd_Set(pUSB)               USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_IncompTxServiceSetupEnd_Msk)
+#define CSR0_ServicedOutPktRdy_Set(pUSB)              USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_ClrDataTogServicedOutPktRdy_Msk)
+#define CSR0_ServicedOutPktRdy(pUSB)                  USB_IDX0_GET_MASK(USB_IDX0_ClrDataTogServicedOutPktRdy_Msk)
+#define CSR0_SendStall_Set(pUSB)                      USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_SentStallSendStall_Msk)
+#define CSR0_SetupEnd(pUSB)                           USB_IDX0_GET_MASK(USB_IDX0_SendStallSetupEnd_Msk)
+#define CSR0_DataEnd_Set(pUSB)                        USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_FlushFIFODataEnd_Msk)
+#define CSR0_SentStall(pUSB)                          USB_IDX0_GET_MASK(USB_IDX0_UnderRunSentStall_Msk)
+#define CSR0_SentStall_Clear(pUSB)                    USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_UnderRunSentStall_Msk)
+#define CSR0_InPktRdy(pUSB)                           USB_IDX0_GET_MASK(USB_IDX0_FIFONotEmptyInPktRdy_Msk)
+#define CSR0_InPktRdy_Set(pUSB)                       USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_FIFONotEmptyInPktRdy_Msk)
+#define CSR0_OutPktRdy(pUSB)                          USB_IDX0_GET_MASK(USB_IDX0_InPktRdyOutPktRdy_Msk)
+#define CSR0_OutPktRdy_Set(pUSB)                      USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_InPktRdyOutPktRdy_Msk)
+#define CSR0_ServicedOutPktRdyAndDataEnd_Set(pUSB)    USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_ClrDataTogServicedOutPktRdy_Msk | USB_IDX0_FlushFIFODataEnd_Msk)
+#define CSR0_InPktRdyAndDataEnd_Set(pUSB)             USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_FIFONotEmptyInPktRdy_Msk | USB_IDX0_FlushFIFODataEnd_Msk)
+#define CSR0_ServicedOutPktRdyAndSendStall_Set(pUSB)  USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_ClrDataTogServicedOutPktRdy_Msk | USB_IDX0_SentStallSendStall_Msk)
 //*****************************************************************************
 //! @}
 //*****************************************************************************
@@ -575,12 +576,12 @@ static bool g_bUSBDMA0Busy = false;
 //! @{
 //
 //*****************************************************************************
-#define INMAXP_MaxPayload(pUSB)                (pUSB->IDX0 &   USB_IDX0_MAXPAYLOAD_Msk) >> USB_IDX0_MAXPAYLOAD_Pos
-#define INMAXP_MaxPayload_Set(pUSB, maxp)       pUSB->IDX0 &= ~(USB_IDX0_MAXPAYLOAD_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk); \
-                                                pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | (maxp) << USB_IDX0_MAXPAYLOAD_Pos
-#define INMAXP_PktSplitOption(pUSB)            (pUSB->IDX0 &   USB_IDX0_PKTSPLITOPTION_Msk) >> USB_IDX0_PKTSPLITOPTION_Pos
-#define INMAXP_PktSplitOption_Set(pUSB, split)  pUSB->IDX0 &= ~(USB_IDX0_PKTSPLITOPTION_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk); \
-                                                pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | (split) << USB_IDX0_PKTSPLITOPTION_Pos
+#define INMAXP_MaxPayload(pUSB)                 USB_IDX0_GET_MASK(USB_IDX0_MAXPAYLOAD_Msk) >> USB_IDX0_MAXPAYLOAD_Pos
+#define INMAXP_MaxPayload_Set(pUSB, maxp)       USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_MAXPAYLOAD_Msk); \
+                                                USB_IDX0_SET_MASK_WITH_PROTECT((maxp) << USB_IDX0_MAXPAYLOAD_Pos)
+#define INMAXP_PktSplitOption(pUSB)             USB_IDX0_GET_MASK(USB_IDX0_PKTSPLITOPTION_Msk) >> USB_IDX0_PKTSPLITOPTION_Pos
+#define INMAXP_PktSplitOption_Set(pUSB, split)  USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_PKTSPLITOPTION_Msk); \
+                                                USB_IDX0_SET_MASK_WITH_PROTECT((split) << USB_IDX0_PKTSPLITOPTION_Pos)
 //*****************************************************************************
 //! @}
 //*****************************************************************************
@@ -591,20 +592,20 @@ static bool g_bUSBDMA0Busy = false;
 //! @{
 //
 //*****************************************************************************
-#define INCSRL_IncompTx(pUSB)                  (pUSB->IDX0 &   USB_IDX0_IncompTxServiceSetupEnd_Msk)
-#define INCSRL_IncompTx_Clear(pUSB)             pUSB->IDX0 &= ~(USB_IDX0_IncompTxServiceSetupEnd_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRL_ClrDataTog_Set(pUSB)             pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_ClrDataTogServicedOutPktRdy_Msk
-#define INCSRL_SentStall(pUSB)                 (pUSB->IDX0 &   USB_IDX0_SentStallSendStall_Msk)
-#define INCSRL_SentStall_Clear(pUSB)            pUSB->IDX0 &= ~(USB_IDX0_SentStallSendStall_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRL_SendStall_Set(pUSB)              pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_SendStallSetupEnd_Msk
-#define INCSRL_SendStall_Clear(pUSB)            pUSB->IDX0 &= ~(USB_IDX0_SendStallSetupEnd_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRL_FlushFIFO_Set(pUSB)              pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_FlushFIFODataEnd_Msk
-#define INCSRL_UnderRun(pUSB)                  (pUSB->IDX0 &   USB_IDX0_UnderRunSentStall_Msk)
-#define INCSRL_UnderRun_Clear(pUSB)             pUSB->IDX0 &= ~(USB_IDX0_UnderRunSentStall_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRL_FIFONotEmpty(pUSB)              (pUSB->IDX0 &   USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRL_FIFONotEmpty_Clear(pUSB)         pUSB->IDX0 &= ~(USB_IDX0_FIFONotEmptyInPktRdy_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRL_InPktRdy(pUSB)                  (pUSB->IDX0 &   USB_IDX0_InPktRdyOutPktRdy_Msk)
-#define INCSRL_InPktRdy_Set(pUSB)               pUSB->IDX0 = (pUSB->IDX0 & ~USB_IDX0_FIFONotEmptyInPktRdy_Msk) | USB_IDX0_InPktRdyOutPktRdy_Msk
+#define INCSRL_IncompTx(pUSB)                   USB_IDX0_GET_MASK(USB_IDX0_IncompTxServiceSetupEnd_Msk)
+#define INCSRL_IncompTx_Clear(pUSB)             USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_IncompTxServiceSetupEnd_Msk)
+#define INCSRL_ClrDataTog_Set(pUSB)             USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_ClrDataTogServicedOutPktRdy_Msk)
+#define INCSRL_SentStall(pUSB)                  USB_IDX0_GET_MASK(USB_IDX0_SentStallSendStall_Msk)
+#define INCSRL_SentStall_Clear(pUSB)            USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_SentStallSendStall_Msk)
+#define INCSRL_SendStall_Set(pUSB)              USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_SendStallSetupEnd_Msk)
+#define INCSRL_SendStall_Clear(pUSB)            USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_SendStallSetupEnd_Msk)
+#define INCSRL_FlushFIFO_Set(pUSB)              USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_FlushFIFODataEnd_Msk)
+#define INCSRL_UnderRun(pUSB)                   USB_IDX0_GET_MASK(USB_IDX0_UnderRunSentStall_Msk)
+#define INCSRL_UnderRun_Clear(pUSB)             USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_UnderRunSentStall_Msk)
+#define INCSRL_FIFONotEmpty(pUSB)               USB_IDX0_GET_MASK(USB_IDX0_FIFONotEmptyInPktRdy_Msk)
+#define INCSRL_FIFONotEmpty_Clear(pUSB)         USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_FIFONotEmptyInPktRdy_Msk)
+#define INCSRL_InPktRdy(pUSB)                   USB_IDX0_GET_MASK(USB_IDX0_InPktRdyOutPktRdy_Msk)
+#define INCSRL_InPktRdy_Set(pUSB)               USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_InPktRdyOutPktRdy_Msk)
 //*****************************************************************************
 //! @}
 //*****************************************************************************
@@ -615,22 +616,22 @@ static bool g_bUSBDMA0Busy = false;
 //! @{
 //
 //*****************************************************************************
-#define INCSRU_AutoSet(pUSB)                   (pUSB->IDX0 &   USB_IDX0_AutoSet_Msk)
-#define INCSRU_AutoSet_Set(pUSB)                pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) |  USB_IDX0_AutoSet_Msk
-#define INCSRU_AutoSet_Clear(pUSB)              pUSB->IDX0 &= ~(USB_IDX0_AutoSet_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRU_ISO_Set(pUSB)                    pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_ISO_Msk
-#define INCSRU_ISO_Clear(pUSB)                  pUSB->IDX0 &= ~(USB_IDX0_ISO_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRU_Mode_Set(pUSB)                   pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_Mode_Msk
-#define INCSRU_Mode_Clear(pUSB)                 pUSB->IDX0 &= ~(USB_IDX0_Mode_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRU_DMAReqEnab_Set(pUSB)             pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_DMAReqEnab_Msk
-#define INCSRU_DMAReqEnab_Clear(pUSB)           pUSB->IDX0 &= ~(USB_IDX0_DMAReqEnab_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRU_FrcDataTog_Set(pUSB)             pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_FrcDataTog_Msk
-#define INCSRU_FrcDataTog_Clear(pUSB)           pUSB->IDX0 &= ~(USB_IDX0_FrcDataTog_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
+#define INCSRU_AutoSet(pUSB)                   USB_IDX0_GET_MASK(USB_IDX0_AutoSet_Msk)
+#define INCSRU_AutoSet_Set(pUSB)               USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_AutoSet_Msk)
+#define INCSRU_AutoSet_Clear(pUSB)             USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_AutoSet_Msk)
+#define INCSRU_ISO_Set(pUSB)                   USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_ISO_Msk)
+#define INCSRU_ISO_Clear(pUSB)                 USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_ISO_Msk)
+#define INCSRU_Mode_Set(pUSB)                  USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_Mode_Msk)
+#define INCSRU_Mode_Clear(pUSB)                USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_Mode_Msk)
+#define INCSRU_DMAReqEnab_Set(pUSB)            USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_DMAReqEnab_Msk)
+#define INCSRU_DMAReqEnab_Clear(pUSB)          USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_DMAReqEnab_Msk)
+#define INCSRU_FrcDataTog_Set(pUSB)            USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_FrcDataTog_Msk)
+#define INCSRU_FrcDataTog_Clear(pUSB)          USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_FrcDataTog_Msk)
 
-#define INCSRU_DMAReqMode_Set(pUSB)             pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_DMAReqMode_Msk
-#define INCSRU_DMAReqMode_Clear(pUSB)           pUSB->IDX0 &= ~(USB_IDX0_DMAReqMode_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
-#define INCSRU_DPktBufDis_Set(pUSB)             pUSB->IDX0 = (pUSB->IDX0 & ~(USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)) | USB_IDX0_DPktBufDis_Msk
-#define INCSRU_DPktBufDis_Clear(pUSB)           pUSB->IDX0 &= ~(USB_IDX0_DPktBufDis_Msk | USB_IDX0_InPktRdyOutPktRdy_Msk | USB_IDX0_FIFONotEmptyInPktRdy_Msk)
+#define INCSRU_DMAReqMode_Set(pUSB)            USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_DMAReqMode_Msk)
+#define INCSRU_DMAReqMode_Clear(pUSB)          USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_DMAReqMode_Msk)
+#define INCSRU_DPktBufDis_Set(pUSB)            USB_IDX0_SET_MASK_WITH_PROTECT(USB_IDX0_DPktBufDis_Msk)
+#define INCSRU_DPktBufDis_Clear(pUSB)          USB_IDX0_CLR_MASK_WITH_PROTECT(USB_IDX0_DPktBufDis_Msk)
 //*****************************************************************************
 //! @}
 //*****************************************************************************
@@ -638,9 +639,10 @@ static bool g_bUSBDMA0Busy = false;
 //
 // IDX1 registers
 //
-
-#define USB_IDX1_SET_MASK_WITH_PROTECT(msk)     pUSB->IDX1 |= ((msk) | USB_IDX1_OutPktRdy_Msk)
-#define USB_IDX1_CLR_MASK_WITH_PROTECT(msk)     pUSB->IDX1  = ((pUSB->IDX1 & (~msk)) | USB_IDX1_OutPktRdy_Msk)
+#define USB_IDX1_NO_CLEAR_MASK                  (USB_IDX1_OutPktRdy_Msk)
+#define USB_IDX1_GET_MASK(msk)                  (pUSB->IDX1 & msk)
+#define USB_IDX1_SET_MASK_WITH_PROTECT(msk)     (pUSB->IDX1 = (pUSB->IDX1 | USB_IDX1_NO_CLEAR_MASK) |  (msk))
+#define USB_IDX1_CLR_MASK_WITH_PROTECT(msk)     (pUSB->IDX1 = (pUSB->IDX1 | USB_IDX1_NO_CLEAR_MASK) & ~(msk))
 
 //*****************************************************************************
 //
@@ -648,11 +650,11 @@ static bool g_bUSBDMA0Busy = false;
 //! @{
 //
 //*****************************************************************************
-#define OUTMAXP_MaxPayload(pUSB)               (pUSB->IDX1 & USB_IDX1_MAXPAYLOAD_Msk) >> USB_IDX1_MAXPAYLOAD_Pos
+#define OUTMAXP_MaxPayload(pUSB)                USB_IDX1_GET_MASK(USB_IDX1_MAXPAYLOAD_Msk) >> USB_IDX1_MAXPAYLOAD_Pos
 #define OUTMAXP_MaxPayload_Set(pUSB, maxp)      USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_MAXPAYLOAD_Msk); \
                                                 USB_IDX1_SET_MASK_WITH_PROTECT((maxp) << USB_IDX1_MAXPAYLOAD_Pos)
 
-#define OUTMAXP_PktSplitOption(pUSB)           (pUSB->IDX1 & USB_IDX1_PKTSPLITOPTION_Msk) >> USB_IDX1_PKTSPLITOPTION_Pos
+#define OUTMAXP_PktSplitOption(pUSB)            USB_IDX1_GET_MASK(USB_IDX1_PKTSPLITOPTION_Msk) >> USB_IDX1_PKTSPLITOPTION_Pos
 #define OUTMAXP_PktSplitOption_Set(pUSB, split) USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_PKTSPLITOPTION_Msk); \
                                                 USB_IDX1_SET_MASK_WITH_PROTECT((split) << USB_IDX1_PKTSPLITOPTION_Pos)
 //*****************************************************************************
@@ -666,17 +668,17 @@ static bool g_bUSBDMA0Busy = false;
 //
 //*****************************************************************************
 #define OUTCSRL_ClrDataTog_Set(pUSB)           USB_IDX1_SET_MASK_WITH_PROTECT(USB_IDX1_ClrDataTog_Msk)
-#define OUTCSRL_SentStall(pUSB)                (pUSB->IDX1 &   USB_IDX1_SentStall_Msk)
+#define OUTCSRL_SentStall(pUSB)                USB_IDX1_GET_MASK(USB_IDX1_SentStall_Msk)
 #define OUTCSRL_SentStall_Clear(pUSB)          USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_SentStall_Msk)
 #define OUTCSRL_SendStall_Set(pUSB)            USB_IDX1_SET_MASK_WITH_PROTECT(USB_IDX1_SendStall_Msk)
 #define OUTCSRL_SendStall_Clear(pUSB)          USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_SendStall_Msk)
 #define OUTCSRL_FlushFIFO_Set(pUSB)            USB_IDX1_SET_MASK_WITH_PROTECT(USB_IDX1_FlushFIFO_Msk)
-#define OUTCSRL_DataError(pUSB)                (pUSB->IDX1 &   USB_IDX1_DataError_Msk)
-#define OUTCSRL_OverRun(pUSB)                  (pUSB->IDX1 &   USB_IDX1_OverRun_Msk)
+#define OUTCSRL_DataError(pUSB)                USB_IDX1_GET_MASK(USB_IDX1_DataError_Msk)
+#define OUTCSRL_OverRun(pUSB)                  USB_IDX1_GET_MASK(USB_IDX1_OverRun_Msk)
 #define OUTCSRL_OverRun_Clear(pUSB)            USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_OverRun_Msk)
-#define OUTCSRL_FIFOFull(pUSB)                 (pUSB->IDX1 &   USB_IDX1_FIFOFull_Msk)
-#define OUTCSRL_OutPktRdy(pUSB)                (pUSB->IDX1 &   USB_IDX1_OutPktRdy_Msk)
-#define OUTCSRL_OutPktRdy_Clear(pUSB)          pUSB->IDX1 &= ~USB_IDX1_OutPktRdy_Msk
+#define OUTCSRL_FIFOFull(pUSB)                 USB_IDX1_GET_MASK(USB_IDX1_FIFOFull_Msk)
+#define OUTCSRL_OutPktRdy(pUSB)                USB_IDX1_GET_MASK(USB_IDX1_OutPktRdy_Msk)
+#define OUTCSRL_OutPktRdy_Clear(pUSB)          USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_OutPktRdy_Msk)
 //*****************************************************************************
 //! @}
 //*****************************************************************************
@@ -687,7 +689,7 @@ static bool g_bUSBDMA0Busy = false;
 //! @{
 //
 //*****************************************************************************
-#define OUTCSRU_AutoClear(pUSB)                (pUSB->IDX1 &   USB_IDX1_AutoClear_Msk)
+#define OUTCSRU_AutoClear(pUSB)                USB_IDX1_GET_MASK(USB_IDX1_AutoClear_Msk)
 #define OUTCSRU_AutoClear_Set(pUSB)            USB_IDX1_SET_MASK_WITH_PROTECT(USB_IDX1_AutoClear_Msk)
 #define OUTCSRU_AutoClear_Clear(pUSB)          USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_AutoClear_Msk)
 #define OUTCSRU_ISO_Set(pUSB)                  USB_IDX1_SET_MASK_WITH_PROTECT(USB_IDX1_ISO_Msk)
@@ -696,13 +698,13 @@ static bool g_bUSBDMA0Busy = false;
 #define OUTCSRU_DMAReqEnab_Clear(pUSB)         USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_DMAReqEnab_Msk)
 #define OUTCSRU_DisNye_Set(pUSB)               USB_IDX1_SET_MASK_WITH_PROTECT(USB_IDX1_DisNye_Msk)
 #define OUTCSRU_DisNye_Clear(pUSB)             USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_DisNye_Msk)
-#define OUTCSRU_PIDErr(pUSB)                   (pUSB->IDX1 &   USB_IDX1_DisNye_Msk)
+#define OUTCSRU_PIDErr(pUSB)                   USB_IDX1_GET_MASK(USB_IDX1_DisNye_Msk)
 #define OUTCSRU_DMAReqMode_Set(pUSB)           USB_IDX1_SET_MASK_WITH_PROTECT(USB_IDX1_DMAReqMode_Msk)
 #define OUTCSRU_DMAReqMode_Clear(pUSB)         USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_DMAReqMode_Msk)
-#define OUTCSRU_DPktBufDis(pUSB)               (pUSB->IDX1 &   USB_IDX1_DPktBufDis_Msk)
+#define OUTCSRU_DPktBufDis(pUSB)               USB_IDX1_GET_MASK(USB_IDX1_DPktBufDis_Msk)
 #define OUTCSRU_DPktBufDis_Set(pUSB)           USB_IDX1_SET_MASK_WITH_PROTECT(USB_IDX1_DPktBufDis_Msk)
 #define OUTCSRU_DPktBufDis_Clear(pUSB)         USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_DPktBufDis_Msk)
-#define OUTCSRU_IncompRx(pUSB)                 (pUSB->IDX1 &   USB_IDX1_IncompRx_Msk)
+#define OUTCSRU_IncompRx(pUSB)                 USB_IDX1_GET_MASK(USB_IDX1_IncompRx_Msk)
 #define OUTCSRU_IncompRx_Clear(pUSB)           USB_IDX1_CLR_MASK_WITH_PROTECT(USB_IDX1_IncompRx_Msk)
 //*****************************************************************************
 //! @}

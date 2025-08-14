@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -181,7 +181,14 @@ uint32_t am_hal_ios_power_ctrl(void *pHandle,
             //
             // Enable power control.
             //
-            am_hal_pwrctrl_periph_enable((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_IOS0 + pIOSState->ui32Module));
+            if (pIOSState->ui32Module == 0)
+            {
+                am_hal_pwrctrl_periph_enable((am_hal_pwrctrl_periph_e)AM_HAL_PWRCTRL_PERIPH_IOS0);
+            }
+            else
+            {
+                am_hal_pwrctrl_periph_enable((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_IOSFD0 + pIOSState->ui32Module - 1));
+            }
 
             if (bRetainState)
             {
@@ -225,7 +232,14 @@ uint32_t am_hal_ios_power_ctrl(void *pHandle,
             //
             // Disable power control.
             //
-            am_hal_pwrctrl_periph_disable((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_IOS0 + pIOSState->ui32Module));
+            if (pIOSState->ui32Module == 0)
+            {
+                am_hal_pwrctrl_periph_disable((am_hal_pwrctrl_periph_e)AM_HAL_PWRCTRL_PERIPH_IOS0);
+            }
+            else
+            {
+                am_hal_pwrctrl_periph_disable((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_IOSFD0 + pIOSState->ui32Module - 1));
+            }
 
             //
             // IOS clock release
@@ -301,7 +315,9 @@ static void am_hal_ios_dma_configure(void *pHandle, am_hal_ios_transfer_t *pTran
         IOSLAVEn(ui32Module)->DMACFG =
             (_VAL2FLD(IOSLAVE_DMACFG_DMAQUAD,   IOSLAVE_DMACFG_DMAQUAD_QUAD)                    |
              _VAL2FLD(IOSLAVE_DMACFG_DMAPRI,    pTransferCfg->ui8Priority)                      |
-             _VAL2FLD(IOSLAVE_DMACFG_DMADIR,    ui32Dir) );
+             _VAL2FLD(IOSLAVE_DMACFG_DMADIR,    ui32Dir)                                        |
+             _VAL2FLD(IOSLAVE_DMACFG_FRCDMA,    IOSLAVE_DMACFG_FRCDMA_NOFORCE)                  |
+             _VAL2FLD(IOSLAVE_DMACFG_PADBYTEEN, IOSLAVE_DMACFG_PADBYTEEN_DIS) );
     }
     // Full duplex
     else
@@ -484,6 +500,34 @@ am_hal_ios_dma_fullduplex_transfer_abort(void *pTXHandle,
 
 //*****************************************************************************
 //
+// IOS get dma status
+//
+//*****************************************************************************
+uint32_t am_hal_ios_dma_status_get(void *pHandle, uint32_t *pui32DmaStatus)
+{
+    uint32_t ui32Module;
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    if ( !AM_HAL_IOS_CHK_HANDLE(pHandle) )
+    {
+        return AM_HAL_STATUS_INVALID_HANDLE;
+    }
+
+    if ( !pui32DmaStatus )
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+    ui32Module = ((am_hal_ios_state_t*)pHandle)->ui32Module;
+
+    *pui32DmaStatus = IOSLAVEn(ui32Module)->DMASTAT;
+
+    return AM_HAL_STATUS_SUCCESS;
+} // am_hal_ios_dma_status_get()
+
+//*****************************************************************************
+//
 //! @brief Validate an IOS transaction.
 //!
 //! @param psTransaction  - pointer to IOS transaction.
@@ -656,12 +700,7 @@ static uint32_t internal_ios_get_err(uint32_t ui32Module, uint32_t ui32IntStatus
     ui32IntStatus |= IOSLAVEn(ui32Module)->INTSTAT;
     ui32DmaStatus |= IOSLAVEn(ui32Module)->DMASTAT;
 
-    // DMA overflow and FIFO has been overwritten
-    if (ui32DmaStatus & IOSLAVE_DMASTAT_DMAFOVF_Msk)
-    {
-        ui32Status = AM_HAL_IOS_STATUS_DMA_OVERFLOW;
-    }
-    else if (ui32IntStatus & AM_HAL_IOS_INT_DERR)
+    if (ui32IntStatus & AM_HAL_IOS_INT_DERR)
     {
         ui32Status = AM_HAL_IOS_STATUS_DMA_ERROR;
     }
@@ -681,6 +720,11 @@ static uint32_t internal_ios_get_err(uint32_t ui32Module, uint32_t ui32IntStatus
     else if (ui32IntStatus & AM_HAL_IOS_INT_FRDERR)
     {
         ui32Status = AM_HAL_IOS_STATUS_FIFO_READ_ERROR;
+    }
+    // DMA overflow and FIFO has been overwritten
+    else if (ui32DmaStatus & IOSLAVE_DMASTAT_DMAFOVF_Msk)
+    {
+        ui32Status = AM_HAL_IOS_STATUS_DMA_OVERFLOW;
     }
 
     return ui32Status;

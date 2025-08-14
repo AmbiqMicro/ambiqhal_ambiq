@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -187,6 +187,10 @@ typedef struct
 
     am_hal_i2s_clksel_e     eClockSel;
     bool                    bInternalMclkRequired;
+
+    //! Store application's settings.
+    am_hal_i2s_data_format_t sDataFormat;
+    am_hal_i2s_io_signal_t   sIoConfig;
 }am_hal_i2s_state_t;
 
 //*****************************************************************************
@@ -515,6 +519,45 @@ uint32_t am_hal_i2s_control(void *pHandle, am_hal_i2s_request_e eReq, void *pArg
         case AM_HAL_I2S_REQ_WRITE_TXLOWERLIMIT:
             I2Sn(ui32Module)->TXLOWERLIMIT = *((uint32_t*)pArgs);
             break;
+
+        case AM_HAL_I2S_REQ_SET_CH_NUM_FOR_MONO:
+            if (pArgs == NULL)
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+
+            // Only 1 or 2 channels are allowed for mono mode.
+            uint32_t ui32ChannelNumbersForMono = *((uint32_t*)pArgs);
+            if ((ui32ChannelNumbersForMono != 1) && (ui32ChannelNumbersForMono != 2))
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+
+            am_hal_i2s_data_format_t* pI2SData = &(pState->sDataFormat);
+            am_hal_i2s_io_signal_t* pIoConfig = &(pState->sIoConfig);
+            uint32_t ui32FramePeriod = ui32ChannelNumbersForMono * ui32I2sWordLength[pI2SData->eChannelLenPhase1];
+            if ((pI2SData->ePhase == AM_HAL_I2S_DATA_PHASE_SINGLE) && (pI2SData->ui32ChannelNumbersPhase1 == 1))
+            {
+                I2Sn(ui32Module)->I2SIOCFG_b.FPER = ui32FramePeriod - 1;
+                if (pIoConfig->sFsyncPulseCfg.eFsyncPulseType == AM_HAL_I2S_FSYNC_PULSE_HALF_FRAME_PERIOD)
+                {
+                    I2Sn(ui32Module)->I2SIOCFG_b.FWID = ui32FramePeriod / 2 - 1;
+                }
+                else if (pIoConfig->sFsyncPulseCfg.eFsyncPulseType == AM_HAL_I2S_FSYNC_PULSE_CUSTOM)
+                {
+                    if (pIoConfig->sFsyncPulseCfg.ui32FsyncPulseWidth >= ui32FramePeriod)
+                    {
+                        return AM_HAL_STATUS_INVALID_ARG;
+                    }
+                }
+            }
+            else
+            {
+                return AM_HAL_STATUS_INVALID_OPERATION;
+            }
+
+            break;
+
         case AM_HAL_I2S_REQ_MAX:
             return AM_HAL_STATUS_INVALID_ARG;
     }
@@ -584,6 +627,25 @@ am_hal_i2s_configure(void *pHandle, am_hal_i2s_config_t *psConfig)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    //
+    // Store data format information from the application.
+    //
+    pState->sDataFormat.ePhase                   = pI2SData->ePhase;
+    pState->sDataFormat.ui32ChannelNumbersPhase1 = pI2SData->ui32ChannelNumbersPhase1;
+    pState->sDataFormat.ui32ChannelNumbersPhase2 = pI2SData->ui32ChannelNumbersPhase2;
+    pState->sDataFormat.eChannelLenPhase1        = pI2SData->eChannelLenPhase1;
+    pState->sDataFormat.eChannelLenPhase2        = pI2SData->eChannelLenPhase2;
+    pState->sDataFormat.eDataDelay               = pI2SData->eDataDelay;
+    pState->sDataFormat.eSampleLenPhase1         = pI2SData->eSampleLenPhase1;
+    pState->sDataFormat.eSampleLenPhase2         = pI2SData->eSampleLenPhase2;
+    pState->sDataFormat.eDataJust                = pI2SData->eDataJust;
+
+    //
+    // Store IO configuration from the application.
+    //
+    pState->sIoConfig.sFsyncPulseCfg.eFsyncPulseType = pI2SIOCfg->sFsyncPulseCfg.eFsyncPulseType;
+    pState->sIoConfig.sFsyncPulseCfg.ui32FsyncPulseWidth = pI2SIOCfg->sFsyncPulseCfg.ui32FsyncPulseWidth;
 
     uint32_t ui32FramePeriod = 0;
     uint32_t ui32FsyncPulseWidth = 0;

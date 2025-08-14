@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_I2S_H
@@ -282,6 +282,8 @@ typedef enum
     AM_HAL_I2S_REQ_READ_TXLOWERLIMIT    = 4,
     AM_HAL_I2S_REQ_WRITE_RXUPPERLIMIT   = 5,
     AM_HAL_I2S_REQ_WRITE_TXLOWERLIMIT   = 6,
+    //! Overwrite the value AM_HAL_I2S_CH_NUM_FOR_MONO at runtime.
+    AM_HAL_I2S_REQ_SET_CH_NUM_FOR_MONO  = 7,
     AM_HAL_I2S_REQ_MAX
 } am_hal_i2s_request_e;
 
@@ -663,6 +665,19 @@ extern uint32_t am_hal_i2s_power_control(void *pHandle, am_hal_sysctrl_power_sta
 //
 //*****************************************************************************
 extern uint32_t am_hal_i2s_configure(void *pHandle, am_hal_i2s_config_t *psConfig);
+
+//*****************************************************************************
+//
+//! @brief I2S control function
+//!
+//! @param pHandle  - handle for the module instance.
+//! @param eReq     - request type
+//! @param pArgs    - pointer to the request arguments.
+//!
+//! @return status  - generic or interface specific status.
+//!
+//*****************************************************************************
+extern uint32_t am_hal_i2s_control(void *pHandle, am_hal_i2s_request_e eReq, void *pArgs);
 
 //*****************************************************************************
 //

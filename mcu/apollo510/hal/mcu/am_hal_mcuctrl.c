@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -94,7 +94,7 @@ uint32_t g_ui32xtalhscaptrim = XTALHSCAPTRIM_DEFAULT;
 //  Gets all relevant device information.
 //
 // ****************************************************************************
-#define JEDEC_RD_DELAY
+#define JEDEC_RD_DELAY  am_hal_delay_us(1);
 
 static void
 device_info_get(am_hal_mcuctrl_device_t *psDevice)
@@ -359,7 +359,7 @@ am_hal_mcuctrl_control(am_hal_mcuctrl_control_e eControl, void *pArgs)
             //
             // Set the default trim code for CAP1/CAP2, it impacts frequency accuracy and should be retrimmed
             //
-            ui32Reg = _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAP2TRIM, g_ui32xtalhscap2trim)    |
+            ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAP2TRIM, g_ui32xtalhscap2trim)    |
                       _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAPTRIM, g_ui32xtalhscaptrim)      |
             //
             // Set the transconductance of crystal to maximum, it accelerate the startup sequence

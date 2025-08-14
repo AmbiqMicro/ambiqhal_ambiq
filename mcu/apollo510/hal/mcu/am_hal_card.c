@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -2904,6 +2904,8 @@ am_hal_card_emmc_calibrate(am_hal_host_inst_index_e eIndex,
     uint8_t  ui8RxDelay = 0;
     uint32_t ui32TxResult = 0;
     uint32_t ui32RxResultArray[16] = {0};
+    uint32_t ui32BufAddr = (uint32_t)ui8CalibBuf;
+    am_hal_cachectrl_range_t sRange;
 
 #ifdef AM_DEBUG_PRINTF
     if (eUHSMode == AM_HAL_HOST_UHS_DDR50)
@@ -2964,10 +2966,32 @@ am_hal_card_emmc_calibrate(am_hal_host_inst_index_e eIndex,
                 ui8CalibBuf[i] = i % 256;
             }
 
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             am_hal_card_block_write_sync(&eMMCard, ui32StartBlk, ui32BlkCnt, (uint8_t *)ui8CalibBuf);
 
             memset((void *)ui8CalibBuf, 0x0, len);
+
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             am_hal_card_block_read_sync(&eMMCard, ui32StartBlk, ui32BlkCnt, (uint8_t *)ui8CalibBuf);
+
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_invalidate(&sRange, false);
+            }
 
             for (i = 0; i < len; i++)
             {
@@ -3081,6 +3105,8 @@ am_hal_sd_card_calibrate(am_hal_host_inst_index_e eIndex,
     uint32_t ui32TxResult = 0;
     uint32_t ui32RxResultArray[16] = {0};
     uint32_t ui32RxIndexEnd = SDIO_SCAN_RXDELAY_MAX;
+    uint32_t ui32BufAddr = (uint32_t)ui8CalibBuf;
+    am_hal_cachectrl_range_t sRange;
 
 #ifdef AM_DEBUG_PRINTF
     if (eUHSMode == AM_HAL_HOST_UHS_DDR50)
@@ -3146,9 +3172,32 @@ am_hal_sd_card_calibrate(am_hal_host_inst_index_e eIndex,
                 ui8CalibBuf[i] = i % 256;
             }
 
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             am_hal_sd_card_block_write_sync(&SdCard, ui32StartBlk, ui32BlkCnt, (uint8_t *)ui8CalibBuf);
+
             memset((void *)ui8CalibBuf, 0x0, len);
+
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             am_hal_sd_card_block_read_sync(&SdCard, ui32StartBlk, ui32BlkCnt, (uint8_t *)ui8CalibBuf);
+
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_invalidate(&sRange, false);
+            }
 
             for (i = 0; i < len; i++)
             {
@@ -4866,6 +4915,8 @@ am_hal_sdio_card_calibrate(am_hal_host_inst_index_e eIndex,
     uint32_t ui32RxResultArray[16] = {0};
     uint32_t ui32MisMatchCnt = 0;
     uint32_t ui32WrErrCnt = 0;
+    uint32_t ui32BufAddr = (uint32_t)ui8CalibBuf;
+    am_hal_cachectrl_range_t sRange;
 
 #ifdef AM_DEBUG_PRINTF
     if (eUHSMode == AM_HAL_HOST_UHS_DDR50)
@@ -4981,6 +5032,13 @@ am_hal_sdio_card_calibrate(am_hal_host_inst_index_e eIndex,
                 ui8CalibBuf[i] = i % 256;
             }
 
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = ui32BufLength;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             ui32Status = am_hal_sdio_card_multi_bytes_write_sync(&SdioCard, ui32FuncNum, ui32StartAddr, (uint8_t *)ui8CalibBuf, ui32BlockCnt, ui32BlkSize, true);
             if ( (ui32Status & 0xffff) != AM_HAL_STATUS_SUCCESS )
             {
@@ -4991,12 +5049,26 @@ am_hal_sdio_card_calibrate(am_hal_host_inst_index_e eIndex,
 
             memset((void *)ui8CalibBuf, 0x0, ui32BufLength);
 
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = ui32BufLength;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             ui32Status = am_hal_sdio_card_multi_bytes_read_sync(&SdioCard, ui32FuncNum, ui32StartAddr, (uint8_t *)ui8CalibBuf, ui32BlockCnt, ui32BlkSize, true);
             if ( (ui32Status & 0xffff)  != AM_HAL_STATUS_SUCCESS )
             {
                 ui32WrErrCnt ++;
                 AM_HAL_CARD_DEBUG("Sdio Card calibration read fail. Status=0x%x\n", ui32Status & 0xffff);
                 continue;
+            }
+
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = ui32BufLength;
+                am_hal_cachectrl_dcache_invalidate(&sRange, false);
             }
 
             for (i = 0; i < ui32BufLength; i++)

@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -60,6 +60,39 @@ am_hal_cachectrl_prefetch_t    g_PrefetchConfig =
     .ui8MaxLookAhead                = 6,
     .ui8MinLookAhead                = 4
 };
+
+//
+// Power up or power down the caches
+//
+uint32_t
+am_hal_cachectrl_caches_power_control(bool bPowerup)
+{
+    if ( bPowerup )
+    {
+        MEMSYSCTL->MSCR |= (uint32_t)(MEMSYSCTL_MSCR_ICACTIVE_Msk | MEMSYSCTL_MSCR_DCACTIVE_Msk);
+    }
+    else
+    {
+        //
+        // Check whether caches were disabled, if not, return error.
+        //
+        if ((SCB->CCR & SCB_CCR_IC_Msk) || (SCB->CCR & SCB_CCR_DC_Msk))
+        {
+            return AM_HAL_STATUS_FAIL;
+        }
+
+        //
+        // Check whether CPDLPSTATE.RLPSTATE was set to OFF state(0b11), if not, return error.
+        //
+        if ((PWRMODCTL->CPDLPSTATE & PWRMODCTL_CPDLPSTATE_RLPSTATE_Msk) != PWRMODCTL_CPDLPSTATE_RLPSTATE_Msk)
+        {
+            return AM_HAL_STATUS_FAIL;
+        }
+        MEMSYSCTL->MSCR &= ~(uint32_t)(MEMSYSCTL_MSCR_ICACTIVE_Msk | MEMSYSCTL_MSCR_DCACTIVE_Msk);
+    }
+
+    return AM_HAL_STATUS_SUCCESS;
+}
 
 //Enable the Instruction cache for operation.
 uint32_t

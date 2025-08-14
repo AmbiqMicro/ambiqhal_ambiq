@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_REG_H
@@ -214,6 +214,16 @@
 #define AM_REG_MCUCTRL_NUM_MODULES                   1
 #define AM_REG_MCUCTRLn(n) \
     (MCUCTRL_BASE + 0x00000000 * n)
+
+//*****************************************************************************
+//
+//! @brief MRAM
+//! Instance finder. (1 instance(s) available)
+//
+//*****************************************************************************
+#define AM_REG_MRAM_NUM_MODULES                      1
+#define AM_REG_MRAMn(n) \
+    (MRAM_BASE + 0x00001000 * n)
 
 //*****************************************************************************
 //

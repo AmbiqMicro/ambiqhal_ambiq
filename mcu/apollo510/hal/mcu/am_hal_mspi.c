@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -1639,7 +1639,6 @@ am_hal_mspi_device_configure(void *pHandle,
     mspi_clkgen_ctrl(ui32Module, false, false, (am_hal_mspi_io_clock_sel_e)0);
 
     {
-
         am_hal_clkmgr_clock_id_e eClockSrc;
         uint32_t ui32Status;
 

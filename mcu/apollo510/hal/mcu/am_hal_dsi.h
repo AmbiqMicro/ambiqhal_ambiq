@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -191,6 +191,16 @@ typedef void (*am_hal_dsi_external_vdd18_callback)(bool bEnable);
 
 //*****************************************************************************
 //
+//! @brief DSI exit ULPS pattern delay callback function pointer type
+//!
+//! The Application can provide a callback functions otherwise executing the default
+//! 1010us delay.
+//!
+//
+//*****************************************************************************
+typedef void (*am_hal_dsi_delay_function_callback)(uint32_t ui32PeriodInMilliSec);
+//*****************************************************************************
+//
 // External functions.
 //
 //*****************************************************************************
@@ -206,6 +216,19 @@ typedef void (*am_hal_dsi_external_vdd18_callback)(bool bEnable);
 //
 //*****************************************************************************
 extern uint32_t am_hal_dsi_register_external_vdd18_callback(const am_hal_dsi_external_vdd18_callback cb);
+
+//*****************************************************************************
+//
+//! @brief Register exit ULPS callback function
+//!
+//! @param cb is pointer of delay function.
+//!
+//! This function should be called before function am_hal_dsi_ulps_exit().
+//!
+//! @return AM_HAL_STATUS_SUCCESS
+//
+//*****************************************************************************
+extern uint32_t am_hal_dsi_register_ulps_exit_delay_callback(const am_hal_dsi_delay_function_callback cb);
 
 //*****************************************************************************
 //

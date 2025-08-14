@@ -42,7 +42,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-634f7c117b of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -296,9 +296,10 @@ vddc_vddf_tempco_top(am_hal_pwrctrl_tempco_range_e eTempCoRange)
 {
     AM_CRITICAL_BEGIN
 
+    g_eTempCoRange = eTempCoRange;
+
     if (g_bPostponeTempco)
     {
-        g_eTempCoRange = eTempCoRange;
         g_bTempcoPending = true;
     }
     else
@@ -317,6 +318,9 @@ vddc_vddf_tempco_top(am_hal_pwrctrl_tempco_range_e eTempCoRange)
 //!                   am_hal_spotmgr_tempco_param_t
 //!
 //! @return SUCCESS or other Failures.
+//!
+//! @note Setting g_bFrcBuckAct in this function only applies to PCM 1.0/1.1,
+//!       for PCM 2.0 it is handled in spotmgr_buck_deepsleep_state_determine().
 //
 //*****************************************************************************
 static uint32_t am_hal_spotmgr_pcm2_0_tempco_update(am_hal_spotmgr_tempco_param_t *psTempCo)
@@ -343,19 +347,28 @@ static uint32_t am_hal_spotmgr_pcm2_0_tempco_update(am_hal_spotmgr_tempco_param_
     switch (eTempRange)
     {
         case AM_HAL_PWRCTRL_TEMPCO_RANGE_LOW:
-            g_bFrcBuckAct = false;
+            if (g_bIsPCM2p0 == false)
+            {
+                g_bFrcBuckAct = false;
+            }
             vddc_vddf_tempco_top(AM_HAL_PWRCTRL_TEMPCO_RANGE_LOW);
             psTempCo->fRangeLower = LOW_LIMIT;
             psTempCo->fRangeHigher = VDDC_VDDF_TEMPCO_THRESHOLD;
             break;
         case AM_HAL_PWRCTRL_TEMPCO_RANGE_MID:
-            g_bFrcBuckAct = false;
+            if (g_bIsPCM2p0 == false)
+            {
+                g_bFrcBuckAct = false;
+            }
             vddc_vddf_tempco_top(AM_HAL_PWRCTRL_TEMPCO_RANGE_MID);
             psTempCo->fRangeLower = VDDC_VDDF_TEMPCO_THRESHOLD - TEMP_HYSTERESIS;
             psTempCo->fRangeHigher = BUCK_LP_TEMP_THRESHOLD;
             break;
         case AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH:
-            g_bFrcBuckAct = true;
+            if (g_bIsPCM2p0 == false)
+            {
+                g_bFrcBuckAct = true;
+            }
             vddc_vddf_tempco_top(AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH);
             psTempCo->fRangeLower = BUCK_LP_TEMP_THRESHOLD - TEMP_HYSTERESIS;
             psTempCo->fRangeHigher = HIGH_LIMIT;
@@ -367,6 +380,82 @@ static uint32_t am_hal_spotmgr_pcm2_0_tempco_update(am_hal_spotmgr_tempco_param_
     }
 
     return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+//! @brief Determine the buck state in deepsleep by setting g_bFrcBuckAct
+//!
+//! @return None.
+//!
+//! @note This function is only for PCM2.0, not for PCM 1.0/1.1.
+//
+//*****************************************************************************
+static void
+spotmgr_buck_deepsleep_state_determine(void)
+{
+    //
+    // This function is only for PCM2.0, not for PCM 1.0/1.1.
+    //
+    if (g_bIsPCM2p0 == false)
+    {
+        return;
+    }
+
+    //
+    // Check temperature range and peripherals power status, if there is any
+    // peripheral enabled in deepsleep or temperature range is HIGH, the
+    // simobuck must be forced to stay in active mode in deepsleep.
+    //
+    if (g_eTempCoRange == AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH)
+    {
+        g_bFrcBuckAct = true;
+        return;
+    }
+    else
+    {
+        //
+        // Check stimer status and clock source, if it is using either the HFRC,
+        // HFRC2 or a GPIO external clock input as the clock source in
+        // deepsleep, the simobuck must be forced to stay in active mode in
+        // deepsleep.
+        //
+        if (am_hal_stimer_is_running()                                &&
+            (STIMER->STCFG_b.CLKSEL >= STIMER_STCFG_CLKSEL_HFRC_6MHZ) &&
+            (STIMER->STCFG_b.CLKSEL <= STIMER_STCFG_CLKSEL_HFRC_375KHZ))
+        {
+            g_bFrcBuckAct = true;
+            return;
+        }
+        else
+        {
+            //
+            // Check timer status and clock source, if any timer instance is using
+            // either the HFRC, HFRC2 or a GPIO external clock input as the clock
+            // source in deepsleep, the simobuck must be forced to stay in active
+            // mode in deepsleep.
+            //
+            for (uint32_t ui32TimerNumber = 0; ui32TimerNumber < AM_REG_NUM_TIMERS; ui32TimerNumber++)
+            {
+                if ((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0EN == TIMER_CTRL0_TMR0EN_EN) &&
+                    (TIMER->GLOBEN & (TIMER_GLOBEN_ENB0_EN << ui32TimerNumber))        &&
+                    (((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK >= AM_HAL_TIMER_CLOCK_HFRC_DIV4)            &&
+                      (TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK <= AM_HAL_TIMER_CLOCK_HFRC_DIV4K))          ||
+                     ((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK >= AM_HAL_TIMER_CLOCK_HFRC2_125MHz_DIV8)    &&
+                      (TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK <= AM_HAL_TIMER_CLOCK_HFRC2_125MHz_DIV256)) ||
+                     ((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK >= AM_HAL_TIMER_CLOCK_GPIO0)                &&
+                      (TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK <= AM_HAL_TIMER_CLOCK_GPIO223))))
+                {
+                    g_bFrcBuckAct = true;
+                    return;
+                }
+            }
+            //
+            // Set g_bFrcBuckAct to false if all the conditions above are not met.
+            //
+            g_bFrcBuckAct = false;
+        }
+    }
 }
 
 #if BOOST_VDDF_FOR_SDIO
@@ -798,8 +887,17 @@ am_hal_spotmgr_pcm2_0_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
     switch (eStimulus)
     {
         case AM_HAL_SPOTMGR_STIM_CPU_STATE:
-            // Nothing to be done for PCM2.0
+        {
+            if (pArgs != NULL)
+            {
+                am_hal_spotmgr_cpu_state_e eCpuState = *((am_hal_spotmgr_cpu_state_e *)pArgs);
+                if (eCpuState == AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP)
+                {
+                    spotmgr_buck_deepsleep_state_determine();
+                }
+            }
             break;
+        }
         case AM_HAL_SPOTMGR_STIM_GPU_STATE:
         {
             am_hal_spotmgr_gpu_state_e eState = *((am_hal_spotmgr_gpu_state_e*)pArgs);
@@ -936,6 +1034,11 @@ uint32_t am_hal_spotmgr_pcm2_0_simobuck_init_aft_enable(void)
 #if !BOOST_VDDF_FOR_SDIO
 uint32_t am_hal_spotmgr_pcm2_0_tempco_suspend(void)
 {
+    //
+    // Set g_eTempCoRange to AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH to align with VDDC and VDDF values.
+    //
+    g_eTempCoRange = AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH;
+
     // Restore VDDC and VDDF settings before deepsleep to allow application to
     // suspend tempsensing during deeplseep.
     if (g_bOrigTrimsStored && (PWRCTRL->VRSTATUS_b.SIMOBUCKST == PWRCTRL_VRSTATUS_SIMOBUCKST_ACT))
@@ -987,6 +1090,11 @@ uint32_t am_hal_spotmgr_pcm2_0_tempco_suspend(void)
 #else
 uint32_t am_hal_spotmgr_pcm2_0_tempco_suspend(void)
 {
+    //
+    // Set g_eTempCoRange to AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH to align with VDDC and VDDF values.
+    //
+    g_eTempCoRange = AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH;
+
     // Restore VDDC and VDDF settings before deepsleep to allow application to
     // suspend tempsensing during deeplseep.
     if (g_bOrigTrimsStored && (PWRCTRL->VRSTATUS_b.SIMOBUCKST == PWRCTRL_VRSTATUS_SIMOBUCKST_ACT))
@@ -1146,8 +1254,10 @@ am_hal_spotmgr_pcm2_0_init(void)
     //
     g_bIsB0Pcm1p0 = APOLLO5_B0_PCM1P0;
     g_bIsPCM1p0Or1p1 = APOLLO5_B0_PCM1P0 || APOLLO5_B0_PCM1P1 || APOLLO5_B1_PCM1P1;
-    g_bIsPCM2p0Unscreened = APOLLO5_B2_PCM2P0 && (!SDIO_SCREEN_PARTS_FOR_B2);
-
+    //
+    // All B1-PCM2.0 parts are unscreened. For B2-PCM2.0, determine if it is an unscreened part through datecode.
+    //
+    g_bIsPCM2p0Unscreened = APOLLO5_B1_PCM2P0 || (APOLLO5_B2_PCM2P0 && (!SDIO_SCREEN_PARTS_FOR_B2));
     return ui32Status;
 }
 
