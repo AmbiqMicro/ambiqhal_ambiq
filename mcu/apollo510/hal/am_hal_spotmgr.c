@@ -4,11 +4,42 @@
 //!
 //! @brief SPOT manager functions that manage power states.
 //!
-//! @addtogroup spotmgr5b SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr5b_ap510 SPOTMGR - SPOT Manager
 //! @ingroup apollo510_hal
 //! @{
-//
-// ****************************************************************************
+///!
+//! Purpose: This module provides SPOT manager functionality for Apollo5
+//! devices, supporting power state management, peripheral control, and
+//! system optimization across multiple PCM versions.
+//!
+//! @section hal_spotmgr_features Key Features
+//!
+//! 1. @b Power @b State @b Management: Control and monitor system power states.
+//! 2. @b Stimulus @b Handling: Respond to hardware and software power events.
+//! 3. @b Hardware @b Integration: Interface with SIMOBUCK, LDO, and other power domains.
+//! 4. @b Version @b Support: Handle multiple PCM (Power Control Module) versions.
+//!
+//! @section hal_spotmgr_functionality Functionality
+//!
+//! - Initialize and configure SPOT manager state
+//! - Handle power state transitions and stimulus events
+//! - Integrate with hardware power domains and peripherals
+//! - Support for timer-based power management
+//! - Provide hooks for custom power management logic
+//!
+//! @section hal_spotmgr_usage Usage
+//!
+//! 1. Initialize SPOT manager and configure callbacks
+//! 2. Handle power state transitions in response to events
+//! 3. Integrate with board and application power management
+//! 4. Extend with custom logic as needed
+//!
+//! @section hal_spotmgr_configuration Configuration
+//!
+//! - @b PCM @b Version: Select appropriate PCM version for hardware
+//! - @b Callbacks: Configure function pointers for custom handling
+//! - @b Timer: Set up timer-based power management if required
+//****************************************************************************
 
 // ****************************************************************************
 //
@@ -41,7 +72,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -115,7 +146,7 @@ typedef struct
     am_hal_spotmgr_ton_config_update_t pfnTonConfigUpdate;
 
     // Power handling after LP to HP transition
-    // Applicable PCM version: 2.2
+    // Applicable PCM version: 2.1, 2.2
     am_hal_spotmgr_power_setting_aft_lptohp_t pfnSpotMgrPwrSetAftLpToHp;
 
     // Spotmgr timer interrupt service
@@ -151,6 +182,7 @@ bool g_bIsB0PCM1p1OrNewer;
 bool g_bIsPCM2p0;
 bool g_bIsPCM2p2OrNewer;
 bool g_bIsPCM2p1WoPatch;
+bool g_bCallPcm2p0Spotmgr;
 
 //! Applicable PCM version: 2.1 2.2
 //! Flag to override Vddcaor and Vddcpu
@@ -651,109 +683,99 @@ am_hal_spotmgr_init(void)
     g_bIsPCM2p0 = APOLLO5_B1_PCM2P0 || APOLLO5_B2_PCM2P0;
     // B1 PCM2.1 without UCRG patch, B2 PCM2.1 without UCRG patch
     g_bIsPCM2p1WoPatch = (APOLLO5_B1_PCM2P1 || APOLLO5_B2_PCM2P1) && ((g_sINFO1regs.ui32PATCH_TRACKER0 & 0x1) == 0);
-
-
-    if (g_bIsPCM1p0OrPCM1p1 || g_bIsPCM2p0 || g_bIsPCM2p1WoPatch)
-    {
-        //
-        // Powers up ACRG bias current (required when forcing ANALDO into active mode when entering Sleep mode).
-        //
-        MCUCTRL->ACRG_b.ACRGPWD = 0;
-        MCUCTRL->ACRG_b.ACRGSWE = 1;
-        //
-        // Forces ANALDO into active mode when entering Sleep mode.
-        //
-        MCUCTRL->VRCTRL_b.ANALDOACTIVE = 1;
-        MCUCTRL->VRCTRL_b.ANALDOPDNB = 1;
-        MCUCTRL->VRCTRL_b.ANALDOOVER = 1;
-    }
+    // Silicon versions and trim versions which should call am_hal_spotmgr_pcm2_0
+    g_bCallPcm2p0Spotmgr = (APOLLO5_B0_GE_PCM1P0 || APOLLO5_B1_LE_PCM2P0 || APOLLO5_B2_PCM2P0);
 
     //
     // Populate SPOTmanager function pointer according to PCM version
     //
     if (g_bIsPCM2p2OrNewer)
     {
-        #if !AM_HAL_SPOTMGR_PCM2_2_DISABLE
+#if !AM_HAL_SPOTMGR_PCM2_2_DISABLE
         g_sSpotMgr.pfnSpotmgrInit = am_hal_spotmgr_pcm2_2_init;
         g_sSpotMgr.pfnSpotmgrPSUpdate = am_hal_spotmgr_pcm2_2_power_state_update;
         g_sSpotMgr.pfnSpotMgrDefaultRst = am_hal_spotmgr_pcm2_2_default_reset;
+        g_sSpotMgr.pfnSpotMgrSimobuckInitBfrOvr = am_hal_spotmgr_pcm2_2_simobuck_init_bfr_ovr;
         g_sSpotMgr.pfnSpotMgrSimobuckInitAftEnable = am_hal_spotmgr_pcm2_2_simobuck_init_aft_enable;
         g_sSpotMgr.pfnSpotMgrPwrSetAftLpToHp = am_hal_spotmgr_pcm2_2_post_lptohp_handle;
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_2
         g_sSpotMgr.pfnTimerIntService = am_hal_spotmgr_pcm2_2_boost_timer_interrupt_service;
-
-        #if NO_TEMPSENSE_IN_DEEPSLEEP
+#endif
+#if NO_TEMPSENSE_IN_DEEPSLEEP
         g_sSpotMgr.pfnSpotMgrTempcoSuspend = am_hal_spotmgr_pcm2_2_tempco_suspend;
-        #endif
-        #endif
+#endif
+#endif
     }
     else if (g_bIsPCM2p1)
     {
-        #if !AM_HAL_SPOTMGR_PCM2_1_DISABLE
+#if !AM_HAL_SPOTMGR_PCM2_1_DISABLE
         g_sSpotMgr.pfnSpotmgrInit = am_hal_spotmgr_pcm2_1_init;
         g_sSpotMgr.pfnSpotmgrPSUpdate = am_hal_spotmgr_pcm2_1_power_state_update;
         g_sSpotMgr.pfnSpotMgrDefaultRst = am_hal_spotmgr_pcm2_1_default_reset;
         g_sSpotMgr.pfnSpotMgrSimobuckInitBfrOvr = am_hal_spotmgr_pcm2_1_simobuck_init_bfr_ovr;
         g_sSpotMgr.pfnSpotMgrSimobuckInitBfrEnable = am_hal_spotmgr_pcm2_1_simobuck_init_bfr_enable;
         g_sSpotMgr.pfnSpotMgrSimobuckInitAftEnable = am_hal_spotmgr_pcm2_1_simobuck_init_aft_enable;
+        g_sSpotMgr.pfnSpotMgrPwrSetAftLpToHp = am_hal_spotmgr_pcm2_1_post_lptohp_handle;
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
         g_sSpotMgr.pfnTimerIntService = am_hal_spotmgr_pcm2_1_boost_timer_interrupt_service;
-
-        #if NO_TEMPSENSE_IN_DEEPSLEEP
+#endif
+#if NO_TEMPSENSE_IN_DEEPSLEEP
         g_sSpotMgr.pfnSpotMgrTempcoSuspend = am_hal_spotmgr_pcm2_1_tempco_suspend;
-        #endif // NO_TEMPSENSE_IN_DEEPSLEEP
-        #endif
+#endif // NO_TEMPSENSE_IN_DEEPSLEEP
+#endif
     }
-    else if (APOLLO5_B0_GE_PCM1P0 || APOLLO5_B1_LE_PCM2P0 || APOLLO5_B2_PCM2P0)
+    else if (g_bCallPcm2p0Spotmgr)
     {
-        #if !AM_HAL_SPOTMGR_PCM2_0_DISABLE
+#if !AM_HAL_SPOTMGR_PCM2_0_DISABLE
         g_sSpotMgr.pfnSpotmgrInit = am_hal_spotmgr_pcm2_0_init;
         g_sSpotMgr.pfnSpotmgrPSUpdate = am_hal_spotmgr_pcm2_0_power_state_update;
         g_sSpotMgr.pfnSpotMgrDefaultRst = am_hal_spotmgr_pcm2_0_default_reset;
         g_sSpotMgr.pfnSpotMgrTempcoPostponeSet = am_hal_spotmgr_pcm2_0_tempco_postpone;
         g_sSpotMgr.pfnSpotMgrTempcoPendingHandle = am_hal_spotmgr_pcm2_0_tempco_pending_handle;
-        #if NO_TEMPSENSE_IN_DEEPSLEEP
+#if NO_TEMPSENSE_IN_DEEPSLEEP
         g_sSpotMgr.pfnSpotMgrTempcoSuspend = am_hal_spotmgr_pcm2_0_tempco_suspend;
-        #endif // NO_TEMPSENSE_IN_DEEPSLEEP
-        #if AM_HAL_PWRCTRL_SIMOLP_AUTOSWITCH
+#endif // NO_TEMPSENSE_IN_DEEPSLEEP
+#if AM_HAL_PWRCTRL_SIMOLP_AUTOSWITCH
         g_sSpotMgr.pfnSimobuckLpAutoSwInit = am_hal_spotmgr_pcm2_0_simobuck_lp_autosw_init;
         g_sSpotMgr.pfnSimobuckLpAutoSwEnable = am_hal_spotmgr_pcm2_0_simobuck_lp_autosw_enable;
         g_sSpotMgr.pfnSimobuckLpAutoSwDisable = am_hal_spotmgr_pcm2_0_simobuck_lp_autosw_disable;
-        #endif // AM_HAL_PWRCTRL_SIMOLP_AUTOSWITCH
-        #endif // !AM_HAL_SPOTMGR_PCM2_0_DISABLE
+#endif // AM_HAL_PWRCTRL_SIMOLP_AUTOSWITCH
+#endif // !AM_HAL_SPOTMGR_PCM2_0_DISABLE
         if ( APOLLO5_B0_PCM1P0 )
         {
-            #if !AM_HAL_SPOTMGR_PCM1_0_DISABLE
+#if !AM_HAL_SPOTMGR_PCM1_0_DISABLE
             g_sSpotMgr.pfnSpotMgrSimobuckInitBfrEnable = am_hal_spotmgr_pcm0_7_simobuck_init_bfr_enable;
             g_sSpotMgr.pfnSpotMgrSimobuckInitAftEnable = am_hal_spotmgr_pcm0_7_simobuck_init_aft_enable;
-            #endif // !AM_HAL_SPOTMGR_PCM1_0_DISABLE
+#endif // !AM_HAL_SPOTMGR_PCM1_0_DISABLE
         }
         else
         {
-            #if !AM_HAL_SPOTMGR_PCM2_0_DISABLE
+#if !AM_HAL_SPOTMGR_PCM2_0_DISABLE
             g_sSpotMgr.pfnSpotMgrSimobuckInitBfrEnable = am_hal_spotmgr_pcm2_0_simobuck_init_bfr_enable;
             g_sSpotMgr.pfnSpotMgrSimobuckInitAftEnable = am_hal_spotmgr_pcm2_0_simobuck_init_aft_enable;
-            #endif // !AM_HAL_SPOTMGR_PCM2_0_DISABLE
+#endif // !AM_HAL_SPOTMGR_PCM2_0_DISABLE
         }
     }
     else if (APOLLO5_B0_PCM0P7)
     {
-        #if !AM_HAL_SPOTMGR_PCM0_7_DISABLE
+#if !AM_HAL_SPOTMGR_PCM0_7_DISABLE
         g_sSpotMgr.pfnSpotmgrInit = am_hal_spotmgr_pcm0_7_init;
         g_sSpotMgr.pfnSpotmgrPSUpdate = am_hal_spotmgr_pcm0_7_power_state_update;
         g_sSpotMgr.pfnSpotMgrSimobuckInitBfrEnable = am_hal_spotmgr_pcm0_7_simobuck_init_bfr_enable;
         g_sSpotMgr.pfnSpotMgrSimobuckInitAftEnable = am_hal_spotmgr_pcm0_7_simobuck_init_aft_enable;
-        #if NO_TEMPSENSE_IN_DEEPSLEEP
+#if NO_TEMPSENSE_IN_DEEPSLEEP
         g_sSpotMgr.pfnSpotMgrTempcoSuspend = am_hal_spotmgr_pcm2_0_tempco_suspend;
-        #endif // NO_TEMPSENSE_IN_DEEPSLEEP
-        #endif // !AM_HAL_SPOTMGR_PCM0_7_DISABLE
+#endif // NO_TEMPSENSE_IN_DEEPSLEEP
+#endif // !AM_HAL_SPOTMGR_PCM0_7_DISABLE
     }
 
-    #if !AM_HAL_SPOTMGR_PCM0_7_DISABLE
+#if !AM_HAL_SPOTMGR_PCM0_7_DISABLE
     if ( APOLLO5_B0_LE_PCM0P7 )
     {
         g_sSpotMgr.pfnTonConfigInit = am_hal_spotmgr_pcm0_7_ton_config_init;
         g_sSpotMgr.pfnTonConfigUpdate = am_hal_spotmgr_pcm0_7_ton_config_update;
     }
-    #endif // !AM_HAL_SPOTMGR_PCM0_7_DISABLE
+#endif // !AM_HAL_SPOTMGR_PCM0_7_DISABLE
 
     //
     // Execute SPOTmanager init

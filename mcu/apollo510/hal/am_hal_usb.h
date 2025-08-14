@@ -2,9 +2,9 @@
 //
 //! @file am_hal_usb.h
 //!
-//! @brief
+//! @brief Functions for USB module
 //!
-//! @addtogroup usb USB Functionality
+//! @addtogroup usb_ap510 USB Functionality
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -29,9 +29,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -44,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -1113,3 +1110,4 @@ extern void am_hal_usb_ep_state_reset(void *pHandle, uint8_t ui8EpAddr);
 //! @}
 //
 //*****************************************************************************
+

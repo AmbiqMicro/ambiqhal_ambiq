@@ -4,9 +4,43 @@
 //!
 //! @brief Functions for INFOC functions
 //!
-//! @addtogroup infoc INFOC - One-Time Programmable
+//! @addtogroup infoc_ap510 INFOC - One-Time Programmable
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides functions for reading and writing the INFOC
+//! one-time programmable memory region on Apollo5 devices, supporting secure
+//! storage and retrieval of device-specific data.
+//!
+//! @section hal_infoc_features Key Features
+//!
+//! 1. @b INFOC @b Access: Read and write operations to INFOC memory region.
+//! 2. @b Validation: Comprehensive offset and accessibility validation.
+//! 3. @b Security: Secure access to one-time programmable memory.
+//! 4. @b Error @b Handling: Proper error reporting for invalid operations.
+//! 5. @b Busy @b Monitoring: Wait for programming completion and busy states.
+//!
+//! @section hal_infoc_functionality Functionality
+//!
+//! - Read INFOC words with offset validation
+//! - Write INFOC words with proper programming sequences
+//! - Validate INFOC accessibility and power states
+//! - Handle busy states and programming completion
+//! - Support for secure INFOC operations
+//!
+//! @section hal_infoc_usage Usage
+//!
+//! 1. Validate INFOC accessibility before operations
+//! 2. Read INFOC words using am_hal_infoc_read_word()
+//! 3. Write INFOC words using am_hal_infoc_write_word()
+//! 4. Handle validation errors and busy states
+//!
+//! @section hal_infoc_configuration Configuration
+//!
+//! - @b Offset @b Validation: Ensure word-aligned access to INFOC
+//! - @b Power @b States: Verify CRYPTO and OTP power states
+//! - @b Busy @b Monitoring: Wait for programming completion
+//! - @b Security @b Checks: Validate INFOC accessibility
 //
 //*****************************************************************************
 
@@ -41,7 +75,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>

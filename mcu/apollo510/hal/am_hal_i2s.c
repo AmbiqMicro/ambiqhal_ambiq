@@ -4,9 +4,45 @@
 //!
 //! @brief HAL implementation for the I2S module.
 //!
-//! @addtogroup i2s4 I2S - Inter-IC Sound
+//! @addtogroup i2s4_ap510 I2S - Inter-IC Sound
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides functions for configuring, controlling, and
+//! managing the Inter-IC Sound (I2S) peripheral on Apollo5 devices. It supports
+//! audio data transfer, clock configuration, DMA, and interrupt handling for
+//! digital audio applications.
+//!
+//! @section hal_i2s_features Key Features
+//!
+//! 1. @b Audio @b Data @b Transmission: Support for I2S audio data transfer.
+//! 2. @b DMA @b Support: High-speed DMA-based audio streaming.
+//! 3. @b Clock @b Configuration: Flexible clock source and divider settings.
+//! 4. @b Format @b Support: Multiple I2S data formats and word lengths.
+//! 5. @b Interrupt @b Handling: Comprehensive interrupt management for I2S events.
+//!
+//! @section hal_i2s_functionality Functionality
+//!
+//! - Initialize and configure the I2S peripheral
+//! - Set up audio data transmission and reception
+//! - Configure and manage DMA transfers for audio streaming
+//! - Handle I2S interrupts and status monitoring
+//! - Support for various I2S data formats and clocking options
+//!
+//! @section hal_i2s_usage Usage
+//!
+//! 1. Initialize I2S using am_hal_i2s_initialize()
+//! 2. Configure I2S parameters and clock settings
+//! 3. Set up DMA or interrupt-driven audio streaming
+//! 4. Start and stop audio data transfer as needed
+//! 5. Handle I2S events and monitor status
+//!
+//! @section hal_i2s_configuration Configuration
+//!
+//! - @b Clock @b Source: Select and configure I2S clock source
+//! - @b Data @b Format: Set up I2S data format and word length
+//! - @b DMA @b Settings: Configure DMA transfer parameters
+//! - @b Interrupts: Set up interrupt sources and handlers
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -187,6 +223,10 @@ typedef struct
 
     am_hal_i2s_clksel_e     eClockSel;
     bool                    bInternalMclkRequired;
+
+    //! Store application's settings.
+    am_hal_i2s_data_format_t sDataFormat;
+    am_hal_i2s_io_signal_t   sIoConfig;
 }am_hal_i2s_state_t;
 
 //*****************************************************************************
@@ -196,6 +236,15 @@ typedef struct
 //*****************************************************************************
 am_hal_i2s_state_t          g_I2Shandles[AM_REG_I2S_NUM_MODULES];
 
+//*****************************************************************************
+//
+//! @brief Get clock manager clock ID for I2S clock selection.
+//!
+//! @param clksel - I2S clock selection value.
+//!
+//! @return Returns the corresponding clock manager clock ID.
+//
+//*****************************************************************************
 static am_hal_clkmgr_clock_id_e
 i2s_clksrc_get(am_hal_i2s_clksel_e clksel)
 {
@@ -258,7 +307,13 @@ i2s_clksrc_get(am_hal_i2s_clksel_e clksel)
 
 //*****************************************************************************
 //
-// Set I2S LLMux with Mux Switcing Delay
+//! @brief Set I2S LLMux with mux switching delay.
+//!
+//! @param ui32Module - I2S module number.
+//! @param targetLLMux - Target LLMux value.
+//!
+//! This function sets the I2S LLMux with proper switching delays
+//! to avoid clock glitches during transitions.
 //
 //*****************************************************************************
 static inline void
@@ -287,7 +342,13 @@ i2s_set_llmux_with_delay(uint32_t ui32Module, uint32_t targetLLMux)
 
 //*****************************************************************************
 //
-// Set I2S clock by selecting the NCO mux, the LL mux, and the CLKGEN mux.
+//! @brief Set I2S clock by selecting the NCO mux, the LL mux, and the CLKGEN mux.
+//!
+//! @param ui32Module - I2S module number.
+//! @param targetClk - Target clock selection.
+//!
+//! This function sets the I2S clock by configuring the NCO mux, LL mux,
+//! and CLKGEN mux with proper switching delays to avoid glitches.
 //
 //*****************************************************************************
 static void
@@ -515,6 +576,45 @@ uint32_t am_hal_i2s_control(void *pHandle, am_hal_i2s_request_e eReq, void *pArg
         case AM_HAL_I2S_REQ_WRITE_TXLOWERLIMIT:
             I2Sn(ui32Module)->TXLOWERLIMIT = *((uint32_t*)pArgs);
             break;
+
+        case AM_HAL_I2S_REQ_SET_CH_NUM_FOR_MONO:
+            if (pArgs == NULL)
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+
+            // Only 1 or 2 channels are allowed for mono mode.
+            uint32_t ui32ChannelNumbersForMono = *((uint32_t*)pArgs);
+            if ((ui32ChannelNumbersForMono != 1) && (ui32ChannelNumbersForMono != 2))
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+
+            am_hal_i2s_data_format_t* pI2SData = &(pState->sDataFormat);
+            am_hal_i2s_io_signal_t* pIoConfig = &(pState->sIoConfig);
+            uint32_t ui32FramePeriod = ui32ChannelNumbersForMono * ui32I2sWordLength[pI2SData->eChannelLenPhase1];
+            if ((pI2SData->ePhase == AM_HAL_I2S_DATA_PHASE_SINGLE) && (pI2SData->ui32ChannelNumbersPhase1 == 1))
+            {
+                I2Sn(ui32Module)->I2SIOCFG_b.FPER = ui32FramePeriod - 1;
+                if (pIoConfig->sFsyncPulseCfg.eFsyncPulseType == AM_HAL_I2S_FSYNC_PULSE_HALF_FRAME_PERIOD)
+                {
+                    I2Sn(ui32Module)->I2SIOCFG_b.FWID = ui32FramePeriod / 2 - 1;
+                }
+                else if (pIoConfig->sFsyncPulseCfg.eFsyncPulseType == AM_HAL_I2S_FSYNC_PULSE_CUSTOM)
+                {
+                    if (pIoConfig->sFsyncPulseCfg.ui32FsyncPulseWidth >= ui32FramePeriod)
+                    {
+                        return AM_HAL_STATUS_INVALID_ARG;
+                    }
+                }
+            }
+            else
+            {
+                return AM_HAL_STATUS_INVALID_OPERATION;
+            }
+
+            break;
+
         case AM_HAL_I2S_REQ_MAX:
             return AM_HAL_STATUS_INVALID_ARG;
     }
@@ -584,6 +684,25 @@ am_hal_i2s_configure(void *pHandle, am_hal_i2s_config_t *psConfig)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    //
+    // Store data format information from the application.
+    //
+    pState->sDataFormat.ePhase                   = pI2SData->ePhase;
+    pState->sDataFormat.ui32ChannelNumbersPhase1 = pI2SData->ui32ChannelNumbersPhase1;
+    pState->sDataFormat.ui32ChannelNumbersPhase2 = pI2SData->ui32ChannelNumbersPhase2;
+    pState->sDataFormat.eChannelLenPhase1        = pI2SData->eChannelLenPhase1;
+    pState->sDataFormat.eChannelLenPhase2        = pI2SData->eChannelLenPhase2;
+    pState->sDataFormat.eDataDelay               = pI2SData->eDataDelay;
+    pState->sDataFormat.eSampleLenPhase1         = pI2SData->eSampleLenPhase1;
+    pState->sDataFormat.eSampleLenPhase2         = pI2SData->eSampleLenPhase2;
+    pState->sDataFormat.eDataJust                = pI2SData->eDataJust;
+
+    //
+    // Store IO configuration from the application.
+    //
+    pState->sIoConfig.sFsyncPulseCfg.eFsyncPulseType = pI2SIOCfg->sFsyncPulseCfg.eFsyncPulseType;
+    pState->sIoConfig.sFsyncPulseCfg.ui32FsyncPulseWidth = pI2SIOCfg->sFsyncPulseCfg.ui32FsyncPulseWidth;
 
     uint32_t ui32FramePeriod = 0;
     uint32_t ui32FsyncPulseWidth = 0;
@@ -816,7 +935,7 @@ am_hal_i2s_dma_transfer_start(void *pHandle,  am_hal_i2s_config_t *pConfig)
         I2Sn(ui32Module)->I2SCTL = _VAL2FLD(I2S0_I2SCTL_RXEN, 1) | _VAL2FLD(I2S0_I2SCTL_TXEN, 1);
     }
 
-    #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
     //
     // "Pong = 0xFFFFFFFF" means that only the ping buffer works, otherwise, set the pong buffer to the next stage of DMA.
     //
@@ -840,7 +959,7 @@ am_hal_i2s_dma_transfer_start(void *pHandle,  am_hal_i2s_config_t *pConfig)
         I2Sn(ui32Module)->RXDMATOTCNTNEXT = pState->ui32RxBufferSizeBytes >> 2;
         I2Sn(ui32Module)->DMAENNEXTCTRL   = I2S0_DMAENNEXTCTRL_RXDMAENNEXT_Msk | I2S0_DMAENNEXTCTRL_TXDMAENNEXT_Msk;
     }
-    #endif
+#endif
 
     return ui32Status;
 }
@@ -863,9 +982,9 @@ am_hal_i2s_dma_transfer_continue(void *pHandle, am_hal_i2s_config_t* psConfig, a
     // Once completed, software must first write the DMACFG register to 0.
     //
     I2Sn(ui32Module)->DMACFG = 0x0;
-    #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
     I2Sn(ui32Module)->DMACFG_b.NEXTDMAEN = 1;
-    #endif
+#endif
     //
     // Clear dma status.
     //
@@ -880,42 +999,42 @@ am_hal_i2s_dma_transfer_continue(void *pHandle, am_hal_i2s_config_t* psConfig, a
     switch(psConfig->eXfer)
     {
         case AM_HAL_I2S_XFER_RX:
-            #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
             I2Sn(ui32Module)->RXDMAADDRNEXT   = pState->ui32RxBufferPtr = pTransferCfg->ui32RxTargetAddr;
             I2Sn(ui32Module)->RXDMATOTCNTNEXT = pState->ui32RxBufferSizeBytes >> 2;
             I2Sn(ui32Module)->DMAENNEXTCTRL   = I2S0_DMAENNEXTCTRL_RXDMAENNEXT_Msk;
-            #else
+#else
             I2Sn(ui32Module)->RXDMAADDR   = pState->ui32RxBufferPtr = pTransferCfg->ui32RxTargetAddr;
             I2Sn(ui32Module)->RXDMATOTCNT = pState->ui32RxBufferSizeBytes >> 2;
-            #endif
+#endif
             I2Sn(ui32Module)->DMACFG_b.RXDMAEN = 1;
             break;
 
         case AM_HAL_I2S_XFER_TX:
-            #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
             I2Sn(ui32Module)->TXDMAADDRNEXT   = pState->ui32TxBufferPtr = pTransferCfg->ui32TxTargetAddr;
             I2Sn(ui32Module)->TXDMATOTCNTNEXT = pState->ui32TxBufferSizeBytes >> 2;
             I2Sn(ui32Module)->DMAENNEXTCTRL   = I2S0_DMAENNEXTCTRL_TXDMAENNEXT_Msk;
-            #else
+#else
             I2Sn(ui32Module)->TXDMAADDR   = pState->ui32TxBufferPtr = pTransferCfg->ui32TxTargetAddr;
             I2Sn(ui32Module)->TXDMATOTCNT = pState->ui32TxBufferSizeBytes >> 2;
-            #endif
+#endif
             I2Sn(ui32Module)->DMACFG_b.TXDMAEN = 1;
             break;
 
         case AM_HAL_I2S_XFER_RXTX:
-            #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
             I2Sn(ui32Module)->TXDMAADDRNEXT   = pState->ui32TxBufferPtr = pTransferCfg->ui32TxTargetAddr;
             I2Sn(ui32Module)->TXDMATOTCNTNEXT = pState->ui32TxBufferSizeBytes >> 2;
             I2Sn(ui32Module)->RXDMAADDRNEXT   = pState->ui32RxBufferPtr = pTransferCfg->ui32RxTargetAddr;
             I2Sn(ui32Module)->RXDMATOTCNTNEXT = pState->ui32RxBufferSizeBytes >> 2;
             I2Sn(ui32Module)->DMAENNEXTCTRL   = I2S0_DMAENNEXTCTRL_TXDMAENNEXT_Msk | I2S0_DMAENNEXTCTRL_TXDMAENNEXT_Msk;
-            #else
+#else
             I2Sn(ui32Module)->TXDMAADDR   = pState->ui32TxBufferPtr = pTransferCfg->ui32TxTargetAddr;
             I2Sn(ui32Module)->TXDMATOTCNT = pTransferCfg->ui32TxTotalCount;
             I2Sn(ui32Module)->RXDMAADDR   = pState->ui32RxBufferPtr = pTransferCfg->ui32RxTargetAddr;
             I2Sn(ui32Module)->RXDMATOTCNT = pTransferCfg->ui32RxTotalCount;
-            #endif
+#endif
             I2Sn(ui32Module)->DMACFG_b.RXDMAEN = 1;
             I2Sn(ui32Module)->DMACFG_b.TXDMAEN = 1;
             break;
@@ -1212,7 +1331,7 @@ uint32_t am_hal_i2s_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_ha
     //
     // Reload the DMA address and the transfer size.
     //
-    #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
     if ((ui32IntMask & AM_HAL_I2S_INT_RXDMACPL) && (pState->ui32RxBufferPong != 0xFFFFFFFF))
     {
         I2Sn(ui32Module)->RXDMASTAT_b.RXDMACPL = 0;
@@ -1243,7 +1362,7 @@ uint32_t am_hal_i2s_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_ha
             return AM_HAL_STATUS_HW_ERR;
         }
     }
-    #else
+#else
     //
     // In the previous I2S DMA, writing DMA registers needs deasserting T/RXDMAEN first.
     //
@@ -1264,7 +1383,7 @@ uint32_t am_hal_i2s_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_ha
         I2Sn(ui32Module)->TXDMATOTCNT          = pState->ui32TxBufferSizeBytes >> 2;
         I2Sn(ui32Module)->DMACFG_b.TXDMAEN     = 1;
     }
-    #endif
+#endif
 
     //
     // I2S FIFO interrupts handling.
@@ -1380,11 +1499,11 @@ am_hal_i2s_dma_configure(void *pHandle, am_hal_i2s_config_t* psConfig, am_hal_i2
     // If the USE_NEW_DMA macro is defined, set DMACFG_b.NEXTDMAEN to enable
     // this feature.
     //
-    #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
     I2Sn(ui32Module)->DMACFG_b.NEXTDMAEN = 1;
-    #else
+#else
     I2Sn(ui32Module)->DMACFG_b.NEXTDMAEN = 0;
-    #endif
+#endif
 
     //
     // Load the DMA address and the transfer size.
@@ -1394,46 +1513,46 @@ am_hal_i2s_dma_configure(void *pHandle, am_hal_i2s_config_t* psConfig, am_hal_i2
     {
         case AM_HAL_I2S_XFER_RX:
 
-            #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
             I2Sn(ui32Module)->RXDMAADDRNEXT   = pState->ui32RxBufferPing;
             I2Sn(ui32Module)->RXDMATOTCNTNEXT = pState->ui32RxBufferSizeBytes >> 2;
             I2Sn(ui32Module)->DMAENNEXTCTRL   = I2S0_DMAENNEXTCTRL_RXDMAENNEXT_Msk;
-            #else
+#else
             I2Sn(ui32Module)->RXDMAADDR   = pState->ui32RxBufferPing;
             I2Sn(ui32Module)->RXDMATOTCNT = pState->ui32RxBufferSizeBytes >> 2;
-            #endif
+#endif
 
             I2Sn(ui32Module)->IPBIRPT = AM_HAL_I2S_INT_IPBIRPT_RXDMA;
             I2Sn(ui32Module)->INTEN   = AM_HAL_I2S_INT_RXDMACPL;
             break;
 
         case AM_HAL_I2S_XFER_TX:
-            #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
             I2Sn(ui32Module)->TXDMAADDRNEXT   = pState->ui32TxBufferPing;
             I2Sn(ui32Module)->TXDMATOTCNTNEXT = pState->ui32TxBufferSizeBytes >> 2;
             I2Sn(ui32Module)->DMAENNEXTCTRL   = I2S0_DMAENNEXTCTRL_TXDMAENNEXT_Msk;
-            #else
+#else
             I2Sn(ui32Module)->TXDMAADDR   = pState->ui32TxBufferPing;
             I2Sn(ui32Module)->TXDMATOTCNT = pState->ui32TxBufferSizeBytes >> 2;
-            #endif
+#endif
 
             I2Sn(ui32Module)->IPBIRPT = AM_HAL_I2S_INT_IPBIRPT_TXDMA;
             I2Sn(ui32Module)->INTEN   = AM_HAL_I2S_INT_TXDMACPL;
             break;
 
         case AM_HAL_I2S_XFER_RXTX:
-            #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
             I2Sn(ui32Module)->TXDMAADDRNEXT   = pState->ui32TxBufferPing;
             I2Sn(ui32Module)->TXDMATOTCNTNEXT = pState->ui32TxBufferSizeBytes >> 2;
             I2Sn(ui32Module)->RXDMAADDRNEXT   = pState->ui32RxBufferPing;
             I2Sn(ui32Module)->RXDMATOTCNTNEXT = pState->ui32RxBufferSizeBytes >> 2;
             I2Sn(ui32Module)->DMAENNEXTCTRL   = I2S0_DMAENNEXTCTRL_RXDMAENNEXT_Msk | I2S0_DMAENNEXTCTRL_TXDMAENNEXT_Msk;
-            #else
+#else
             I2Sn(ui32Module)->TXDMAADDR   = pState->ui32TxBufferPing;
             I2Sn(ui32Module)->TXDMATOTCNT = pState->ui32TxBufferSizeBytes >> 2;
             I2Sn(ui32Module)->RXDMAADDR   = pState->ui32RxBufferPing;
             I2Sn(ui32Module)->RXDMATOTCNT = pState->ui32RxBufferSizeBytes >> 2;
-            #endif
+#endif
 
             I2Sn(ui32Module)->IPBIRPT = AM_HAL_I2S_INT_IPBIRPT_RXDMA | AM_HAL_I2S_INT_IPBIRPT_TXDMA;
             I2Sn(ui32Module)->INTEN   = AM_HAL_I2S_INT_TXDMACPL | AM_HAL_I2S_INT_RXDMACPL;
@@ -1471,11 +1590,11 @@ am_hal_i2s_dma_get_buffer(void *pHandle, am_hal_i2s_xfer_dir_e xfer)
         }
         else
         {
-            #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
             ui32BufferPtr = pState->ui32RxBufferPtr;
-            #else
+#else
             ui32BufferPtr = (pState->ui32RxBufferPtr == pState->ui32RxBufferPong)? pState->ui32RxBufferPing: pState->ui32RxBufferPong;
-            #endif
+#endif
         }
     }
     else
@@ -1487,11 +1606,11 @@ am_hal_i2s_dma_get_buffer(void *pHandle, am_hal_i2s_xfer_dir_e xfer)
         }
         else
         {
-            #ifdef USE_I2S_TWO_STAGE_DMA
+#ifdef USE_I2S_TWO_STAGE_DMA
             ui32BufferPtr = pState->ui32TxBufferPtr;
-            #else
+#else
             ui32BufferPtr = (pState->ui32TxBufferPtr == pState->ui32TxBufferPong)? pState->ui32TxBufferPing: pState->ui32TxBufferPong;
-            #endif
+#endif
         }
     }
 

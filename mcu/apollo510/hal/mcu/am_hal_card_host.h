@@ -2,9 +2,9 @@
 //
 //! @file am_hal_card_host.h
 //!
-//! @brief Functions for interfacing with the SDHC or SPI SD/MMC/SDIO card host.
+//! @brief Functions for interfacing with the SDHC or SPI SD/MMC/eMMC/SDIO card host.
 //!
-//! @addtogroup card_host Card Host for SD/MMC/eMMC/SDIO
+//! @addtogroup card_host_ap510 Card Host for SD/MMC/eMMC/SDIO
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CARD_HOST_H

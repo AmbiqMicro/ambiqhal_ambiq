@@ -4,9 +4,45 @@
 //!
 //! @brief Functions for interfacing with the SDHC.
 //!
-//! @addtogroup sdhc SDHC host controller
+//! @addtogroup sdhc_ap510 SDHC host controller
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//!          the SD Host Controller (SDHC) on Apollo5 devices. It supports
+//!          SD card initialization, data transfer, command execution, and
+//!          interrupt handling for secure digital memory card operations.
+//!
+//! @section hal_sdhc_features Key Features
+//!
+//! 1. @b SD @b Card @b Support: Full SD card initialization and management.
+//! 2. @b Data @b Transfer: High-speed data transfer operations.
+//! 3. @b Command @b Execution: SD command execution and response handling.
+//! 4. @b Interrupt @b Support: Comprehensive interrupt management for SD events.
+//! 5. @b Bus @b Configuration: Flexible bus width and clock configuration.
+//!
+//! @section hal_sdhc_functionality Functionality
+//!
+//! - Initialize and configure SD Host Controller
+//! - Handle SD card detection and initialization
+//! - Execute SD commands and handle responses
+//! - Support data transfer operations (read/write)
+//! - Manage SDHC interrupts and status monitoring
+//!
+//! @section hal_sdhc_usage Usage
+//!
+//! 1. Initialize SDHC using am_hal_sdhc_initialize()
+//! 2. Configure bus parameters and clock settings
+//! 3. Set up SD card and host configuration
+//! 4. Execute SD commands and handle data transfer
+//! 5. Monitor SDHC interrupts and status
+//!
+//! @section hal_sdhc_configuration Configuration
+//!
+//! - @b Bus @b Width: Configure 1-bit, 4-bit, or 8-bit bus width
+//! - @b Clock @b Settings: Set up SD bus clock frequencies
+//! - @b Voltage @b Levels: Configure bus voltage levels
+//! - @b Interrupts: Set up interrupt sources and handlers
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -147,7 +183,8 @@ static am_hal_sdhc_state_t g_SDHCState[AM_REG_SDIO_NUM_MODULES];
 //
 //*****************************************************************************
 
-uint32_t am_hal_sdhc_software_reset(SDIO_Type *pSDHC, am_hal_sdhc_sw_reset_e eSoftwareReset)
+uint32_t
+am_hal_sdhc_software_reset(SDIO_Type *pSDHC, am_hal_sdhc_sw_reset_e eSoftwareReset)
 {
     uint32_t ui32Mask;
     uint32_t ui32Timeout;
@@ -175,9 +212,17 @@ uint32_t am_hal_sdhc_software_reset(SDIO_Type *pSDHC, am_hal_sdhc_sw_reset_e eSo
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
-// SDHC send command function
-//
+//! @brief Check if command is inhibited.
+//!
+//! @param pSDHC - Pointer to SDHC register structure.
+//! @param pCmd - Pointer to command structure.
+//! @param pCmdData - Pointer to command data structure.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS if command can be executed.
+//!
+//*****************************************************************************
 static inline uint32_t am_hal_sdhc_check_cmd_inhibit(SDIO_Type *pSDHC, am_hal_card_cmd_t *pCmd, am_hal_card_cmd_data_t *pCmdData)
 {
     uint32_t ui32CmdInhibitMask;
@@ -203,9 +248,17 @@ static inline uint32_t am_hal_sdhc_check_cmd_inhibit(SDIO_Type *pSDHC, am_hal_ca
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
-// Prepare the command register value
-//
+//! @brief Prepare command for execution.
+//!
+//! @param pSDHC - Pointer to SDHC register structure.
+//! @param pCmd - Pointer to command structure.
+//! @param pCmdData - Pointer to command data structure.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t am_hal_sdhc_prepare_cmd(SDIO_Type *pSDHC, am_hal_card_cmd_t *pCmd, am_hal_card_cmd_data_t *pCmdData)
 {
     uint32_t ui32CmdReg = 0x0;
@@ -300,6 +353,17 @@ typedef struct
 
 AM_SHARED_RW static am_hal_sdhc_adma_desc_t adma_desc_table[AM_REG_SDIO_NUM_MODULES][AM_HAL_ADMA_TABLE_NO_ENTRIES] __attribute__((aligned(32)));
 
+//*****************************************************************************
+//
+//! @brief Prepare SDHCI ADMA descriptor.
+//!
+//! @param ui32Module - SDHC module number.
+//! @param ui32Idx - Descriptor index.
+//! @param ui32DmaAddr - DMA address.
+//! @param ui16Len - Length of data.
+//! @param bEnd - True if this is the end descriptor.
+//!
+//*****************************************************************************
 static void am_hal_sdhc_prepare_sdhci_adma_desc(uint32_t ui32Module, uint32_t ui32Idx, dma_addr_t ui32DmaAddr, uint16_t ui16Len, bool bEnd)
 {
     am_hal_sdhc_adma_desc_t *pDesc;
@@ -319,6 +383,14 @@ static void am_hal_sdhc_prepare_sdhci_adma_desc(uint32_t ui32Module, uint32_t ui
     pDesc->ui32AddrLow = ui32DmaAddr;
 }
 
+//*****************************************************************************
+//
+//! @brief Prepare ADMA table for data transfer.
+//!
+//! @param ui32Module - SDHC module number.
+//! @param pCmdData - Pointer to command data structure.
+//!
+//*****************************************************************************
 static void am_hal_sdhc_prepare_adma_table(uint32_t ui32Module, am_hal_card_cmd_data_t *pCmdData)
 {
     bool bEnd;
@@ -384,9 +456,18 @@ static void am_hal_sdhc_prepare_adma_table(uint32_t ui32Module, am_hal_card_cmd_
     }
 }
 
+//*****************************************************************************
 //
-// Prepare transfer mode register and set the block size, block count, SDMA and host control registers (for DMA)
-//
+//! @brief Prepare data transfer.
+//!
+//! @param pSDHCState - Pointer to SDHC state structure.
+//! @param pSDHC - Pointer to SDHC register structure.
+//! @param pCmd - Pointer to command structure.
+//! @param pCmdData - Pointer to command data structure.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t am_hal_sdhc_prepare_xfer(am_hal_sdhc_state_t *pSDHCState, SDIO_Type *pSDHC, am_hal_card_cmd_t *pCmd, am_hal_card_cmd_data_t *pCmdData)
 {
     uint32_t ui32ModeReg = 0;
@@ -477,9 +558,14 @@ static uint32_t am_hal_sdhc_prepare_xfer(am_hal_sdhc_state_t *pSDHCState, SDIO_T
     return ui32ModeReg;
 }
 
+//*****************************************************************************
 //
-// Get the command response after sending out the command
-//
+//! @brief Get command response from SDHC.
+//!
+//! @param pSDHC - Pointer to SDHC register structure.
+//! @param pCmd - Pointer to command structure.
+//!
+//*****************************************************************************
 static void am_hal_sdhc_get_cmd_response(SDIO_Type *pSDHC, am_hal_card_cmd_t *pCmd)
 {
     uint32_t ui32RegResp[4];
@@ -507,9 +593,18 @@ static void am_hal_sdhc_get_cmd_response(SDIO_Type *pSDHC, am_hal_card_cmd_t *pC
     }
 }
 
+//*****************************************************************************
 //
-// Sending the command by writing the argument and command registers
-//
+//! @brief Send command to SDHC.
+//!
+//! @param pSDHCState - Pointer to SDHC state structure.
+//! @param pSDHC - Pointer to SDHC register structure.
+//! @param pCmd - Pointer to command structure.
+//! @param pCmdData - Pointer to command data structure.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t am_hal_sdhc_send_cmd(am_hal_sdhc_state_t *pSDHCState, SDIO_Type *pSDHC, am_hal_card_cmd_t *pCmd, am_hal_card_cmd_data_t *pCmdData)
 {
     uint32_t ui32CmdReg;
@@ -561,6 +656,15 @@ static uint32_t am_hal_sdhc_send_cmd(am_hal_sdhc_state_t *pSDHCState, SDIO_Type 
 
 }
 
+//*****************************************************************************
+//
+//! @brief Check command error type from interrupt status.
+//!
+//! @param ui32IntStatus - Interrupt status register value.
+//!
+//! @return Returns command error type.
+//!
+//*****************************************************************************
 static inline am_hal_card_cmd_err_e am_hal_sdhc_check_cmd_error_type(uint32_t ui32IntStatus)
 {
     if (ui32IntStatus & SDIO0_INTSTAT_COMMANDINDEXERROR_Msk)
@@ -590,6 +694,17 @@ static inline am_hal_card_cmd_err_e am_hal_sdhc_check_cmd_error_type(uint32_t ui
 //
 #define AM_HAL_WAIT_CMD_DONE_TIMEOUT 2
 
+//*****************************************************************************
+//
+//! @brief Wait for command completion.
+//!
+//! @param pSDHCState - Pointer to SDHC state structure.
+//! @param pSDHC - Pointer to SDHC register structure.
+//! @param pCmd - Pointer to command structure.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t inline am_hal_sdhc_wait_cmd_done(am_hal_sdhc_state_t *pSDHCState, SDIO_Type *pSDHC, am_hal_card_cmd_t *pCmd)
 {
     uint32_t ui32Status;
@@ -617,9 +732,13 @@ static uint32_t inline am_hal_sdhc_wait_cmd_done(am_hal_sdhc_state_t *pSDHCState
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
-// Do the PIO block transfer
-//
+//! @brief Transfer data using PIO mode.
+//!
+//! @param pSDHCState - Pointer to SDHC state structure.
+//!
+//*****************************************************************************
 static void am_hal_sdhc_pio_xfer_data(am_hal_sdhc_state_t *pSDHCState)
 {
     uint32_t ui32PreBufReadyMask;
@@ -649,9 +768,13 @@ static void am_hal_sdhc_pio_xfer_data(am_hal_sdhc_state_t *pSDHCState)
     }
 }
 
+//*****************************************************************************
 //
-// Do the SDMA block transfer
-//
+//! @brief Transfer data using SDMA mode.
+//!
+//! @param pSDHCState - Pointer to SDHC state structure.
+//!
+//*****************************************************************************
 static void am_hal_sdhc_sdma_xfer_data(am_hal_sdhc_state_t *pSDHCState)
 {
     SDIO_Type *pSDHC = SDHCn(pSDHCState->ui32Module);
@@ -664,6 +787,15 @@ static void am_hal_sdhc_sdma_xfer_data(am_hal_sdhc_state_t *pSDHCState)
     pSDHC->SDMA = (dma_addr_t)(pSDHCState->pui32Buf);
 }
 
+//*****************************************************************************
+//
+//! @brief Check data error type from interrupt status.
+//!
+//! @param ui32IntStatus - Interrupt status register value.
+//!
+//! @return Returns data error type.
+//!
+//*****************************************************************************
 static inline am_hal_card_data_err_e am_hal_sdhc_check_data_error_type(uint32_t ui32IntStatus)
 {
     if (ui32IntStatus & SDIO0_INTSTAT_ADMAERROR_Msk)
@@ -698,6 +830,16 @@ static inline am_hal_card_data_err_e am_hal_sdhc_check_data_error_type(uint32_t 
 //
 // Transfer the block data to the card
 //
+//*****************************************************************************
+//
+//! @brief Transfer data using SDHC.
+//!
+//! @param pSDHCState - Pointer to SDHC state structure.
+//! @param pCmdData - Pointer to command data structure.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t am_hal_sdhc_xfer_data(am_hal_sdhc_state_t *pSDHCState,
                                       am_hal_card_cmd_data_t *pCmdData)
 {
@@ -812,7 +954,8 @@ static uint32_t am_hal_sdhc_xfer_data(am_hal_sdhc_state_t *pSDHCState,
 // SDHC initialization function
 //
 //*****************************************************************************
-uint32_t am_hal_sdhc_initialize(uint32_t ui32Module, void **ppHandle)
+uint32_t
+am_hal_sdhc_initialize(uint32_t ui32Module, void **ppHandle)
 {
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -864,7 +1007,8 @@ uint32_t am_hal_sdhc_initialize(uint32_t ui32Module, void **ppHandle)
 // SDHC Deinitialize function
 //
 //*****************************************************************************
-uint32_t am_hal_sdhc_deinitialize(void *pHandle)
+uint32_t
+am_hal_sdhc_deinitialize(void *pHandle)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
 
@@ -897,7 +1041,8 @@ uint32_t am_hal_sdhc_deinitialize(void *pHandle)
 // This function updates the peripheral to a given power state.
 //
 //*****************************************************************************
-uint32_t am_hal_sdhc_power_control(void *pHandle, am_hal_sysctrl_power_state_e ePowerState, bool bRetainState)
+uint32_t
+am_hal_sdhc_power_control(void *pHandle, am_hal_sysctrl_power_state_e ePowerState, bool bRetainState)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
@@ -1052,7 +1197,8 @@ uint32_t am_hal_sdhc_power_control(void *pHandle, am_hal_sysctrl_power_state_e e
 // block read, write, erase, speed, bus width.
 //
 //*****************************************************************************
-uint32_t am_hal_sdhc_setup_host(void *pHandle, am_hal_card_host_t *pHost)
+uint32_t
+am_hal_sdhc_setup_host(void *pHandle, am_hal_card_host_t *pHost)
 {
     SDIO_Type *pSDHC;
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
@@ -1178,7 +1324,8 @@ bool am_hal_sdhc_get_wr_protect(void *pHandle)
 // This function sets the bus voltage needed to communiate with the card.
 //
 //*****************************************************************************
-uint32_t am_hal_sdhc_set_bus_voltage(void *pHandle, am_hal_host_bus_voltage_e eBusVoltage)
+uint32_t
+am_hal_sdhc_set_bus_voltage(void *pHandle, am_hal_host_bus_voltage_e eBusVoltage)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     am_hal_card_host_t *pHost;
@@ -1227,7 +1374,8 @@ uint32_t am_hal_sdhc_set_bus_voltage(void *pHandle, am_hal_host_bus_voltage_e eB
 // This function sets the bus width needed to communiate with the card.
 //
 //*****************************************************************************
-uint32_t am_hal_sdhc_set_bus_width(void *pHandle, am_hal_host_bus_width_e eBusWidth)
+uint32_t
+am_hal_sdhc_set_bus_width(void *pHandle, am_hal_host_bus_width_e eBusWidth)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     am_hal_card_host_t *pHost;
@@ -1272,7 +1420,8 @@ uint32_t am_hal_sdhc_set_bus_width(void *pHandle, am_hal_host_bus_width_e eBusWi
 // This function sets the bus clock speed needed to communiate with the card.
 //
 //*****************************************************************************
-uint32_t am_hal_sdhc_set_bus_clock(void *pHandle, uint32_t ui32Clock)
+uint32_t
+am_hal_sdhc_set_bus_clock(void *pHandle, uint32_t ui32Clock)
 {
     uint32_t ui32Divider;
 
@@ -1373,7 +1522,8 @@ uint32_t am_hal_sdhc_set_bus_clock(void *pHandle, uint32_t ui32Clock)
 // This function sets the bus clock speed needed to communiate with the card.
 //
 //*****************************************************************************
-uint32_t am_hal_sdhc_set_uhs_mode(void *pHandle, am_hal_host_uhs_mode_e eUHSMode)
+uint32_t
+am_hal_sdhc_set_uhs_mode(void *pHandle, am_hal_host_uhs_mode_e eUHSMode)
 {
     SDIO_Type *pSDHC;
     am_hal_card_host_t *pHost;
@@ -1415,7 +1565,8 @@ uint32_t am_hal_sdhc_set_uhs_mode(void *pHandle, am_hal_host_uhs_mode_e eUHSMode
 // This function checks if DAT0 line is busy or not.
 //
 //*****************************************************************************
-uint32_t am_hal_sdhc_card_busy(void *pHandle, uint32_t ui32TimeoutMS)
+uint32_t
+am_hal_sdhc_card_busy(void *pHandle, uint32_t ui32TimeoutMS)
 {
     uint32_t ui32Dat0BusyMask;
     SDIO_Type *pSDHC;
@@ -1469,7 +1620,8 @@ uint32_t am_hal_sdhc_card_busy(void *pHandle, uint32_t ui32TimeoutMS)
 // SDHC Set TxRx Delays
 //
 //*****************************************************************************
-void am_hal_sdhc_set_txrx_delay(void *pHandle, uint8_t ui8TxRxDelays[2])
+void
+am_hal_sdhc_set_txrx_delay(void *pHandle, uint8_t ui8TxRxDelays[2])
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
 
@@ -1506,10 +1658,13 @@ void am_hal_sdhc_set_txrx_delay(void *pHandle, uint8_t ui8TxRxDelays[2])
     }
 }
 
+//*****************************************************************************
 //
 // SDHC Enable function
 //
-uint32_t am_hal_sdhc_enable(void *pHandle)
+//*****************************************************************************
+uint32_t
+am_hal_sdhc_enable(void *pHandle)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     SDIO_Type *pSDHC;
@@ -1573,10 +1728,13 @@ uint32_t am_hal_sdhc_enable(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // SDHC Disable function
 //
-uint32_t am_hal_sdhc_disable(void *pHandle)
+//*****************************************************************************
+uint32_t
+am_hal_sdhc_disable(void *pHandle)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
 
@@ -1634,7 +1792,8 @@ uint32_t am_hal_sdhc_disable(void *pHandle)
 // function in the ISR.
 //
 //*****************************************************************************
-uint32_t am_hal_sdhc_execute_cmd(void *pHandle, am_hal_card_cmd_t *pCmd, am_hal_card_cmd_data_t *pCmdData)
+uint32_t
+am_hal_sdhc_execute_cmd(void *pHandle, am_hal_card_cmd_t *pCmd, am_hal_card_cmd_data_t *pCmdData)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     SDIO_Type *pSDHC = NULL;
@@ -1736,10 +1895,13 @@ uint32_t am_hal_sdhc_execute_cmd(void *pHandle, am_hal_card_cmd_t *pCmd, am_hal_
     return am_hal_sdhc_xfer_data(pSDHCState, pCmdData);
 }
 
+//*****************************************************************************
 //
 // SDHC normal/error status interrupts enable function
 //
-uint32_t am_hal_sdhc_intr_status_enable(void *pHandle, uint32_t ui32IntMask)
+//*****************************************************************************
+uint32_t
+am_hal_sdhc_intr_status_enable(void *pHandle, uint32_t ui32IntMask)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     uint32_t ui32Module;
@@ -1772,10 +1934,13 @@ uint32_t am_hal_sdhc_intr_status_enable(void *pHandle, uint32_t ui32IntMask)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // SDHC normal/error status interrupts disable function
 //
-uint32_t am_hal_sdhc_intr_status_disable(void *pHandle, uint32_t ui32IntMask)
+//*****************************************************************************
+uint32_t
+am_hal_sdhc_intr_status_disable(void *pHandle, uint32_t ui32IntMask)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     uint32_t ui32Module;
@@ -1807,10 +1972,13 @@ uint32_t am_hal_sdhc_intr_status_disable(void *pHandle, uint32_t ui32IntMask)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // SDHC normal/error interrupt status get function
 //
-uint32_t am_hal_sdhc_intr_status_get(void *pHandle, uint32_t *pui32Status, bool bEnabledOnly)
+//*****************************************************************************
+uint32_t
+am_hal_sdhc_intr_status_get(void *pHandle, uint32_t *pui32Status, bool bEnabledOnly)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     uint32_t ui32Module;
@@ -1848,10 +2016,13 @@ uint32_t am_hal_sdhc_intr_status_get(void *pHandle, uint32_t *pui32Status, bool 
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // SDHC normal/error interrupt status clear function
 //
-uint32_t am_hal_sdhc_intr_status_clear(void *pHandle, uint32_t ui32IntMask)
+//*****************************************************************************
+uint32_t
+am_hal_sdhc_intr_status_clear(void *pHandle, uint32_t ui32IntMask)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     uint32_t ui32Module;
@@ -1881,10 +2052,13 @@ uint32_t am_hal_sdhc_intr_status_clear(void *pHandle, uint32_t ui32IntMask)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // SDHC normal interrupt signal enable function
 //
-uint32_t am_hal_sdhc_intr_signal_enable(void *pHandle, uint32_t ui32IntMask)
+//*****************************************************************************
+uint32_t
+am_hal_sdhc_intr_signal_enable(void *pHandle, uint32_t ui32IntMask)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     uint32_t ui32Module;
@@ -1917,10 +2091,13 @@ uint32_t am_hal_sdhc_intr_signal_enable(void *pHandle, uint32_t ui32IntMask)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // SDHC normal status signal disable function
 //
-uint32_t am_hal_sdhc_intr_signal_disable(void *pHandle, uint32_t ui32IntMask)
+//*****************************************************************************
+uint32_t
+am_hal_sdhc_intr_signal_disable(void *pHandle, uint32_t ui32IntMask)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     uint32_t ui32Module;
@@ -1952,10 +2129,13 @@ uint32_t am_hal_sdhc_intr_signal_disable(void *pHandle, uint32_t ui32IntMask)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // SDHC interrupt service routine
 //
-uint32_t am_hal_sdhc_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
+//*****************************************************************************
+uint32_t
+am_hal_sdhc_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
     am_hal_card_host_t *pHost = pSDHCState->pHost;

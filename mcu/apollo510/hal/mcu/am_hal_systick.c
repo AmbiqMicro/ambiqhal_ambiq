@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for interfacing with the SYSTICK
 //!
-//! @addtogroup systick4 SYSTICK - System Tick Timer
+//! @addtogroup systick4_ap510 SYSTICK - System Tick Timer
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for interfacing with the System Tick
+//!          (SYSTICK) timer on Apollo5 devices. It supports system tick timer
+//!          configuration, interrupt handling, and precise timing control for
+//!          operating system and application timing requirements.
+//!
+//! @section hal_systick_features Key Features
+//!
+//! 1. @b System @b Timer: Core system tick timer functionality.
+//! 2. @b Interrupt @b Support: Configurable interrupt generation.
+//! 3. @b Clock @b Sources: Support for internal and external clock sources.
+//! 4. @b Precise @b Timing: Accurate timing control and measurement.
+//! 5. @b Load @b Control: Configurable timer load values and counting.
+//!
+//! @section hal_systick_functionality Functionality
+//!
+//! - Initialize and configure SYSTICK timer
+//! - Start, stop, and control timer operations
+//! - Handle SYSTICK interrupts and status monitoring
+//! - Configure timer load values and counting
+//! - Support for precise timing measurements
+//!
+//! @section hal_systick_usage Usage
+//!
+//! 1. Initialize SYSTICK using am_hal_systick_init()
+//! 2. Start the timer with am_hal_systick_start()
+//! 3. Configure interrupts and load values as needed
+//! 4. Handle SYSTICK interrupts and timing events
+//! 5. Stop the timer when no longer needed
+//!
+//! @section hal_systick_configuration Configuration
+//!
+//! - @b Clock @b Sources: Select internal or external clock sources
+//! - @b Load @b Values: Configure timer load and count values
+//! - @b Interrupts: Set up interrupt sources and handlers
+//! - @b Timing: Configure precise timing parameters
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

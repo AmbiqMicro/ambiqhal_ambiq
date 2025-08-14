@@ -2,9 +2,9 @@
 //
 //! @file am_hal_i2s.h
 //!
-//! @brief Functions for interfacing with the I2S
+//! @brief HAL implementation for the I2S module.
 //!
-//! @addtogroup i2s4 I2S - Inter-IC Sound
+//! @addtogroup i2s4_ap510 I2S - Inter-IC Sound
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_I2S_H
@@ -282,6 +282,8 @@ typedef enum
     AM_HAL_I2S_REQ_READ_TXLOWERLIMIT    = 4,
     AM_HAL_I2S_REQ_WRITE_RXUPPERLIMIT   = 5,
     AM_HAL_I2S_REQ_WRITE_TXLOWERLIMIT   = 6,
+    //! Overwrite the value AM_HAL_I2S_CH_NUM_FOR_MONO at runtime.
+    AM_HAL_I2S_REQ_SET_CH_NUM_FOR_MONO  = 7,
     AM_HAL_I2S_REQ_MAX
 } am_hal_i2s_request_e;
 
@@ -613,13 +615,10 @@ typedef struct
 //
 //! @brief initialize the I2S device controller
 //!
-//! @param ui32Module - the index to the I2S
-//! @param pHandle    - the handle of initialized I2S instance
+//! @param ui32Module - Module instance number.
+//! @param ppHandle - Returns the handle for the module instance.
 //!
-//! This function should be called firstly before we use any other I2S HAL driver
-//! functions.
-//!
-//! @return status    - generic or interface specific status.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //
 //*****************************************************************************
 extern uint32_t am_hal_i2s_initialize(uint32_t ui32Module, void **ppHandle);
@@ -628,24 +627,22 @@ extern uint32_t am_hal_i2s_initialize(uint32_t ui32Module, void **ppHandle);
 //
 //! @brief Uninitialize the I2S device controller
 //!
-//! @param pHandle - the handle of initialized I2S instance
+//! @param pHandle - Handle for the module instance.
 //!
-//! @return status - generic or interface specific status.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //
 //*****************************************************************************
 extern uint32_t am_hal_i2s_deinitialize(void *pHandle);
 
 //*****************************************************************************
 //
-//! @brief I2S Power control function. function
+//! @brief I2S power control function.
 //!
-//! @param pHandle      - handle for the I2S.
-//! @param ePowerState  - power state requested
-//! @param bRetainState - boolean on whether to retain state
+//! @param pHandle - Handle for the module instance.
+//! @param ePowerState - Desired power state.
+//! @param bRetainState - Flag to save/restore peripheral state.
 //!
-//! This function allows advanced settings
-//!
-//! @return status      - generic or interface specific status.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //
 //*****************************************************************************
 extern uint32_t am_hal_i2s_power_control(void *pHandle, am_hal_sysctrl_power_state_e ePowerState, bool bRetainState);
@@ -666,6 +663,19 @@ extern uint32_t am_hal_i2s_configure(void *pHandle, am_hal_i2s_config_t *psConfi
 
 //*****************************************************************************
 //
+//! @brief I2S control function
+//!
+//! @param pHandle  - handle for the module instance.
+//! @param eReq     - request type
+//! @param pArgs    - pointer to the request arguments.
+//!
+//! @return status  - generic or interface specific status.
+//!
+//*****************************************************************************
+extern uint32_t am_hal_i2s_control(void *pHandle, am_hal_i2s_request_e eReq, void *pArgs);
+
+//*****************************************************************************
+//
 //! @brief I2S enable function
 //!
 //! @param pHandle - handle for the module instance.
@@ -675,7 +685,6 @@ extern uint32_t am_hal_i2s_configure(void *pHandle, am_hal_i2s_config_t *psConfi
 //! @return status - generic or interface specific status.
 //
 //*****************************************************************************
-
 extern uint32_t am_hal_i2s_enable(void *pHandle);
 
 //*****************************************************************************

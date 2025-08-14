@@ -2,11 +2,9 @@
 //
 //! @file am_util_crypto.h
 //!
-//! @brief Utility functions for the crypto module.
+//! @brief Cryptographic Utility Functions
 //!
-//! A few utils to help with crypto functionality
-//!
-//! @addtogroup crypto Crypto
+//! @addtogroup crypto_utils Crypto Utility Functions
 //! @ingroup utils
 //! @{
 //
@@ -43,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -51,6 +49,10 @@
 #define AM_UTIL_CRYPTO_H
 
 #include <time.h>
+
+/* As required by POSIX.1-2008, declare tm as incomplete type.
+   The actual definition is in time.h. */
+struct tm;
 
 #if !defined(AM_PART_APOLLO4_API) && !defined(AM_PART_APOLLO5_API)
 #error "Error: am_util_crypto.h only supports Apollo4 and Apollo5."

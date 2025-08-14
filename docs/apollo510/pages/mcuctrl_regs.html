@@ -25,7 +25,7 @@
                             <img alt="Logo" src="../resources/am_logo.png" />
                         </td>
                         <td style="padding-left: 0.5em;">
-                            <div id="projectname">Apollo510  Register Documentation &#160;<span id="projectnumber">release_sdk5p0p0-5f68a8286b</span></div>
+                            <div id="projectname">Apollo510  Register Documentation &#160;<span id="projectnumber">release_sdk5p1p0-7063330c5e</span></div>
                         </td>
                     </tr>
                 </tbody>
@@ -6134,8 +6134,9 @@
                             <td>31</td>
                             <td>INFO1ACCESS</td>
                             <td>RW</td>
-                            <td>For Apollo510 revB1 or later, must be set for reliable INFO1 access.<br><br>
-                                </td>
+                            <td>For Apollo510 revB1 or later, this bit must be set for reliable INFO1 access.<br><br>
+                                 EN                   = 0x1 - Enables INFO1 access<br>
+                             DIS                  = 0x0 - Disables INFO1 access</td>
                         </tr>
 
                         <tr>
@@ -6150,40 +6151,45 @@
                             <td>25</td>
                             <td>UART3PLL</td>
                             <td>RW</td>
-                            <td>UART3 PCLK is always on. Default is 0. This bit must be set when PLL clock source is used for UART3.<br><br>
-                                </td>
+                            <td>PLL clock for UART3 enable field. This bit is set to select the System PLL as the clock source for UART3. The UART3 PCLK is always on when set.<br><br>
+                                 EN                   = 0x1 - Enables system PLL to clock UART3; PCLK always on.<br>
+                             DIS                  = 0x0 - Disables system PLL as UART3 clock source</td>
                         </tr>
 
                         <tr>
                             <td>24</td>
                             <td>UART2PLL</td>
                             <td>RW</td>
-                            <td>UART2 PCLK is always on. Default is 0. This bit must be set when PLL clock source is used for UART2.<br><br>
-                                </td>
+                            <td>PLL clock for UART2 enable field. This bit is set to select the System PLL as the clock source for UART2. The UART2 PCLK is always on when set.<br><br>
+                                 EN                   = 0x1 - Enables system PLL to clock UART2; PCLK always on.<br>
+                             DIS                  = 0x0 - Disables system PLL as UART2 clock source</td>
                         </tr>
 
                         <tr>
                             <td>23</td>
                             <td>UART1PLL</td>
                             <td>RW</td>
-                            <td>UART1 PCLK is always on. Default is 0. This bit must be set when PLL clock source is used for UART1.<br><br>
-                                </td>
+                            <td>PLL clock for UART1 enable field. This bit is set to select the System PLL as the clock source for UART1. The UART1 PCLK is always on when set.<br><br>
+                                 EN                   = 0x1 - Enables system PLL to clock UART1; PCLK always on.<br>
+                             DIS                  = 0x0 - Disables system PLL as UART1 clock source</td>
                         </tr>
 
                         <tr>
                             <td>22</td>
                             <td>UART0PLL</td>
                             <td>RW</td>
-                            <td>UART0 PCLK is always on. Default is 0. This bit must be set when PLL clock source is used for UART0.<br><br>
-                                </td>
+                            <td>PLL clock for UART0 enable field. This bit is set to select the System PLL as the clock source for UART0. The UART0 PCLK is always on when set.<br><br>
+                                 EN                   = 0x1 - Enables system PLL to clock UART0; PCLK always on.<br>
+                             DIS                  = 0x0 - Disables system PLL as UART0 clock source</td>
                         </tr>
 
                         <tr>
                             <td>21</td>
                             <td>PLLISOLATIONVDDHVDDF</td>
                             <td>RW</td>
-                            <td>PLL isolation for VDDH, VDDF.<br><br>
-                                </td>
+                            <td>Setting this bit to 1 pulls the two power supply inputs of the PLL block to ground ensuring that PLL signals are not able to float to mid-scale levels and cause unnecessary current flow to downstream logic.  This bit must only be enabled while the PLL is disabled. If the PLL is enabled while the isolation bit is enabled, a leakage path may occur from VDDH and VDDF to ground, which may result in EM damage.<br><br>
+                                 EN                   = 0x1 - PLL isolation is enabled; set only when the PLL is disabled.<br>
+                             DIS                  = 0x0 - PLL isolation is disabled; it is safe to enable the PLL for clocking.</td>
                         </tr>
 
                         <tr>

@@ -2,11 +2,55 @@
 //
 //! @file am_hal_usbcharger.h
 //!
-//! @brief
+//! @brief API for the USB Charger Detection module
 //!
-//! @addtogroup usb_charger USB Charger Functionality
+//! @addtogroup usb_charger_ap510 USB Charger Functionality
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module implements USB Battery Charging Specification 1.2
+//!          compliant charger detection for Apollo5 devices. It provides
+//!          comprehensive functionality for identifying different charger
+//!          types (SDP, CDP, DCP), managing data pin connections, and
+//!          optimizing charging behavior based on the detected charger type.
+//!
+//! @section hal_usbcharger_features Key Features
+//!
+//! 1. @b BC1.2 @b Compliance: Full implementation of USB BC1.2 detection protocol
+//! 2. @b Charger @b Detection: Identifies SDP, CDP, and DCP charger types
+//! 3. @b Pin @b Management: Controls and monitors D+/D- pin states
+//! 4. @b Voltage @b Control: Configurable voltage comparators for pin sensing
+//! 5. @b Power @b Optimization: Automatic charging current adjustment
+//!
+//! @section hal_usbcharger_functionality Functionality
+//!
+//! - Primary and Secondary charger detection
+//! - Data pin contact detection (DCD)
+//! - Voltage comparator configuration
+//! - Charger-specific current draw control
+//! - USB PHY and hardware reset management
+//!
+//! @section hal_usbcharger_usage Usage
+//!
+//! 1. Initialize with hardware reset/unreset functions
+//! 2. Perform data pin contact detection
+//! 3. Execute primary detection for SDP
+//! 4. Run secondary detection for CDP/DCP
+//! 5. Configure charging based on detected type
+//!
+//! @section hal_usbcharger_configuration Configuration
+//!
+//! - Data pin connection settings
+//! - Voltage comparator reference levels
+//! - Charger-specific current limits
+//! - PHY reset override controls
+//! - Hardware reset management
+//!
+//! @section hal_usbcharger_types Charger Types
+//!
+//! - SDP (Standard Downstream Port): PC/laptop ports
+//! - CDP (Charging Downstream Port): High-current capable hosts
+//! - DCP (Dedicated Charging Port): Wall chargers
 //
 //*****************************************************************************
 
@@ -41,7 +85,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

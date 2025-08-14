@@ -2,15 +2,47 @@
 //
 //! @file am_util_ble.c
 //!
-//! @brief Useful BLE functions not covered by the HAL.
+//! @brief Utility functions for the BLE module.
 //!
-//! This file contains functions for interacting with the BLE hardware
-//! that are not already covered by the HAL. Most of these commands either
-//! adjust RF settings or facilitate RF testing operations.
-//!
-//! @addtogroup ble BLE Utility
+//! @addtogroup ble_utils BLE Utility Functions
 //! @ingroup utils
 //! @{
+//!
+//! Purpose: This module provides utility functions for BLE operations
+//!          across Ambiq Micro devices. It enables configuration, initialization,
+//!          and management of BLE hardware and protocol features. The utilities
+//!          support power management, vendor-specific commands, and BLE stack
+//!          integration for optimal wireless performance and system reliability.
+//!
+//! @section utils_ble_features Key Features
+//!
+//! 1. @b Power @b Management: Efficient BLE power state control.
+//! 2. @b HCI @b Support: Handle Host Controller Interface commands.
+//! 3. @b Vendor @b Commands: Support for vendor-specific features.
+//! 4. @b Stack @b Integration: BLE stack initialization and management.
+//! 5. @b Error @b Handling: Robust error detection and recovery.
+//!
+//! @section utils_ble_functionality Functionality
+//!
+//! - Initialize and configure BLE hardware
+//! - Manage power states and sleep modes
+//! - Process HCI and vendor-specific commands
+//! - Handle BLE stack integration
+//! - Support error detection and recovery
+//!
+//! @section utils_ble_usage Usage
+//!
+//! 1. Initialize BLE with am_util_ble_init()
+//! 2. Configure power management settings
+//! 3. Process BLE commands and events
+//! 4. Manage stack integration as needed
+//!
+//! @section utils_ble_configuration Configuration
+//!
+//! - Set up power management parameters
+//! - Configure HCI interface options
+//! - Define vendor command behavior
+//! - Set stack integration options
 //
 //*****************************************************************************
 
@@ -45,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

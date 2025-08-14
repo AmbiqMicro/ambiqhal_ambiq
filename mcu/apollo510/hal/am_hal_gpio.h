@@ -4,7 +4,7 @@
 //!
 //! @brief General Purpose Input Output Functionality
 //!
-//! @addtogroup gpio GPIO - General Purpose Input Output
+//! @addtogroup gpio_ap510 GPIO - General Purpose Input Output
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_GPIO_H
@@ -1042,18 +1042,15 @@ typedef struct
 
 //*****************************************************************************
 //
-//! @brief Return the current configuration of a pin.
+//! @brief Get the current configuration of a GPIO pin.
 //!
-//! @param ui32GpioNum is the GPIO pin number to configure.
-//! @param psGpioCfg - Ptr for the return value of the current configuration.
+//! @param ui32GpioNum - GPIO pin number.
+//! @param psGpioCfg - Pointer to store the pin configuration.
 //!
-//! This function returns the current configuration of a GPIO.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//! @return Standard HAL status code.
-//
 //*****************************************************************************
-extern uint32_t
-am_hal_gpio_pinconfig_get(uint32_t ui32GpioNum, am_hal_gpio_pincfg_t* psGpioCfg);
+extern uint32_t am_hal_gpio_pinconfig_get(uint32_t ui32GpioNum, am_hal_gpio_pincfg_t* psGpioCfg);
 
 //*****************************************************************************
 //
@@ -1072,15 +1069,13 @@ extern uint32_t am_hal_gpio_pinconfig(uint32_t ui32GpioNum,
 
 //*****************************************************************************
 //
-//! @brief Configure the function of a single pin.
+//! @brief Configure GPIO pin with function override.
 //!
-//! @param ui32GpioNum is the GPIO pin number to configure.
-//! @param sGpioCfg Structure corresponding to the desired configuration.
-//! @param eFunction Function Select type
+//! @param ui32GpioNum - GPIO pin number.
+//! @param sGpioCfg - Pin configuration structure.
+//! @param eFunction - Pin function to override.
 //!
-//! This function sets the configuration of a GPIO.
-//!
-//! @return Standard HAL status code.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //
 //*****************************************************************************
 extern uint32_t am_hal_gpio_pinconfig_override(uint32_t ui32GpioNum,

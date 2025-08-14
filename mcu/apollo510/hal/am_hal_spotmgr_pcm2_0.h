@@ -2,10 +2,9 @@
 //
 //! @file am_hal_spotmgr_pcm2_0.h
 //!
-//! @brief SPOT manager functions that manage power states for PCM 1.0, PCM 1.1,
-//! and PCM2.0 parts.
+//! @brief SPOT manager functions that manage power states for PCM2.0, PCM1.1 and PCM1.0 parts.
 //!
-//! @addtogroup spotmgr5b SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr_20_ap510 SPOTMGR - SPOT Manager PCM2.0
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -42,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SPOTMGR_PCM2_0_H

@@ -4,9 +4,45 @@
 //!
 //! @brief Functions for interfacing with the System PLL.
 //!
-//! @addtogroup syspll5b SYSPLL - System PLL
+//! @addtogroup syspll_ap510 SYSPLL - System PLL
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//!          the System PLL (Phase-Locked Loop) on Apollo5 devices. It supports
+//!          PLL configuration, frequency generation, lock management, and clock
+//!          multiplexing for precise clock generation and distribution.
+//!
+//! @section hal_syspll_features Key Features
+//!
+//! 1. @b PLL @b Configuration: Flexible PLL parameter configuration.
+//! 2. @b Frequency @b Generation: Precise frequency generation and control.
+//! 3. @b Lock @b Management: PLL lock detection and wait functionality.
+//! 4. @b Clock @b Multiplexing: Support for multiple clock source selection.
+//! 5. @b Bypass @b Mode: PLL bypass functionality for direct clock routing.
+//!
+//! @section hal_syspll_functionality Functionality
+//!
+//! - Initialize and configure System PLL
+//! - Generate precise clock frequencies
+//! - Handle PLL lock detection and management
+//! - Support clock multiplexing and selection
+//! - Enable/disable PLL and bypass modes
+//!
+//! @section hal_syspll_usage Usage
+//!
+//! 1. Initialize PLL using am_hal_syspll_initialize()
+//! 2. Configure PLL parameters and frequencies
+//! 3. Enable PLL and wait for lock
+//! 4. Configure clock multiplexing as needed
+//! 5. Disable PLL when no longer needed
+//!
+//! @section hal_syspll_configuration Configuration
+//!
+//! - @b PLL @b Parameters: Configure reference and feedback dividers
+//! - @b Frequency @b Settings: Set up output frequencies and VCO ranges
+//! - @b Lock @b Timing: Configure lock detection and wait times
+//! - @b Clock @b Sources: Set up clock multiplexing and selection
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

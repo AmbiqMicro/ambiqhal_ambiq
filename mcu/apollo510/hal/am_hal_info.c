@@ -4,10 +4,37 @@
 //!
 //! @brief INFO helper functions
 //!
-//! @addtogroup info5 INFO Functionality
+//! @addtogroup info5_ap510 INFO Functionality
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides helper functions for accessing and managing
+//! INFO memory regions on Apollo5 devices, including reading, programming, and
+//! validating INFO0 and INFO1 spaces for device configuration and security.
+//!
+//! @section hal_info_features Key Features
+//!
+//! 1. @b INFO0/INFO1 @b Access: Read and program device information in OTP and MRAM.
+//! 2. @b Offset @b Translation: Utilities for translating OTP offsets to MRAM offsets.
+//! 3. @b Validation: Functions to validate INFO0/INFO1 regions and signatures.
+//! 4. @b Compatibility: Handles Apollo5-specific INFO region behaviors.
+//!
+//! @section hal_info_functionality Functionality
+//!
+//! - Read and write INFO0/INFO1 memory regions
+//! - Translate between OTP and MRAM offsets
+//! - Validate INFO region signatures and status
+//! - Support for both current and legacy INFO region access
+//!
+//! @section hal_info_usage Usage
+//!
+//! 1. Use am_hal_info0_read() or am_hal_info1_read() to access INFO memory
+//! 2. Use translation helpers for offset conversions
+//! 3. Validate INFO regions as needed for device configuration
+//!
+//! @section hal_info_configuration Configuration
+//!
+//! - No special configuration required; functions adapt to Apollo5 INFO region layout
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +68,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -61,6 +88,18 @@ static uint8_t g_ui8INFO0valid = 0xFF;
 // Helper functions to translate OTP offsets to MRAM offsets.
 //
 //*****************************************************************************
+
+//*****************************************************************************
+//
+//! @brief Translate INFO0 OTP offset to MRAM offset.
+//!
+//! For Apollo5, INFO0 OTP and MRAM offsets are the same.
+//!
+//! @param ui32wordOffset  Word offset in INFO0 OTP.
+//!
+//! @return MRAM offset corresponding to the OTP offset.
+//
+//*****************************************************************************
 static uint32_t
 INFO0_xlateOTPoffsetToMRAM(uint32_t ui32wordOffset)
 {
@@ -71,6 +110,17 @@ INFO0_xlateOTPoffsetToMRAM(uint32_t ui32wordOffset)
     return ui32wordOffset;
 } // INFO0_xlateOTPoffsetToMRAM()
 
+//*****************************************************************************
+//
+//! @brief Translate INFO1 OTP offset to MRAM offset.
+//!
+//! For Apollo5, INFO1 OTP and MRAM offsets are identical up to 0x7FC. For higher offsets, add 0xA00.
+//!
+//! @param ui32wordOffset  Word offset in INFO1 OTP.
+//!
+//! @return MRAM offset corresponding to the OTP offset.
+//
+//*****************************************************************************
 static uint32_t
 INFO1_xlateOTPoffsetToMRAM(uint32_t ui32wordOffset)
 {
@@ -92,15 +142,25 @@ INFO1_xlateOTPoffsetToMRAM(uint32_t ui32wordOffset)
 
 //*****************************************************************************
 //
-// Read INFO data.
-//
-// eInfoSpace - Specifies which info space to be read.
-//      AM_HAL_INFO_INFOSPACE_CURRENT_INFO0 // Currently active INFO0
-//      AM_HAL_INFO_INFOSPACE_CURRENT_INFO1 // Currently active INFO1
-//      AM_HAL_INFO_INFOSPACE_OTP_INFO0     // INFO0 from OTP  (regardless of current)
-//      AM_HAL_INFO_INFOSPACE_OTP_INFO1     // INFO1 from OTP  (regardless of current)
-//      AM_HAL_INFO_INFOSPACE_MRAM_INFO0    // INFO0 from MRAM (regardless of current)
-//      AM_HAL_INFO_INFOSPACE_MRAM_INFO1    // INFO1 from MRAM (regardless of current)
+//! @brief Read INFO data from the specified info space.
+//!
+//! This internal helper reads data from INFO0 or INFO1, in either OTP or MRAM,
+//! depending on the info space and device configuration.
+//!
+//! Read INFO data.
+//!
+//! @param eInfoSpace     Specifies which info space to read (INFO0/INFO1, OTP/MRAM).
+//!      eInfoSpace::AM_HAL_INFO_INFOSPACE_CURRENT_INFO0: Currently active INFO0.
+//!      eInfoSpace::AM_HAL_INFO_INFOSPACE_CURRENT_INFO1: Currently active INFO1.
+//!      eInfoSpace::AM_HAL_INFO_INFOSPACE_OTP_INFO0:     INFO0 from OTP  (regardless of current).
+//!      eInfoSpace::AM_HAL_INFO_INFOSPACE_OTP_INFO1:     INFO1 from OTP  (regardless of current).
+//!      eInfoSpace::AM_HAL_INFO_INFOSPACE_MRAM_INFO0:    INFO0 from MRAM (regardless of current).
+//!      eInfoSpace::AM_HAL_INFO_INFOSPACE_MRAM_INFO1:    INFO1 from MRAM (regardless of current).
+//! @param ui32WordOffset Word offset to start reading from.
+//! @param ui32NumWords   Number of words to read.
+//! @param pui32Dst       Destination buffer for the read data.
+//!
+//! @return AM_HAL_STATUS_SUCCESS on success, error code otherwise.
 //
 //*****************************************************************************
 static uint32_t

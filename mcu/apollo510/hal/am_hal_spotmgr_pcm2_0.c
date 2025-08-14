@@ -2,14 +2,47 @@
 //
 //! @file am_hal_spotmgr_pcm2_0.c
 //!
-//! @brief SPOT manager functions that manage power states for PCM2.0, PCM1.1
-//!        and PCM1.0 parts.
+//! @brief SPOT manager functions that manage power states for PCM2.0, PCM1.1 and PCM1.0 parts.
 //!
-//! @addtogroup spotmgr5b SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr_20_ap510 SPOTMGR - SPOT Manager PCM2.0
 //! @ingroup apollo510_hal
 //! @{
-//
-// ****************************************************************************
+//!
+//! Purpose: This module provides SPOT manager functionality for PCM1.0,
+//! PCM1.1, and PCM2.0 Apollo5 devices, supporting power state management,
+//! peripheral control, and system optimization. It enables efficient
+//! power management and system reliability for a range of PCM-based
+//! designs.
+//!
+//! @section hal_spotmgr_pcm2_0_features Key Features
+//!
+//! 1. @b PCM2.0/1.1/1.0 @b Support: Power management for multiple PCM versions.
+//! 2. @b Temperature @b Compensation: Handle temperature-based power adjustments.
+//! 3. @b SIMOBUCK/LDO @b Integration: Manage power domain transitions.
+//! 4. @b SDIO/GPU @b Handling: Special handling for SDIO and GPU power events.
+//! 5. @b Extensible: Support for custom power management strategies.
+//!
+//! @section hal_spotmgr_pcm2_0_functionality Functionality
+//!
+//! - Manage power state transitions for PCM2.0, PCM1.1, and PCM1.0
+//! - Integrate with SIMOBUCK, LDO, and other power domains
+//! - Handle temperature compensation and event postponement
+//! - Support for SDIO and GPU power event handling
+//! - Provide hooks for board-specific power management
+//!
+//! @section hal_spotmgr_pcm2_0_usage Usage
+//!
+//! 1. Initialize SPOT manager for PCM2.0/1.1/1.0 hardware
+//! 2. Handle power state transitions in response to events
+//! 3. Integrate with board and application power management
+//! 4. Extend with custom logic as needed
+//!
+//! @section hal_spotmgr_pcm2_0_configuration Configuration
+//!
+//! - @b PCM @b Version: Select appropriate PCM version for hardware
+//! - @b Temperature @b Compensation: Configure compensation parameters
+//! - @b SDIO/GPU: Set up event handling as required
+//****************************************************************************
 
 // ****************************************************************************
 //
@@ -42,7 +75,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -296,9 +329,10 @@ vddc_vddf_tempco_top(am_hal_pwrctrl_tempco_range_e eTempCoRange)
 {
     AM_CRITICAL_BEGIN
 
+    g_eTempCoRange = eTempCoRange;
+
     if (g_bPostponeTempco)
     {
-        g_eTempCoRange = eTempCoRange;
         g_bTempcoPending = true;
     }
     else
@@ -317,6 +351,9 @@ vddc_vddf_tempco_top(am_hal_pwrctrl_tempco_range_e eTempCoRange)
 //!                   am_hal_spotmgr_tempco_param_t
 //!
 //! @return SUCCESS or other Failures.
+//!
+//! @note Setting g_bFrcBuckAct in this function only applies to PCM 1.0/1.1,
+//!       for PCM 2.0 it is handled in spotmgr_buck_deepsleep_state_determine().
 //
 //*****************************************************************************
 static uint32_t am_hal_spotmgr_pcm2_0_tempco_update(am_hal_spotmgr_tempco_param_t *psTempCo)
@@ -343,19 +380,28 @@ static uint32_t am_hal_spotmgr_pcm2_0_tempco_update(am_hal_spotmgr_tempco_param_
     switch (eTempRange)
     {
         case AM_HAL_PWRCTRL_TEMPCO_RANGE_LOW:
-            g_bFrcBuckAct = false;
+            if (g_bIsPCM2p0 == false)
+            {
+                g_bFrcBuckAct = false;
+            }
             vddc_vddf_tempco_top(AM_HAL_PWRCTRL_TEMPCO_RANGE_LOW);
             psTempCo->fRangeLower = LOW_LIMIT;
             psTempCo->fRangeHigher = VDDC_VDDF_TEMPCO_THRESHOLD;
             break;
         case AM_HAL_PWRCTRL_TEMPCO_RANGE_MID:
-            g_bFrcBuckAct = false;
+            if (g_bIsPCM2p0 == false)
+            {
+                g_bFrcBuckAct = false;
+            }
             vddc_vddf_tempco_top(AM_HAL_PWRCTRL_TEMPCO_RANGE_MID);
             psTempCo->fRangeLower = VDDC_VDDF_TEMPCO_THRESHOLD - TEMP_HYSTERESIS;
             psTempCo->fRangeHigher = BUCK_LP_TEMP_THRESHOLD;
             break;
         case AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH:
-            g_bFrcBuckAct = true;
+            if (g_bIsPCM2p0 == false)
+            {
+                g_bFrcBuckAct = true;
+            }
             vddc_vddf_tempco_top(AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH);
             psTempCo->fRangeLower = BUCK_LP_TEMP_THRESHOLD - TEMP_HYSTERESIS;
             psTempCo->fRangeHigher = HIGH_LIMIT;
@@ -367,6 +413,82 @@ static uint32_t am_hal_spotmgr_pcm2_0_tempco_update(am_hal_spotmgr_tempco_param_
     }
 
     return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+//! @brief Determine the buck state in deepsleep by setting g_bFrcBuckAct
+//!
+//! @return None.
+//!
+//! @note This function is only for PCM2.0, not for PCM 1.0/1.1.
+//
+//*****************************************************************************
+static void
+spotmgr_buck_deepsleep_state_determine(void)
+{
+    //
+    // This function is only for PCM2.0, not for PCM 1.0/1.1.
+    //
+    if (g_bIsPCM2p0 == false)
+    {
+        return;
+    }
+
+    //
+    // Check temperature range and peripherals power status, if there is any
+    // peripheral enabled in deepsleep or temperature range is HIGH, the
+    // simobuck must be forced to stay in active mode in deepsleep.
+    //
+    if (g_eTempCoRange == AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH)
+    {
+        g_bFrcBuckAct = true;
+        return;
+    }
+    else
+    {
+        //
+        // Check stimer status and clock source, if it is using either the HFRC,
+        // HFRC2 or a GPIO external clock input as the clock source in
+        // deepsleep, the simobuck must be forced to stay in active mode in
+        // deepsleep.
+        //
+        if (am_hal_stimer_is_running()                                &&
+            (STIMER->STCFG_b.CLKSEL >= STIMER_STCFG_CLKSEL_HFRC_6MHZ) &&
+            (STIMER->STCFG_b.CLKSEL <= STIMER_STCFG_CLKSEL_HFRC_375KHZ))
+        {
+            g_bFrcBuckAct = true;
+            return;
+        }
+        else
+        {
+            //
+            // Check timer status and clock source, if any timer instance is using
+            // either the HFRC, HFRC2 or a GPIO external clock input as the clock
+            // source in deepsleep, the simobuck must be forced to stay in active
+            // mode in deepsleep.
+            //
+            for (uint32_t ui32TimerNumber = 0; ui32TimerNumber < AM_REG_NUM_TIMERS; ui32TimerNumber++)
+            {
+                if ((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0EN == TIMER_CTRL0_TMR0EN_EN) &&
+                    (TIMER->GLOBEN & (TIMER_GLOBEN_ENB0_EN << ui32TimerNumber))        &&
+                    (((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK >= AM_HAL_TIMER_CLOCK_HFRC_DIV4)            &&
+                      (TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK <= AM_HAL_TIMER_CLOCK_HFRC_DIV4K))          ||
+                     ((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK >= AM_HAL_TIMER_CLOCK_HFRC2_125MHz_DIV8)    &&
+                      (TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK <= AM_HAL_TIMER_CLOCK_HFRC2_125MHz_DIV256)) ||
+                     ((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK >= AM_HAL_TIMER_CLOCK_GPIO0)                &&
+                      (TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK <= AM_HAL_TIMER_CLOCK_GPIO223))))
+                {
+                    g_bFrcBuckAct = true;
+                    return;
+                }
+            }
+            //
+            // Set g_bFrcBuckAct to false if all the conditions above are not met.
+            //
+            g_bFrcBuckAct = false;
+        }
+    }
 }
 
 #if BOOST_VDDF_FOR_SDIO
@@ -794,12 +916,32 @@ uint32_t
 am_hal_spotmgr_pcm2_0_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bool bOn, void *pArgs)
 {
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
+    static float fTempStatic = BUCK_LP_TEMP_THRESHOLD + 5.0f; // Default power trims correspond to the temperature range AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH
 
     switch (eStimulus)
     {
-        case AM_HAL_SPOTMGR_STIM_CPU_STATE:
-            // Nothing to be done for PCM2.0
+        case AM_HAL_SPOTMGR_STIM_INIT_STATE:
+        {
+            //
+            // For PCM2.0, need to update the tempco related power trims after enabling SIMOBUCK.
+            //
+            am_hal_spotmgr_tempco_param_t sTemp;
+            sTemp.fTemperature = fTempStatic;
+            ui32Status = am_hal_spotmgr_pcm2_0_tempco_update(&sTemp);
             break;
+        }
+        case AM_HAL_SPOTMGR_STIM_CPU_STATE:
+        {
+            if (pArgs != NULL)
+            {
+                am_hal_spotmgr_cpu_state_e eCpuState = *((am_hal_spotmgr_cpu_state_e *)pArgs);
+                if (eCpuState == AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP)
+                {
+                    spotmgr_buck_deepsleep_state_determine();
+                }
+            }
+            break;
+        }
         case AM_HAL_SPOTMGR_STIM_GPU_STATE:
         {
             am_hal_spotmgr_gpu_state_e eState = *((am_hal_spotmgr_gpu_state_e*)pArgs);
@@ -816,7 +958,16 @@ am_hal_spotmgr_pcm2_0_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
         case AM_HAL_SPOTMGR_STIM_TEMP:
         {
             am_hal_spotmgr_tempco_param_t *psTempCo = (am_hal_spotmgr_tempco_param_t *)pArgs;
+            //
+            // Invoke am_hal_spotmgr_pcm2_0_tempco_update regardless of SIMOBUCK on or off.
+            // When simobuck is off, it only calculates temperature range, fRangeHigher and fRangeLower,
+            // but not adjust power trims.
+            //
             ui32Status = am_hal_spotmgr_pcm2_0_tempco_update(psTempCo);
+            //
+            // Save the temperature
+            //
+            fTempStatic = psTempCo->fTemperature;
             break;
         }
         case AM_HAL_SPOTMGR_STIM_DEVPWR:
@@ -849,6 +1000,8 @@ am_hal_spotmgr_pcm2_0_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
             break;
         case AM_HAL_SPOTMGR_STIM_SSRAMPWR:
             // Nothing to be done for PCM2.0
+            break;
+        case AM_HAL_SPOTMGR_STIM_BACK_TO_DEFAULT_STATE:
             break;
     }
 
@@ -917,9 +1070,33 @@ uint32_t am_hal_spotmgr_pcm2_0_simobuck_init_bfr_enable(void)
 //*****************************************************************************
 uint32_t am_hal_spotmgr_pcm2_0_simobuck_init_aft_enable(void)
 {
+    am_hal_delay_us(100);
     MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM = 1;
     MCUCTRL->D2ASPARE_b.MEMLDOREF = 0x2;
-    return AM_HAL_STATUS_SUCCESS;
+    am_hal_delay_us(100);
+    //
+    // Waiting for SIMOBUCK active
+    //
+    uint32_t ui32Status;
+    ui32Status = am_hal_delay_us_status_check(AM_HAL_PWRCTRL_MAX_WAIT_SIMOBUCK_ACT_US,
+                                              (uint32_t) &(PWRCTRL->VRSTATUS),
+                                              PWRCTRL_VRSTATUS_SIMOBUCKST_Msk,
+                                              (PWRCTRL_VRSTATUS_SIMOBUCKST_ACT << PWRCTRL_VRSTATUS_SIMOBUCKST_Pos),
+                                              true);
+    //
+    // Check for success.
+    //
+    if (AM_HAL_STATUS_SUCCESS != ui32Status)
+    {
+        return ui32Status;
+    }
+    else
+    {
+        //
+        // Initialise MCU power state after enabling SIMOBUCK
+        //
+        return am_hal_spotmgr_pcm2_0_power_state_update(AM_HAL_SPOTMGR_STIM_INIT_STATE, false, NULL);
+    }
 }
 
 #if NO_TEMPSENSE_IN_DEEPSLEEP
@@ -936,6 +1113,11 @@ uint32_t am_hal_spotmgr_pcm2_0_simobuck_init_aft_enable(void)
 #if !BOOST_VDDF_FOR_SDIO
 uint32_t am_hal_spotmgr_pcm2_0_tempco_suspend(void)
 {
+    //
+    // Set g_eTempCoRange to AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH to align with VDDC and VDDF values.
+    //
+    g_eTempCoRange = AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH;
+
     // Restore VDDC and VDDF settings before deepsleep to allow application to
     // suspend tempsensing during deeplseep.
     if (g_bOrigTrimsStored && (PWRCTRL->VRSTATUS_b.SIMOBUCKST == PWRCTRL_VRSTATUS_SIMOBUCKST_ACT))
@@ -987,6 +1169,11 @@ uint32_t am_hal_spotmgr_pcm2_0_tempco_suspend(void)
 #else
 uint32_t am_hal_spotmgr_pcm2_0_tempco_suspend(void)
 {
+    //
+    // Set g_eTempCoRange to AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH to align with VDDC and VDDF values.
+    //
+    g_eTempCoRange = AM_HAL_PWRCTRL_TEMPCO_RANGE_HIGH;
+
     // Restore VDDC and VDDF settings before deepsleep to allow application to
     // suspend tempsensing during deeplseep.
     if (g_bOrigTrimsStored && (PWRCTRL->VRSTATUS_b.SIMOBUCKST == PWRCTRL_VRSTATUS_SIMOBUCKST_ACT))
@@ -1146,7 +1333,22 @@ am_hal_spotmgr_pcm2_0_init(void)
     //
     g_bIsB0Pcm1p0 = APOLLO5_B0_PCM1P0;
     g_bIsPCM1p0Or1p1 = APOLLO5_B0_PCM1P0 || APOLLO5_B0_PCM1P1 || APOLLO5_B1_PCM1P1;
-    g_bIsPCM2p0Unscreened = APOLLO5_B2_PCM2P0 && (!SDIO_SCREEN_PARTS_FOR_B2);
+    //
+    // All B1-PCM2.0 parts are unscreened. For B2-PCM2.0, determine if it is an unscreened part through datecode.
+    //
+    g_bIsPCM2p0Unscreened = APOLLO5_B1_PCM2P0 || (APOLLO5_B2_PCM2P0 && (!SDIO_SCREEN_PARTS_FOR_B2));
+
+    //
+    // Powers up ACRG bias current (required when forcing ANALDO into active mode when entering Sleep mode).
+    //
+    MCUCTRL->ACRG_b.ACRGPWD = 0;
+    MCUCTRL->ACRG_b.ACRGSWE = 1;
+    //
+    // Forces ANALDO into active mode when entering Sleep mode.
+    //
+    MCUCTRL->VRCTRL_b.ANALDOACTIVE = 1;
+    MCUCTRL->VRCTRL_b.ANALDOPDNB = 1;
+    MCUCTRL->VRCTRL_b.ANALDOOVER = 1;
 
     return ui32Status;
 }
@@ -1160,7 +1362,7 @@ am_hal_spotmgr_pcm2_0_init(void)
 //*****************************************************************************
 uint32_t am_hal_spotmgr_pcm2_0_default_reset(void)
 {
-    #if BOOST_VDDF_FOR_SDIO
+#if BOOST_VDDF_FOR_SDIO
     if (g_bIsPCM1p0Or1p1 || g_bIsPCM2p0Unscreened)
     {
         bool bEnabled = false;
@@ -1193,7 +1395,7 @@ uint32_t am_hal_spotmgr_pcm2_0_default_reset(void)
             return AM_HAL_STATUS_FAIL;
         }
     }
-    #endif
+#endif
 
     return AM_HAL_STATUS_SUCCESS;
 }

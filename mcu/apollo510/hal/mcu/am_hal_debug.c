@@ -4,9 +4,44 @@
 //!
 //! @brief Functions for general debug operations.
 //!
-//! @addtogroup debug
+//! @addtogroup debug_ap510 General Debug Functionality
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides general debug operation functions for Apollo5
+//!          devices. It supports debug enable/disable, power management, trace
+//!          configuration, and TPIU clock setup for development and debugging.
+//!
+//! @section hal_debug_features Key Features
+//!
+//! 1. @b Debug @b Enable/Disable: Control debug operation state.
+//! 2. @b Power @b Management: Manage debug power domain.
+//! 3. @b Trace @b Configuration: Enable/disable trace and TPIU clock.
+//! 4. @b Counter @b Management: Track debug and trace enable counts.
+//! 5. @b MCUCTRL @b Integration: Integrate with MCU control registers.
+//!
+//! @section hal_debug_functionality Functionality
+//!
+//! - Enable and disable debug operation
+//! - Manage debug power domain and counters
+//! - Configure trace and TPIU clock
+//! - Integrate with MCU control registers
+//! - Track debug and trace enable/disable counts
+//!
+//! @section hal_debug_usage Usage
+//!
+//! 1. Enable debug using am_hal_debug_enable()
+//! 2. Disable debug using am_hal_debug_disable()
+//! 3. Manage debug power and trace configuration
+//! 4. Track debug and trace enable/disable counts
+//! 5. Integrate with MCU control as needed
+//!
+//! @section hal_debug_configuration Configuration
+//!
+//! - @b Debug @b Power: Configure debug power management
+//! - @b Trace @b Settings: Set up trace and TPIU clock
+//! - @b Counter @b Management: Track enable/disable counts
+//! - @b MCUCTRL: Configure MCU control register integration
 //
 //*****************************************************************************
 
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

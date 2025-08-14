@@ -4,11 +4,44 @@
 //!
 //! @brief SPOT manager functions that manage power states for PCM2.2 parts
 //!
-//! @addtogroup spotmgr5b SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr_22_ap510 SPOTMGR - SPOT Manager PCM2.2
 //! @ingroup apollo510_hal
 //! @{
-//
-// ****************************************************************************
+//!
+//! Purpose: This module provides SPOT manager functionality for PCM2.2
+//! Apollo5 devices, supporting advanced power state management, peripheral
+//! control, and system optimization. It enables efficient power
+//! management and system reliability for PCM2.2-based designs.
+//!
+//! @section hal_spotmgr_pcm2_2_features Key Features
+//!
+//! 1. @b PCM2.2 @b Support: Power management for PCM2.2 hardware.
+//! 2. @b Temperature @b Compensation: Handle temperature-based power adjustments.
+//! 3. @b SIMOBUCK/LDO @b Integration: Manage power domain transitions.
+//! 4. @b SDIO/GPU @b Handling: Special handling for SDIO and GPU power events.
+//! 5. @b Extensible: Support for custom power management strategies.
+//!
+//! @section hal_spotmgr_pcm2_2_functionality Functionality
+//!
+//! - Manage power state transitions for PCM2.2 hardware
+//! - Integrate with SIMOBUCK, LDO, and other power domains
+//! - Handle temperature compensation and event postponement
+//! - Support for SDIO and GPU power event handling
+//! - Provide hooks for board-specific power management
+//!
+//! @section hal_spotmgr_pcm2_2_usage Usage
+//!
+//! 1. Initialize SPOT manager for PCM2.2 hardware
+//! 2. Handle power state transitions in response to events
+//! 3. Integrate with board and application power management
+//! 4. Extend with custom logic as needed
+//!
+//! @section hal_spotmgr_pcm2_2_configuration Configuration
+//!
+//! - @b PCM @b Version: Select PCM2.2 for hardware
+//! - @b Temperature @b Compensation: Configure compensation parameters
+//! - @b SDIO/GPU: Set up event handling as required
+//****************************************************************************
 
 // ****************************************************************************
 //
@@ -41,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -167,13 +200,18 @@ typedef union
 //
 //! Function pointer of power state transition sequence.
 //
-typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
+typedef uint32_t (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
 
 //*****************************************************************************
 //
 //! Defines
 //
 //*****************************************************************************
+
+//! Power boost duration in us for trim optmized parts
+#define SINGLE_BOOST_WAIT_STABLE_US    200
+//! Power boost duration in us for double boost case on trim optmized parts
+#define DOUBLE_BOOST_WAIT_STABLE_US    50
 
 //! Only bit[0:11] and bit[20:23] are used to determine power state.
 #define PWR_STATE_DESC_MASK 0x00F00FFF
@@ -184,11 +222,11 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
 //! Maximum delay for waiting for timer AM_HAL_INTERNAL_TIMER_NUM_A is disabled
 #define TIMER_A_DISABLE_WAIT_IN_US   2500
 
-//! Use the blocking delay instead of the timer
-#define USE_DELAY_INSTEAD_OF_TIMER false
+//! VDDCLVACTLOWTONTRIM trim code for power state 0 2 3.
+#define VDDCLVACTLOWTONTRIM_POWER_STATE_0_2_3 7
 
-//! VDDCLVACTLOWTONTRIM trim code for all other power states except power state 1 (and 5).
-#define VDDCLVACTLOWTONTRIM_DEFAULT 6
+//! VDDCLVACTLOWTONTRIM trim code for all other power states except power state 0, 2, and 3.
+#define VDDCLVACTLOWTONTRIM_DEFAULT 4
 
 //! Mask of power state group
 #define STATE_GROUP_MASK 0xFFFFFFFC
@@ -217,11 +255,17 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
 //! Check if the state is in the temperature range <= 0C
 #define IsStateLE0C(m) (((m & STATE_TEMP_RANGE_MASK) >= 2) && (StateGroup(m) <= 4))
 
+#if AM_HAL_SPOTMGR_DOUBLE_BOOST_FOR_SEQ_USING_TIMER_PCM2_2
 //! Timer compare value in micro second
 #define MAX_WAIT_TIME_FOR_SPOTMGR_TIMER_EXPIRE_IN_US 60
+#else
+//! Timer compare value in micro second
+#define MAX_WAIT_TIME_FOR_SPOTMGR_TIMER_EXPIRE_IN_US 210
+#endif
 
 //! Common header of state transition function.
 #define COMMON_HEADER                                                                       \
+    uint8_t ui32Status = AM_HAL_STATUS_SUCCESS;                                             \
     uint8_t vddclv[4];                                                                      \
     bool bEnableICache = false;                                                             \
     am_hal_spotmgr_trim_settings_t *pTrimSettings =                                         \
@@ -239,7 +283,8 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
     uint32_t ui32NewVddcTrim = pTrimSettings->PWRSTATE_b.TVRGCACTTRIM;                      \
     uint32_t ui32NewVddfTrim = pTrimSettings->PWRSTATE_b.TVRGFACTTRIM;                      \
     uint32_t ui32CurVddclvTrim = vddclv[ui32CurPwrState % 4];                               \
-    uint32_t ui32NewVddclvTrim = vddclv[ui32PwrState % 4];
+    uint32_t ui32NewVddclvTrim = vddclv[ui32PwrState % 4];                                  \
+    uint32_t i = 0;
 
 //! Update globals
 #define UPDATE_GLOBALS                                                                      \
@@ -256,7 +301,7 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
     {                                                                                       \
         if (TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0EN)                            \
         {                                                                                   \
-            for (uint32_t i = 0; i < MAX_WAIT_TIME_FOR_SPOTMGR_TIMER_EXPIRE_IN_US; i++)     \
+            for (i = 0; i < MAX_WAIT_TIME_FOR_SPOTMGR_TIMER_EXPIRE_IN_US; i++)              \
             {                                                                               \
                 if (TIMER->INTSTAT & AM_HAL_TIMER_MASK(AM_HAL_INTERNAL_TIMER_NUM_A, AM_HAL_TIMER_COMPARE0)) \
                 {                                                                           \
@@ -308,7 +353,7 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
     } while (0)
 
 //! Boost VDDF for VDDC and VDDF separation
-#define BOOST_VDDF_FOR_SEPARATION(diff)                                                                 \
+#define BOOST_VDDF_FOR_SEPARATION(diff)                                                     \
     do                                                                                      \
     {                                                                                       \
         if ((ui32NewVddfTrim + (diff)) > MAX_VDDF_TRIM)                                     \
@@ -345,7 +390,7 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
         int32_t i32DblBstDiff = (i32Diff > 0) ? (2 * i32Diff) : 0;                          \
         if ((ui32CurVddcTrim + i32DblBstDiff) > MAX_VDDC_TRIM)                              \
         {                                                                                   \
-            MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = MAX_VDDC_TRIM;                            \
+            MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = MAX_VDDC_TRIM;                              \
         }                                                                                   \
         else                                                                                \
         {                                                                                   \
@@ -361,7 +406,7 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
         int32_t i32DblBstDiff = (i32Diff > 0) ? (2 * i32Diff) : 0;                          \
         if ((ui32CurVddclvTrim + i32DblBstDiff) > MAX_VDDC_LV_TRIM)                         \
         {                                                                                   \
-            MCUCTRL->VREFGEN3_b.TVRGCLVVREFTRIM = MAX_VDDC_LV_TRIM;                        \
+            MCUCTRL->VREFGEN3_b.TVRGCLVVREFTRIM = MAX_VDDC_LV_TRIM;                         \
         }                                                                                   \
         else                                                                                \
         {                                                                                   \
@@ -369,13 +414,28 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
         }                                                                                   \
     } while (0)
 
+//! Boost VDDF
+#define SINGLE_BOOST_VDDF()        LOAD_VDDF_TRIM()
+
+//! Boost VDDC
+#define SINGLE_BOOST_VDDC()        LOAD_VDDC_TRIM()
+
+//! Boost VDDC_LV
+#define SINGLE_BOOST_VDDC_LV()     LOAD_VDDC_LV_TRIM()
+
+
+
 //! Disable ICache
 #define DISABLE_ICACHE()                                                                    \
     do                                                                                      \
     {                                                                                       \
         if (SCB->CCR & SCB_CCR_IC_Msk)                                                      \
         {                                                                                   \
-            am_hal_cachectrl_icache_disable();                                              \
+            ui32Status = am_hal_cachectrl_icache_disable();                                 \
+            if (ui32Status != AM_HAL_STATUS_SUCCESS)                                        \
+            {                                                                               \
+                return ui32Status;                                                          \
+            }                                                                               \
             bEnableICache = true;                                                           \
         }                                                                                   \
     } while (0)
@@ -386,7 +446,11 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
     {                                                                                       \
         if (bEnableICache)                                                                  \
         {                                                                                   \
-            am_hal_cachectrl_icache_enable();                                               \
+            ui32Status = am_hal_cachectrl_icache_enable();                                  \
+            if (ui32Status != AM_HAL_STATUS_SUCCESS)                                        \
+            {                                                                               \
+                return ui32Status;                                                          \
+            }                                                                               \
         }                                                                                   \
     } while (0)
 
@@ -395,7 +459,7 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
     do                                                                                      \
     {                                                                                       \
         PWRCTRL->MCUPERFREQ_b.MCUPERFREQ = PWRCTRL_MCUPERFREQ_MCUPERFREQ_LP;                \
-        for ( uint32_t i = 0; i < AM_HAL_PWRCTRL_PERF_SWITCH_WAIT_US; i++ )                 \
+        for ( i = 0; i < AM_HAL_PWRCTRL_PERF_SWITCH_WAIT_US; i++ )                          \
         {                                                                                   \
             if ( PWRCTRL->MCUPERFREQ_b.MCUPERFACK > 0 )                                     \
             {                                                                               \
@@ -403,20 +467,50 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
             }                                                                               \
             am_hal_delay_us(1);                                                             \
         }                                                                                   \
+        if (i >= AM_HAL_PWRCTRL_PERF_SWITCH_WAIT_US)                                        \
+        {                                                                                   \
+            return AM_HAL_STATUS_TIMEOUT;                                                   \
+        }                                                                                   \
     } while (0)
 
 //! Switch CPU to HP mode as a workaround
 #define SWITCH_TO_HP()                                                                      \
     do                                                                                      \
     {                                                                                       \
-        PWRCTRL->MCUPERFREQ_b.MCUPERFREQ = PWRCTRL_MCUPERFREQ_MCUPERFREQ_HP;                \
-        for ( uint32_t i = 0; i < AM_HAL_PWRCTRL_PERF_SWITCH_WAIT_US; i++ )                 \
+        bool bHFRC2ForceOn = false;                                                         \
+        if (!CLKGEN->MISC_b.FRCHFRC2)                                                       \
         {                                                                                   \
-            if ( PWRCTRL->MCUPERFREQ_b.MCUPERFACK > 0 )                                     \
-            {                                                                               \
-                break;                                                                      \
-            }                                                                               \
+            CLKGEN->MISC_b.FRCHFRC2 = CLKGEN_MISC_FRCHFRC2_FRC;                             \
             am_hal_delay_us(1);                                                             \
+            am_hal_delay_us_status_change(AM_HAL_CLKGEN_HFRC2_DELAY,                        \
+                    (uint32_t)&CLKGEN->CLOCKENSTAT,                                         \
+                    CLKGEN_CLOCKENSTAT_HFRC2READY_Msk,                                      \
+                    CLKGEN_CLOCKENSTAT_HFRC2READY_Msk);                                     \
+            bHFRC2ForceOn = true;                                                           \
+        }                                                                                   \
+        if (CLKGEN->CLOCKENSTAT_b.HFRC2READY)                                               \
+        {                                                                                   \
+            PWRCTRL->MCUPERFREQ_b.MCUPERFREQ = PWRCTRL_MCUPERFREQ_MCUPERFREQ_HP;            \
+            for ( i = 0; i < AM_HAL_PWRCTRL_PERF_SWITCH_WAIT_US; i++ )                      \
+            {                                                                               \
+                if ( PWRCTRL->MCUPERFREQ_b.MCUPERFACK > 0 )                                 \
+                {                                                                           \
+                    break;                                                                  \
+                }                                                                           \
+                am_hal_delay_us(1);                                                         \
+            }                                                                               \
+            if (i >= AM_HAL_PWRCTRL_PERF_SWITCH_WAIT_US)                                    \
+            {                                                                               \
+                return AM_HAL_STATUS_TIMEOUT;                                               \
+            }                                                                               \
+        }                                                                                   \
+        else                                                                                \
+        {                                                                                   \
+            return AM_HAL_STATUS_FAIL;                                                      \
+        }                                                                                   \
+        if (bHFRC2ForceOn)                                                                  \
+        {                                                                                   \
+            CLKGEN->MISC_b.FRCHFRC2 = CLKGEN_MISC_FRCHFRC2_NOFRC;                           \
         }                                                                                   \
     } while (0)
 
@@ -436,8 +530,23 @@ typedef void (*TransitionSequencePtr)(uint32_t, uint32_t, uint32_t, uint32_t);
 //! Remove VDDC_LV double boost
 #define REMOVE_VDDC_LV_DOUBLE_BOOST()   LOAD_VDDC_LV_TRIM()
 
+#if AM_HAL_SPOTMGR_DOUBLE_BOOST_FOR_SEQ_USING_TIMER_PCM2_2
+//! Wait time for VDDC to stabilize when using timer delay in double boost mode
+#define BOOST_WAIT_STABLE_US_FOR_SEQ_USING_TIMER  DOUBLE_BOOST_WAIT_STABLE_US
+//! Boost mode applied when using timer delay
+#define BOOST_VDDC_FOR_SEQ_USING_TIMER            DOUBLE_BOOST_VDDC
+#else
+//! Wait time for VDDC to stabilize when using timer delay in single boost mode
+#define BOOST_WAIT_STABLE_US_FOR_SEQ_USING_TIMER  SINGLE_BOOST_WAIT_STABLE_US
+//! Boost mode applied when using timer delay
+#define BOOST_VDDC_FOR_SEQ_USING_TIMER            SINGLE_BOOST_VDDC
+#endif
+
 //! Assume g_sSpotMgrINFO1regs.sPowerStateArray[1].PWRSTATE_b.TVRGFACTTRIM is set to TVRGFACTTRIM0
 #define TVRGFACTTRIM0 (g_sSpotMgrINFO1regs.sPowerStateArray[1].PWRSTATE_b.TVRGFACTTRIM)
+
+//! Assume g_sSpotMgrINFO1regs.sPowerStateArray[4].PWRSTATE_b.TVRGFACTTRIM is set to TVRGFACTTRIM1
+#define TVRGFACTTRIM1 (g_sSpotMgrINFO1regs.sPowerStateArray[4].PWRSTATE_b.TVRGFACTTRIM)
 
 //! Assume g_sSpotMgrINFO1regs.sPowerStateArray[19].PWRSTATE_b.TVRGFACTTRIM is set to TVRGFACTTRIM2
 #define TVRGFACTTRIM2 (g_sSpotMgrINFO1regs.sPowerStateArray[19].PWRSTATE_b.TVRGFACTTRIM)
@@ -489,14 +598,32 @@ static volatile uint32_t g_ui32TargetPowerState = 0;
 static am_hal_spotmgr_transition_sequence_e eOngoingSeq = AM_HAL_SPOTMGR_TRANS_SEQ_INVALID;
 
 #if AM_HAL_SPOTMGR_REPLACE_DELAY_WITH_WFI
-//*****************************************************************************
-//
-// Define a simple function that will go to sleep.
-//
-//*****************************************************************************
-//
-// Prototype the assembly function.
-//
+
+//! BASEPRI Register Access
+#if (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION < 6000000)
+#define READ_BASEPRI(value)            \
+    __asm                              \
+    {                                  \
+        PUSH {R0}                      \
+        MRS     R0, BASEPRI            \
+        MOV     value, R0              \
+        POP {R0}                       \
+    }
+#define WRITE_BASEPRI(value)           \
+    __asm                              \
+    {                                  \
+        PUSH {R0}                      \
+        MOV R0, value                  \
+        MSR BASEPRI, R0                \
+        POP {R0}                       \
+    }
+#elif ((defined (__ARMCC_VERSION)) && (__ARMCC_VERSION >= 6000000)) || defined(__IAR_SYSTEMS_ICC__) || defined(__GNUC_STDC_INLINE__)
+#define READ_BASEPRI(value)  __ASM volatile ("MRS %0, BASEPRI" : "=r" (value));
+#define WRITE_BASEPRI(value) __ASM volatile ("MSR basepri, %0" : : "r" (value) : "memory");
+#else
+#error Compiler is unknown, please contact Ambiq support team
+#endif
+
 typedef void (*WFIfunc_t)(void);
 
 #if (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION < 6000000)
@@ -514,42 +641,69 @@ __align(32)
 #error Unknown compiler.
 #endif
 
-static
-uint16_t WFIRAM[16] WA_ATTRIB =
-{
-    0xF3BF, 0x8F4F,     // DSB
-    0xBF30,             // WFI
-    0xF3BF, 0x8F6F,     // ISB
-    0x4770,             // bx lr
-    0xBF00,             // nop
-};
-#define DELAY_TIME_COMPENSATION 10
-
-//
-// Prototype the assembly function.
-//
-WFIfunc_t WFIfuncRAM = (WFIfunc_t)((uint8_t *)WFIRAM + 1);
-
-static uint32_t nvic_en[16];
-static uint32_t origBasePri, origTimerPri;
-static bool g_bSTIntEnabled = false;
+#define HP_MODE_COMPENSATION 3
+#define LP_MODE_COMPENSATION 4
+#define DEEPSLEEP_WAKEUP_COMPENSATION 5
 
 //*****************************************************************************
 //
-// Mask off all interrupts
+// am_hal_spotmgr_wfi_wait
 //
 //*****************************************************************************
-static inline void
-am_critical_mask_all_begin(void)
+__attribute__((section(".itcm_text")))
+void
+am_hal_spotmgr_wfi_wait(uint32_t ui32Delayus)
 {
+    uint32_t nvic_en[16];
+    uint32_t ui32OrigBasePri, ui32OrigTimerPri;
+    bool bSTIntEnabled = false;
+    am_hal_pwrctrl_pwrmodctl_cpdlp_t sActCpdlpConfig;
+    uint32_t ui32CpdlpConfig = 0;
+    uint32_t ui32CpdlpState = 0;
+    uint32_t ui32STVal = 0;
+    bool bSetSTPend = false;
+    uint16_t WFIRAM[16] WA_ATTRIB =
+    {
+        0xF3BF, 0x8F4F,     // DSB
+        0xBF30,             // WFI
+        0xF3BF, 0x8F6F,     // ISB
+        0x4770,             // bx lr
+        0xBF00,             // nop
+    };
+
+    //
+    // Prototype the assembly function.
+    //
+    WFIfunc_t WFIfuncRAM = (WFIfunc_t)((uint8_t *)WFIRAM + 1);
+
+    //
+    // If PWRSTDBG is OFF, set ClpConfig to CLP_RET, the wake-up time needs to be compensated.
+    //
+    if ( !PWRCTRL->DEVPWRSTATUS_b.PWRSTDBG )
+    {
+        ui32Delayus -= DEEPSLEEP_WAKEUP_COMPENSATION;
+    }
+
+    if ( PWRCTRL->MCUPERFREQ_b.MCUPERFREQ == AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE )
+    {
+        ui32Delayus -= HP_MODE_COMPENSATION;
+    }
+    else
+    {
+        ui32Delayus -= LP_MODE_COMPENSATION;
+    }
+
+    //
+    // Mask off all interrupts
+    //
     uint32_t basePrioGrouping = ((uint32_t)((SCB->AIRCR & SCB_AIRCR_PRIGROUP_Msk) >> SCB_AIRCR_PRIGROUP_Pos));
 
     //
     // In this HAL, am_critical_mask_all_begin is called from CRITICAL SECTION
     //
     // orgPriMask = am_hal_interrupt_master_disable();
-    origBasePri = __get_BASEPRI();
-    __set_BASEPRI((basePrioGrouping >= (8 - __NVIC_PRIO_BITS))?(1 << (basePrioGrouping + 1)):(1 << (8 - __NVIC_PRIO_BITS)));
+    READ_BASEPRI(ui32OrigBasePri);
+    WRITE_BASEPRI((basePrioGrouping >= (8 - __NVIC_PRIO_BITS))?(1 << (basePrioGrouping + 1)):(1 << (8 - __NVIC_PRIO_BITS)));
     for (uint32_t i = 0; i < 16; i++)
     {
         nvic_en[i] = NVIC->ISER[i];
@@ -560,114 +714,46 @@ am_critical_mask_all_begin(void)
     //
     if (SysTick->CTRL & SysTick_CTRL_TICKINT_Msk)
     {
-        g_bSTIntEnabled = true;
+        bSTIntEnabled = true;
         SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
     }
-
-} // am_critical_mask_all_begin()
-
-//*****************************************************************************
-//
-//  Restore the interrupts
-//
-//*****************************************************************************
-static inline void
-am_critical_mask_all_end(void)
-{
-    uint32_t ui32STVal = 0;
-    bool bSetSTPend = false;
-
-    for (uint32_t i = 0; i < 16; i++ )
-    {
-        NVIC->ISER[i] = nvic_en[i];
-    }
-    __set_BASEPRI(origBasePri);
-
-    if (g_bSTIntEnabled)
-    {
-        //
-        // Address potential race condition where Systick interrupt could have
-        // been fired - while we disabled it
-        //
-        // Current snapshot for Systick
-        //
-        ui32STVal = SysTick->VAL;
-
-        //
-        // Need to read COUNTFLAG before writing to CTRL, as it would get reset
-        //
-        bSetSTPend = SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk;
-
-        //
-        // Enable SysTick Int
-        //
-        SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
-
-        //
-        // Read Systick again to see if it wrapped
-        //
-        if (SysTick->VAL > ui32STVal)
-        {
-              bSetSTPend = true;
-        }
-
-        //
-        // Set PENDSTSET
-        //
-        if (bSetSTPend)
-        {
-            SCB->ICSR |= SCB_ICSR_PENDSTSET_Msk;
-        }
-    }
-    //
-    // In this HAL, am_critical_mask_all_begin is called from CRITICAL SECTION
-    //
-    // am_hal_interrupt_master_set(orgPriMask);
-} // am_critical_mask_all_end()
-
-//*****************************************************************************
-//
-// am_hal_spotmgr_wfi_wait
-//
-//*****************************************************************************
-static void
-am_hal_spotmgr_wfi_wait(uint32_t ui32Delayus)
-{
-    am_hal_pwrctrl_pwrmodctl_cpdlp_t sActCpdlpConfig;
-    uint32_t ui32CpdlpConfig = 0;
-
-    //
-    // Mask off all interrupts
-    //
-    am_critical_mask_all_begin();
 
     //
     // This interrupt needs to be set as the highest priority (0)
     //
-    origTimerPri = NVIC->IPR[TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A];
+    ui32OrigTimerPri = NVIC->IPR[TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A];
     NVIC->IPR[TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A] = (uint8_t)((0 << (8U - __NVIC_PRIO_BITS)) & (uint32_t)0xFFUL);
 
     //
-    // Start the timer.
+    //  Set timer compare value
     //
-    am_hal_spotmgr_timer_start(ui32Delayus - DELAY_TIME_COMPENSATION);
+    TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->TMR0CMP0 = ui32Delayus * (AM_HAL_CLKGEN_FREQ_MAX_MHZ / 16);
+    //
+    // Toggle the clear bit (required by the hardware), and then enable the timer.
+    //
+    TIMER->GLOBEN |= 1UL <<  AM_HAL_INTERNAL_TIMER_NUM_A;
+    TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0CLR = 1;
+    TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0CLR = 0;
+    //
+    // Set the timer interrupt
+    //
+    NVIC->ISER[(TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A) / 32] = (1 << ((TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A) % 32));
+    //
+    // Enable the timer
+    //
+    TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0EN = 1;
 
-    //
-    // CPDLPSTATE may affect DBG power status, remove it before we understand this.
     //
     // Get the current CPDLPSTATE configuration in active mode
-    //
-    am_hal_pwrctrl_pwrmodctl_cpdlp_get(&sActCpdlpConfig);
-
-    //
     // Prepare the data for restoring CPDLPSTATE configuration after waking up
     //
-    ui32CpdlpConfig |= (sActCpdlpConfig.eRlpConfig << PWRMODCTL_CPDLPSTATE_RLPSTATE_Pos);
-    ui32CpdlpConfig |= (sActCpdlpConfig.eElpConfig << PWRMODCTL_CPDLPSTATE_ELPSTATE_Pos);
-    ui32CpdlpConfig |= (sActCpdlpConfig.eClpConfig << PWRMODCTL_CPDLPSTATE_CLPSTATE_Pos);
+    ui32CpdlpConfig = PWRMODCTL->CPDLPSTATE;
+
+    sActCpdlpConfig.eRlpConfig = (am_hal_pwrctrl_pwrmodctl_rlp_e) ((ui32CpdlpConfig & PWRMODCTL_CPDLPSTATE_RLPSTATE_Msk) >> PWRMODCTL_CPDLPSTATE_RLPSTATE_Pos);
+    sActCpdlpConfig.eElpConfig = (am_hal_pwrctrl_pwrmodctl_elp_e) ((ui32CpdlpConfig & PWRMODCTL_CPDLPSTATE_ELPSTATE_Msk) >> PWRMODCTL_CPDLPSTATE_ELPSTATE_Pos);
 
     //
-    // Set the CPDLPSTATE configuration in deepsleep mode
+    // Prepare the CPDLPSTATE configuration in deepsleep mode
     //
     am_hal_pwrctrl_pwrmodctl_cpdlp_t sDSCpdlpConfig =
     {
@@ -684,11 +770,22 @@ am_hal_spotmgr_wfi_wait(uint32_t ui32Delayus)
         sDSCpdlpConfig.eElpConfig = AM_HAL_PWRCTRL_ELP_OFF;
     }
 
+    //
+    // If PWRSTDBG is ON, set ClpConfig to CLP_ON_CLK_OFF
+    //
     if ( PWRCTRL->DEVPWRSTATUS_b.PWRSTDBG )
     {
         sDSCpdlpConfig.eClpConfig = AM_HAL_PWRCTRL_CLP_ON_CLK_OFF;
     }
-    am_hal_pwrctrl_pwrmodctl_cpdlp_config(sDSCpdlpConfig);
+
+    ui32CpdlpState |= (sDSCpdlpConfig.eRlpConfig << PWRMODCTL_CPDLPSTATE_RLPSTATE_Pos);
+    ui32CpdlpState |= (sDSCpdlpConfig.eElpConfig << PWRMODCTL_CPDLPSTATE_ELPSTATE_Pos);
+    ui32CpdlpState |= (sDSCpdlpConfig.eClpConfig << PWRMODCTL_CPDLPSTATE_CLPSTATE_Pos);
+
+    //
+    // Set the CPDLPSTATE configuration in deepsleep mode
+    //
+    PWRMODCTL->CPDLPSTATE = ui32CpdlpState;
 
     //
     // Set for deep sleep before calling WFIfunc()
@@ -713,16 +810,13 @@ am_hal_spotmgr_wfi_wait(uint32_t ui32Delayus)
     //
     am_hal_sysctrl_sysbus_write_flush();
 
-    //
-    // Call the function to go to sleep.
-    //
     WFIfuncRAM();
 
 #if AM_HAL_STALL_CPU_HPWAKE
     //
     // If in HP mode, we need to wait till HFRC2 is ready and CPU is fully back in HP mode
     //
-    if ((bSleepDeep == AM_HAL_SYSCTRL_SLEEP_DEEP) && (PWRCTRL->MCUPERFREQ_b.MCUPERFREQ == AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE))
+    if (PWRCTRL->MCUPERFREQ_b.MCUPERFREQ == AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE)
     {
         while ( PWRCTRL->MCUPERFREQ_b.MCUPERFSTATUS != AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE )
         {
@@ -732,14 +826,31 @@ am_hal_spotmgr_wfi_wait(uint32_t ui32Delayus)
 #endif // AM_HAL_STALL_CPU_HPWAKE
 
     //
-    // Stop/Disable the timer
+    // Deinit the timer
     //
-    am_hal_spotmgr_timer_stop();
+    TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0EN  = 0;
+    TIMER->GLOBEN &= ~(1UL <<  AM_HAL_INTERNAL_TIMER_NUM_A);
+    //
+    // Disable the timer interrupt
+    //
+    NVIC->ICER[(TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A) / 32] = (1 << ((TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A) % 32));
+    //
+    // clear the timer interrupt status
+    //
+    TIMER->INTCLR = (uint32_t) AM_HAL_TIMER_MASK(AM_HAL_INTERNAL_TIMER_NUM_A, AM_HAL_TIMER_COMPARE_BOTH);
+    //
+    // Flush APB writes.
+    //
+    am_hal_sysctrl_sysbus_write_flush();
+    //
+    // Clear pending NVIC interrupt for the timer-specific IRQ.
+    //
+    NVIC->ICPR[(((uint32_t)TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A) >> 5UL)] = (uint32_t)(1UL << (((uint32_t)TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A) & 0x1FUL));
 
     //
     // Restore the original timer priority
     //
-    NVIC->IPR[TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A] = origTimerPri;
+    NVIC->IPR[TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A] = ui32OrigTimerPri;
 
     //
     // Restore the CPDLPSTATE
@@ -749,7 +860,48 @@ am_hal_spotmgr_wfi_wait(uint32_t ui32Delayus)
     //
     // Restore all interrupts
     //
-    am_critical_mask_all_end();
+    for (uint32_t i = 0; i < 16; i++ )
+    {
+        NVIC->ISER[i] = nvic_en[i];
+    }
+    WRITE_BASEPRI(ui32OrigBasePri);
+
+    if (bSTIntEnabled)
+    {
+        //
+        // Address potential race condition where Systick interrupt could have
+        // been fired - while we disabled it
+        //
+        // Current snapshot for Systick
+        //
+        ui32STVal = SysTick->VAL;
+
+        //
+        // Need to read COUNTFLAG before writing to CTRL, as it would get reset
+        //
+        bSetSTPend = SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk;
+
+        //
+        // Enable SysTick Int
+        //
+        SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+
+        //
+        // Read Systick again to see if it wrapped
+        //
+        if (SysTick->VAL > ui32STVal)
+        {
+            bSetSTPend = true;
+        }
+
+        //
+        // Set PENDSTSET
+        //
+        if (bSetSTPend)
+        {
+            SCB->ICSR |= SCB_ICSR_PENDSTSET_Msk;
+        }
+    }
 } // am_hal_spotmgr_wfi_wait()
 #endif
 
@@ -795,9 +947,10 @@ DIAG_SUPPRESS_UNUSED_VAR
 //
 //! Sequences for the transition from "PCM2.1 LP" to
 //! "PCM2.0 LP peripheral on and GPU&SDIO off" or "PCM2.0 LP GPU/SDIO on".
+//! Section 3.a
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_0(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
@@ -809,7 +962,7 @@ transition_sequence_0(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
             LOAD_VDDC_TRIM();
             am_hal_spotmgr_timer_stop();
             eOngoingSeq = AM_HAL_SPOTMGR_TRANS_SEQ_INVALID;
-            return;
+            return ui32Status;
         }
         else
         {
@@ -819,7 +972,7 @@ transition_sequence_0(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     UPDATE_GLOBALS
     ADJUST_TON_IF_REQUIRED();
     DOUBLE_BOOST_VDDF();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDF_DOUBLE_BOOST();
     DISABLE_ICACHE();
     MCUCTRL->PWRSW0_b.PWRSWVDDMCPUSTATSEL = 1;
@@ -829,14 +982,16 @@ transition_sequence_0(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     LOAD_CORELDO_TRIM();
     LOAD_VDDC_TRIM();
     // Enable peripheral
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.1 LP" to "PCM2.1 HP".
+//! Section 3.b
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_1(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
@@ -844,11 +999,12 @@ transition_sequence_1(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     UPDATE_GLOBALS
     ADJUST_TON_IF_REQUIRED();
     DOUBLE_BOOST_VDDF();
+    am_hal_delay_us(10);
     DOUBLE_BOOST_VDDC();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDC_DOUBLE_BOOST();
     LOAD_CORELDO_TRIM();
-    am_hal_delay_us(5);
+    am_hal_delay_us(10);
     REMOVE_VDDF_DOUBLE_BOOST();
     DISABLE_ICACHE();
     MCUCTRL->PWRSW0_b.PWRSWVDDMCPUSTATSEL = 1;
@@ -859,16 +1015,18 @@ transition_sequence_1(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     //
     // Switch to HP mode after excuting the sequences above.
     //
+    return ui32Status;
 }
 
-#if USE_DELAY_INSTEAD_OF_TIMER
+#if !AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_2
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.0 LP peripheral on and GPU&SDIO off"
 //! or "PCM2.0 LP GPU/SDIO on" to "PCM2.1 LP".
+//! Section 3.c
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_2(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
@@ -881,24 +1039,27 @@ transition_sequence_2(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     //
     // Boost VDDF for separation
     //
-    MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = TVRGFACTTRIM2;
+    MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = (TVRGFACTTRIM2 + (TVRGFACTTRIM2 - TVRGFACTTRIM1)) > 0x7F ? 0x7F : (TVRGFACTTRIM2 + (TVRGFACTTRIM2 - TVRGFACTTRIM1));
+    am_hal_delay_us(10);
     DOUBLE_BOOST_VDDC();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDC_DOUBLE_BOOST();
     LOAD_CORELDO_TRIM();
-    am_hal_delay_us(5);
+    am_hal_delay_us(10);
     MCUCTRL->PWRSW0_b.PWRSWVDDMCPUSTATSEL = 0;
     MCUCTRL->PWRSW0_b.PWRSWVDDMLSTATSEL = 0;
     LOAD_VDDF_TRIM();
+    return ui32Status;
 }
 #else
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.0 LP peripheral on and GPU&SDIO off"
 //! or "PCM2.0 LP GPU/SDIO on" to "PCM2.1 LP".
+//! Section 3.c
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_2(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
@@ -911,11 +1072,13 @@ transition_sequence_2(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     //
     // Boost VDDF for separation
     //
-    MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = TVRGFACTTRIM2;
-    DOUBLE_BOOST_VDDC();
+    MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = (TVRGFACTTRIM2 + (TVRGFACTTRIM2 - TVRGFACTTRIM1)) > 0x7F ? 0x7F : (TVRGFACTTRIM2 + (TVRGFACTTRIM2 - TVRGFACTTRIM1));
+    am_hal_delay_us(10);
+    BOOST_VDDC_FOR_SEQ_USING_TIMER();
     g_ui32LastStateBfStartTimer = ui32PwrState;
-    am_hal_spotmgr_timer_start(50);
+    am_hal_spotmgr_timer_start(BOOST_WAIT_STABLE_US_FOR_SEQ_USING_TIMER);
     eOngoingSeq = AM_HAL_SPOTMGR_TRANS_SEQ_2;
+    return ui32Status;
 }
 
 //*****************************************************************************
@@ -923,18 +1086,19 @@ transition_sequence_2(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
 //! Sequences for the transition from "PCM2.0 LP peripheral on and GPU&SDIO off"
 //! or "PCM2.0 LP GPU/SDIO on" to "PCM2.1 LP".
 //! Call this from ISR.
+//! Section 3.c
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_2b()
 {
     //
-    // After 50us timer expires, execute the sequences below.
+    // After BOOST_WAIT_STABLE_US timer expires, execute the sequences below.
     //
     MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = g_ui32NewVddcTrim;
     MCUCTRL->LDOREG1_b.CORELDOTEMPCOTRIM = g_ui32NewCoreldoTempcoTrim;
-    MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM  = g_ui32NewCoreldoActTrim;
-    am_hal_delay_us(5);
+    MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = g_ui32NewCoreldoActTrim;
+    am_hal_delay_us(10);
     MCUCTRL->PWRSW0_b.PWRSWVDDMCPUSTATSEL = 0;
     MCUCTRL->PWRSW0_b.PWRSWVDDMLSTATSEL = 0;
     MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = g_ui32NewVddfTrim;
@@ -942,6 +1106,7 @@ transition_sequence_2b()
     // Set to the default value.
     //
     eOngoingSeq = AM_HAL_SPOTMGR_TRANS_SEQ_INVALID;
+    return AM_HAL_STATUS_SUCCESS;
 }
 #endif
 
@@ -949,9 +1114,10 @@ transition_sequence_2b()
 //
 //! Sequences for the transition from "PCM2.0 LP peripheral on and GPU&SDIO off"
 //! to "PCM2.0 HP peripheral on" or "PCM2.0 LP GPU/SDIO on".
+//! Section 3.d
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_3(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
@@ -959,19 +1125,21 @@ transition_sequence_3(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     UPDATE_GLOBALS
     ADJUST_TON_IF_REQUIRED();
     DOUBLE_BOOST_VDDF();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDF_DOUBLE_BOOST();
     //
     // Switch to CPU HP mode or Enable GPU and/or SDIO after executing the sequences above.
     //
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.1 HP" to "PCM2.1 LP".
+//! Section 3.e
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_4(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
@@ -982,19 +1150,22 @@ transition_sequence_4(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     UPDATE_GLOBALS
     LOAD_CORELDO_TRIM();
     LOAD_VDDC_TRIM();
+    am_hal_delay_us(10);
     LOAD_VDDF_TRIM();
     ADJUST_TON_IF_REQUIRED();
     MCUCTRL->PWRSW0_b.PWRSWVDDCPUOVERRIDE = 0;
     MCUCTRL->PWRSW0_b.PWRSWVDDCAOROVERRIDE = 0;
     MCUCTRL->PWRSW0_b.PWRSWVDDMCPUSTATSEL = 0;
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.1 HP" to "PCM2.0 HP peripheral on".
+//! Section 3.f
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_5(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
@@ -1006,7 +1177,7 @@ transition_sequence_5(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
             LOAD_VDDC_TRIM();
             am_hal_spotmgr_timer_stop();
             eOngoingSeq = AM_HAL_SPOTMGR_TRANS_SEQ_INVALID;
-            return;
+            return ui32Status;
         }
         else
         {
@@ -1025,15 +1196,17 @@ transition_sequence_5(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     //
     // Turn on peripheral after executing the sequences above.
     //
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.0 HP peripheral on" to
 //! "PCM2.0 LP peripheral on and GPU&SDIO off".
+//! Section 3.g
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_6(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
@@ -1044,15 +1217,17 @@ transition_sequence_6(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     UPDATE_GLOBALS
     LOAD_VDDF_TRIM();
     ADJUST_TON_IF_REQUIRED();
+    return ui32Status;
 }
 
-#if USE_DELAY_INSTEAD_OF_TIMER
+#if !AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_2
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.0 HP peripheral on" to "PCM2.1 HP".
+//! Section 3.h
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_7(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
@@ -1062,27 +1237,29 @@ transition_sequence_7(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
     ADJUST_TON_IF_REQUIRED();
-    uint32_t ui32Diff = (ui32NewVddfTrim - TVRGFACTTRIM0) * 0.9f;
-    BOOST_VDDF_FOR_SEPARATION(ui32Diff);
+    MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = (TVRGFACTTRIM2 + (TVRGFACTTRIM2 - TVRGFACTTRIM0)) > 0x7F ? 0x7F : (TVRGFACTTRIM2 + (TVRGFACTTRIM2 - TVRGFACTTRIM0));
+    am_hal_delay_us(10);
     DOUBLE_BOOST_VDDC();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDC_DOUBLE_BOOST();
     LOAD_CORELDO_TRIM();
-    am_hal_delay_us(5);
+    am_hal_delay_us(10);
     LOAD_VDDF_TRIM();
     SWITCH_TO_LP();
     MCUCTRL->PWRSW0_b.PWRSWVDDCAOROVERRIDE = 1;
     MCUCTRL->PWRSW0_b.PWRSWVDDCPUOVERRIDE = 1;
     MCUCTRL->PWRSW0_b.PWRSWVDDMLSTATSEL = 0;
     SWITCH_TO_HP();
+    return ui32Status;
 }
 #else
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.0 HP peripheral on" to "PCM2.1 HP".
+//! Section 3.h
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_7(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
@@ -1092,31 +1269,34 @@ transition_sequence_7(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
     ADJUST_TON_IF_REQUIRED();
-    volatile uint32_t ui32Diff = (ui32NewVddfTrim - TVRGFACTTRIM0) * 0.9f;
-    BOOST_VDDF_FOR_SEPARATION(ui32Diff);
-    DOUBLE_BOOST_VDDC();
+    MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = (TVRGFACTTRIM2 + (TVRGFACTTRIM2 - TVRGFACTTRIM0)) > 0x7F ? 0x7F : (TVRGFACTTRIM2 + (TVRGFACTTRIM2 - TVRGFACTTRIM0));
+    am_hal_delay_us(10);
+    BOOST_VDDC_FOR_SEQ_USING_TIMER();
     g_ui32LastStateBfStartTimer = ui32PwrState;
-    am_hal_spotmgr_timer_start(50);
+    am_hal_spotmgr_timer_start(BOOST_WAIT_STABLE_US_FOR_SEQ_USING_TIMER);
     eOngoingSeq = AM_HAL_SPOTMGR_TRANS_SEQ_7;
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.0 HP peripheral on" to "PCM2.1 HP".
 //! Call this from ISR.
+//! Section 3.h
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_7b()
 {
     bool bSwitchBackToHp = true;
+    uint32_t i = 0;
     //
-    // After 50us timer expires, execute the sequences below.
+    // After BOOST_WAIT_STABLE_US timer expires, execute the sequences below.
     //
     MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = g_ui32NewVddcTrim;
     MCUCTRL->LDOREG1_b.CORELDOTEMPCOTRIM = g_ui32NewCoreldoTempcoTrim;
     MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM  = g_ui32NewCoreldoActTrim;
-    am_hal_delay_us(5);
+    am_hal_delay_us(10);
     MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = g_ui32NewVddfTrim;
     //
     // If currently CPU is in HP mode, switch it to LP mode for switching power domains,
@@ -1142,6 +1322,7 @@ transition_sequence_7b()
     // Set to the default value.
     //
     eOngoingSeq = AM_HAL_SPOTMGR_TRANS_SEQ_INVALID;
+    return AM_HAL_STATUS_SUCCESS;
 }
 #endif
 
@@ -1149,9 +1330,10 @@ transition_sequence_7b()
 //
 //! Sequences for the transition from "PCM2.0 HP peripheral on" to
 //! "PCM2.0 LP GPU/SDIO on".
+//! Section 3.i
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_8(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
@@ -1161,15 +1343,17 @@ transition_sequence_8(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
     ADJUST_TON_IF_REQUIRED();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.0 LP GPU/SDIO on" to
 //! "PCM2.0 LP peripheral on and GPU&SDIO off".
+//! Section 3.j
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_9(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
@@ -1180,15 +1364,17 @@ transition_sequence_9(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t 
     UPDATE_GLOBALS
     LOAD_VDDF_TRIM();
     ADJUST_TON_IF_REQUIRED();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from "PCM2.0 LP GPU/SDIO on" to
 //! "PCM2.0 HP peripheral on".
+//! Section 3.k
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_10(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
@@ -1198,14 +1384,16 @@ transition_sequence_10(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
     //
     // Switch to HP mode after executing the sequences above.
     //
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 9 to 8 (transitions to > 50C).
+//! Section 3.l.i.1
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_11(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
@@ -1218,54 +1406,57 @@ transition_sequence_11(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
     SWITCH_TO_HP();
     LOAD_CORELDO_TRIM();
     LOAD_VDDC_TRIM();
-    DOUBLE_BOOST_VDDF();
-    WAIT_FOR_POWER_STABLE(50);
-    REMOVE_VDDF_DOUBLE_BOOST();
     ADJUST_TON_IF_REQUIRED();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 1 to 0 (transitions to > 50C).
+//! Section 3.l.i.2
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_12(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
+    ADJUST_TON_IF_REQUIRED();
     DOUBLE_BOOST_VDDF();
     LOAD_CORELDO_TRIM();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDF_DOUBLE_BOOST();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 8 to 9 (transitions to < 50C).
+//! Section 3.l.ii.1
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_13(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
     ADJUST_TON_IF_REQUIRED();
-    volatile uint32_t ui32Diff = (ui32NewVddfTrim - TVRGFACTTRIM0) * 0.9f;
-    BOOST_VDDF_FOR_SEPARATION(ui32Diff);
+    MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = (TVRGFACTTRIM2 + (TVRGFACTTRIM2 - TVRGFACTTRIM0)) > 0x7F ? 0x7F : (TVRGFACTTRIM2 + (TVRGFACTTRIM2 - TVRGFACTTRIM0));
+    am_hal_delay_us(10);
     DOUBLE_BOOST_VDDC();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDC_DOUBLE_BOOST();
     LOAD_CORELDO_TRIM();
-    am_hal_delay_us(5);
+    am_hal_delay_us(10);
     LOAD_VDDF_TRIM();
     SWITCH_TO_LP();
     MCUCTRL->PWRSW0_b.PWRSWVDDCAOROVERRIDE = 1;
     MCUCTRL->PWRSW0_b.PWRSWVDDCPUOVERRIDE = 1;
     MCUCTRL->PWRSW0_b.PWRSWVDDMLSTATSEL = 0;
     SWITCH_TO_HP();
+    return ui32Status;
 }
 
 //*****************************************************************************
@@ -1273,21 +1464,24 @@ transition_sequence_13(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
 //! Sequences for the transition from Power state 0 to 1 (transitions to < 50C).
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_14(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
     LOAD_VDDF_TRIM();
+    ADJUST_TON_IF_REQUIRED();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 2 to 1 or 10 to 9 (transitions to > 0C).
+//! Section 3.l.iii.1, 3.l.iii.2
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_15(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
@@ -1296,85 +1490,98 @@ transition_sequence_15(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
     LOAD_VDDC_LV_TRIM();
     LOAD_CORELDO_TRIM();
     LOAD_VDDC_TRIM();
+    ADJUST_TON_IF_REQUIRED();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transitions to > 0C,
 //! but not Power state 2 to 1 or 10 to 9 transition.
+//! Section 3.l.iii.1
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_16(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
     LOAD_VDDC_LV_TRIM();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 9 to 10 (transitions to < 0C).
+//! Section 3.l.iv.1, 3.l.iv.2, 3.l.iv.5
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_17(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
     DOUBLE_BOOST_VDDC_LV();
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     LOAD_CORELDO_TRIM();
     REMOVE_VDDC_LV_DOUBLE_BOOST();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 1 to 2 (transitions to < 0C).
+//! Section 3.l.iv.1, 3.l.iv.3, 3.l.iv.5
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_18(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
+    ADJUST_TON_IF_REQUIRED();
     DOUBLE_BOOST_VDDC_LV();
-    uint32_t ui32Diff = (TVRGFACTTRIM3 - ui32NewVddfTrim) * 2;
-    BOOST_VDDF_FOR_SEPARATION(ui32Diff);
+    MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = TVRGFACTTRIM2;
+    am_hal_delay_us(10);
     DOUBLE_BOOST_VDDC();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDC_DOUBLE_BOOST();
     LOAD_CORELDO_TRIM();
-    am_hal_delay_us(5);
+    am_hal_delay_us(10);
     LOAD_VDDF_TRIM();
     REMOVE_VDDC_LV_DOUBLE_BOOST();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transitions to < 0C,
 //! but not Power state 9 to 10 or 1 to 2 transition.
+//! //! Section 3.l.iv.1, 3.l.iv.4, 3.l.iv.5
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_19(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
     DOUBLE_BOOST_VDDC_LV();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDC_LV_DOUBLE_BOOST();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 11 to 10 or 10 to 11 (temperature transition).
+//! //! Section 3.l.v, 3.l.vi
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_20(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
@@ -1382,14 +1589,16 @@ transition_sequence_20(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
     UPDATE_GLOBALS
     LOAD_CORELDO_TRIM();
     am_hal_delay_us(5);
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 0 to 8.
+//! Section 3.n
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_21(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
@@ -1398,7 +1607,7 @@ transition_sequence_21(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
     g_bContinueSeq21b = true;
     ADJUST_TON_IF_REQUIRED();
     DOUBLE_BOOST_VDDF();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDF_DOUBLE_BOOST();
     DISABLE_ICACHE();
     MCUCTRL->PWRSW0_b.PWRSWVDDMCPUSTATSEL = 1;
@@ -1408,29 +1617,33 @@ transition_sequence_21(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
     //
     // Switch to HP mode after executing the sequences above.
     //
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 0 to 8.
 //! Call it after CPU LP to HP switch.
+//! Section 3.n
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_21b()
 {
     MCUCTRL->LDOREG1_b.CORELDOTEMPCOTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[g_ui32CurPowerStateStatic].PWRSTATE_b.CORELDOTEMPCOTRIM;
     MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = g_sSpotMgrINFO1regs.sPowerStateArray[g_ui32CurPowerStateStatic].PWRSTATE_b.CORELDOACTTRIM;
     MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[g_ui32CurPowerStateStatic].PWRSTATE_b.TVRGCACTTRIM;
     g_bContinueSeq21b = false;
+    return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 8 to 0.
+//! Section 3.o
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_22(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
@@ -1440,7 +1653,7 @@ transition_sequence_22(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
     DOUBLE_BOOST_VDDC();
-    WAIT_FOR_POWER_STABLE(50);
+    WAIT_FOR_POWER_STABLE(DOUBLE_BOOST_WAIT_STABLE_US);
     REMOVE_VDDC_DOUBLE_BOOST();
     LOAD_CORELDO_TRIM();
     am_hal_delay_us(5);
@@ -1448,20 +1661,23 @@ transition_sequence_22(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
     MCUCTRL->PWRSW0_b.PWRSWVDDMLSTATSEL = 0;
     LOAD_VDDF_TRIM();
     ADJUST_TON_IF_REQUIRED();
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! Sequences for the transition from Power state 8 to 12 or 12 to 8.
+//! Section 3.q, 3.r
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_23(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     COMMON_HEADER
     WAIT_FOR_TIMER_EXPIRE_AND_EXECUTE_ISR();
     UPDATE_GLOBALS
     ADJUST_TON_IF_REQUIRED();
+    return ui32Status;
 }
 
 //*****************************************************************************
@@ -1469,12 +1685,13 @@ transition_sequence_23(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
 //! Sequences for other temperature transitions besides SEQ_11 to SEQ_20
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_24(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
     // No operation
     //
+    return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************
@@ -1482,12 +1699,13 @@ transition_sequence_24(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t
 //! Not used
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_temp(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
     // Not used currently.
     //
+    return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************
@@ -1495,12 +1713,13 @@ transition_sequence_temp(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32
 //! Not used
 //
 //*****************************************************************************
-static inline void
+static inline uint32_t
 transition_sequence_invalid(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     //
     // Not used currently.
     //
+    return AM_HAL_STATUS_FAIL;
 }
 
 
@@ -1562,13 +1781,37 @@ am_hal_spotmgr_pcm2_2_post_lptohp_handle(void)
 
 //*****************************************************************************
 //
+//! Inline function for setting ANALDO according to the temperature.
+//
+//*****************************************************************************
+static inline void
+spotmgr_analdo_set(am_hal_spotmgr_tempco_range_e eTempRange)
+{
+    //
+    // Forces ANALDO into active mode when the temperature is below 0C.
+    //
+    if ((eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_VERY_LOW) ||
+        (eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_LOW))
+    {
+        MCUCTRL->VRCTRL_b.ANALDOACTIVE = 1;
+        MCUCTRL->VRCTRL_b.ANALDOPDNB = 1;
+        MCUCTRL->VRCTRL_b.ANALDOOVER = 1;
+    }
+    else
+    {
+        MCUCTRL->VRCTRL_b.ANALDOOVER = 0;
+    }
+}
+
+//*****************************************************************************
+//
 //! Timer interrupt service for spotmgr
 //
 //*****************************************************************************
 void
 am_hal_spotmgr_pcm2_2_boost_timer_interrupt_service(void)
 {
-#if !USE_DELAY_INSTEAD_OF_TIMER
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_2
     AM_CRITICAL_BEGIN
 
     if (eOngoingSeq == AM_HAL_SPOTMGR_TRANS_SEQ_2)
@@ -1604,12 +1847,13 @@ spotmgr_buck_deepsleep_state_determine(am_hal_spotmgr_power_status_t * psPwrStat
 {
     //
     // Check temperature range and peripherals power status, if there is any
-    // peripheral enabled in deepsleep or temperature range is HIGH, the
+    // peripheral or SYSPLL enabled in deepsleep or temperature range is HIGH, the
     // simobuck must be forced to stay in active mode in deepsleep.
     //
-    if ((psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH) ||
-        (psPwrStatus->ui32DevPwrSt & DEVPWRST_MONITOR_PERIPH_MASK)    ||
-        (psPwrStatus->ui32AudSSPwrSt & AUDSSPWRST_MONITOR_PERIPH_MASK))
+    if ((psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH)   ||
+        (psPwrStatus->ui32DevPwrSt & DEVPWRST_MONITOR_PERIPH_MASK)      ||
+        (psPwrStatus->ui32AudSSPwrSt & AUDSSPWRST_MONITOR_PERIPH_MASK)  ||
+        (MCUCTRL->PLLCTL0_b.SYSPLLPDB == MCUCTRL_PLLCTL0_SYSPLLPDB_ENABLE))
     {
         g_bFrcBuckAct = true;
         return;
@@ -1709,6 +1953,7 @@ spotmgr_power_ton_adjust(uint32_t ui32TonState, uint32_t ui32PwrState)
     {
         ui32TonState = 7;
     }
+
     //
     // Apply different Ton trims to different modes
     //
@@ -1789,6 +2034,18 @@ spotmgr_power_ton_adjust(uint32_t ui32TonState, uint32_t ui32PwrState)
 
     MCUCTRL->SIMOBUCK2_b.VDDCACTLOWTONTRIM = ui32VDDCACTLOWTONTRIM;
     MCUCTRL->SIMOBUCK7_b.VDDFACTLOWTONTRIM = ui32VDDFACTLOWTONTRIM;
+
+    //
+    // VDDC_LV Ton adjustments for power state 0 2 3.
+    //
+    if ((ui32PwrState == 0) || (ui32PwrState == 2) || (ui32PwrState == 3))
+    {
+        MCUCTRL->SIMOBUCK4_b.VDDCLVACTLOWTONTRIM = VDDCLVACTLOWTONTRIM_POWER_STATE_0_2_3;
+    }
+    else
+    {
+        MCUCTRL->SIMOBUCK4_b.VDDCLVACTLOWTONTRIM = VDDCLVACTLOWTONTRIM_DEFAULT;
+    }
 }
 
 //*****************************************************************************
@@ -1798,7 +2055,7 @@ spotmgr_power_ton_adjust(uint32_t ui32TonState, uint32_t ui32PwrState)
 //! @param ui32TarPwrState - Target power state.
 //! @param ui32CurPwrState - Current/Last power state.
 //!
-//! @return SUCCESS or FAIL.
+//! @return Success or failures.
 //
 //*****************************************************************************
 static uint32_t
@@ -1954,12 +2211,13 @@ spotmgr_state_transition_sequence_determine(uint32_t ui32TarPwrState, uint32_t u
 //! @param ui32TonState    - Target Ton state.
 //! @param ui32CurTonState - Current/Last Ton state.
 //!
-//! @return None.
+//! @return Success or failures.
 //
 //*****************************************************************************
-static void
+static uint32_t
 spotmgr_temperature_transition_separate(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
+    uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
     uint32_t ui32StartingState = 0, ui32EndState = 0;
     am_hal_spotmgr_transition_sequence_e eSeqNum = AM_HAL_SPOTMGR_TRANS_SEQ_INVALID;
 
@@ -1973,7 +2231,7 @@ spotmgr_temperature_transition_separate(uint32_t ui32PwrState, uint32_t ui32CurP
                 //
                 // Call the corresponding transition sequence
                 //
-                powerStateTransitionSeq[eSeqNum](ui32PwrState, ui32CurPwrState, ui32TonState, ui32CurTonState);
+                ui32Status = powerStateTransitionSeq[eSeqNum](ui32PwrState, ui32CurPwrState, ui32TonState, ui32CurTonState);
             }
         }
     }
@@ -1987,16 +2245,18 @@ spotmgr_temperature_transition_separate(uint32_t ui32PwrState, uint32_t ui32CurP
                 //
                 // Call the corresponding transition sequence
                 //
-                powerStateTransitionSeq[eSeqNum](ui32PwrState, ui32CurPwrState, ui32TonState, ui32CurTonState);
+                ui32Status = powerStateTransitionSeq[eSeqNum](ui32PwrState, ui32CurPwrState, ui32TonState, ui32CurTonState);
             }
         }
     }
+
+    return ui32Status;
 }
 
 //*****************************************************************************
 //
 //! @brief Power trims update
-//!        Update power trims and Ton trims accodrding to the power state and
+//!        Update power trims and Ton trims according to the power state and
 //!        Ton state.
 //!
 //! @param ui32PwrState    - Target power state.
@@ -2004,12 +2264,13 @@ spotmgr_temperature_transition_separate(uint32_t ui32PwrState, uint32_t ui32CurP
 //! @param ui32TonState    - Target Ton state.
 //! @param ui32CurTonState - Current/Last Ton state.
 //!
-//! @return None.
+//! @return Success or failures.
 //
 //*****************************************************************************
-static void
+static uint32_t
 spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
+    uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
     am_hal_spotmgr_transition_sequence_e eSeqNum = AM_HAL_SPOTMGR_TRANS_SEQ_INVALID;
 
     //
@@ -2032,7 +2293,7 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
             //
             // If it is only a simple temprature transition, execute the transition sequences range by range.
             //
-            spotmgr_temperature_transition_separate(ui32PwrState, ui32CurPwrState, ui32TonState, ui32CurTonState);
+            ui32Status = spotmgr_temperature_transition_separate(ui32PwrState, ui32CurPwrState, ui32TonState, ui32CurTonState);
         }
         else
         {
@@ -2043,7 +2304,7 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
                 // split it into a temprature transition and a state group transition.
                 //
                 uint32_t ui32MidPwrState = (ui32CurPwrState & STATE_GROUP_MASK) | (ui32PwrState & STATE_TEMP_RANGE_MASK);
-                spotmgr_temperature_transition_separate(ui32MidPwrState, ui32CurPwrState, ui32TonState, ui32CurTonState);
+                ui32Status = spotmgr_temperature_transition_separate(ui32MidPwrState, ui32CurPwrState, ui32TonState, ui32CurTonState);
                 ui32CurPwrState = ui32MidPwrState;
             }
             //
@@ -2054,10 +2315,12 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
                 //
                 // Call the corresponding transition sequence
                 //
-                powerStateTransitionSeq[eSeqNum](ui32PwrState, ui32CurPwrState, ui32TonState, ui32CurTonState);
+                ui32Status = powerStateTransitionSeq[eSeqNum](ui32PwrState, ui32CurPwrState, ui32TonState, ui32CurTonState);
             }
         }
     }
+
+    return ui32Status;
 }
 
 //*****************************************************************************
@@ -2074,7 +2337,7 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
 //! @param pui32TonState  - Pointer of an uint32_t variable, is used to return the
 //!                      Ton state index.
 //!
-//! @return SUCCESS or other Failures.
+//! @return SUCCESS or Failures.
 //
 //*****************************************************************************
 static int32_t
@@ -2084,6 +2347,16 @@ spotmgr_power_state_determine(am_hal_spotmgr_power_status_t * psPwrStatus, uint3
     {
         .ePwrStateDesc = (am_hal_spotmgr_power_state_desc_e)0
     };
+
+    //
+    // Retrun power state 7 if no tempco report is received.
+    //
+    if (psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_UNKNOWN)
+    {
+        *pui32PwrState = 7;
+        *pui32TonState = 6;
+        return AM_HAL_STATUS_SUCCESS;
+    }
 
     //
     // Update sPwrStatDesc according to temperature, power status and perfomance modes.
@@ -2408,7 +2681,7 @@ spotmgr_power_state_determine(am_hal_spotmgr_power_status_t * psPwrStatus, uint3
 //! and pArgs must point to the expected SSRAMPWRST when turning on,
 //! pArgs is ignored when turning off.
 //!
-//! @return SUCCESS or other Failures.
+//! @return SUCCESS or Failures.
 //
 //*****************************************************************************
 uint32_t
@@ -2422,10 +2695,64 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
     bool bLogSleepChangeEvt = false;
 #endif
     //
+    // static variable for temperature range
+    // The default state is 7. Set the temperature range as unknown before reporting the temperature.
+    //
+    static am_hal_spotmgr_tempco_range_e eCurTempRangeStatic = AM_HAL_SPOTMGR_TEMPCO_UNKNOWN;
+    //
     // Check if SIMOBUCK is enabled
     //
-    if ( PWRCTRL->VRSTATUS_b.SIMOBUCKST != PWRCTRL_VRSTATUS_SIMOBUCKST_ACT )
+    if (PWRCTRL->VRSTATUS_b.SIMOBUCKST != PWRCTRL_VRSTATUS_SIMOBUCKST_ACT)
     {
+        //
+        // If the stimulus is temperature, note it down even if SIMOBUCK is not active
+        //
+        if (eStimulus == AM_HAL_SPOTMGR_STIM_TEMP)
+        {
+            if (pArgs != NULL)
+            {
+                am_hal_spotmgr_tempco_param_t *psTemp = (am_hal_spotmgr_tempco_param_t *)pArgs;
+                eCurTempRangeStatic = spotmgr_temp_to_range(psTemp->fTemperature);
+                g_bTempLessThan50C = (eCurTempRangeStatic <= AM_HAL_SPOTMGR_TEMPCO_RANGE_MID);
+
+                //
+                // Set ANALDO according to the temperature.
+                //
+                spotmgr_analdo_set(eCurTempRangeStatic);
+
+                switch(eCurTempRangeStatic)
+                {
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_VERY_LOW:
+                        psTemp->fRangeLower = LOW_LIMIT;
+                        psTemp->fRangeHigher = VDDC_VDDF_TEMPCO_THRESHOLD_LOW;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_LOW:
+                        psTemp->fRangeLower = VDDC_VDDF_TEMPCO_THRESHOLD_LOW - TEMP_HYSTERESIS;
+                        psTemp->fRangeHigher = VDDC_VDDF_TEMPCO_THRESHOLD_MID;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_MID:
+                        psTemp->fRangeLower = VDDC_VDDF_TEMPCO_THRESHOLD_MID - TEMP_HYSTERESIS;
+                        psTemp->fRangeHigher = VDDC_VDDF_TEMPCO_THRESHOLD_HIGH;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH:
+                        psTemp->fRangeLower = VDDC_VDDF_TEMPCO_THRESHOLD_HIGH - TEMP_HYSTERESIS;
+                        psTemp->fRangeHigher = HIGH_LIMIT;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_UNKNOWN:
+                    case AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE:
+                        psTemp->fRangeLower = 0.0f;
+                        psTemp->fRangeHigher = 0.0f;
+                        return AM_HAL_STATUS_INVALID_ARG;
+                }
+            }
+            else
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+        }
+        //
+        // Return success when SIMOBUCK is not active
+        //
         return AM_HAL_STATUS_SUCCESS;
     }
     //
@@ -2439,7 +2766,6 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
     // Static variables for storing the last/current status, initialise them to the default values after MCU powering up.
     //
     static uint32_t ui32CurTonStateStatic = 6; // The default Ton state is 6 - CPU LP, GPU off and any peripheral on.
-    static am_hal_spotmgr_tempco_range_e eCurTempRangeStatic = AM_HAL_SPOTMGR_TEMPCO_RANGE_VERY_LOW;    // The default state is 7. The temp range is VERY_LOW in state 7.
     static am_hal_spotmgr_cpu_state_e eLastCpuStateStatic = AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_LP;          // The default CPU state after MCU powering up is LP.
     AM_CRITICAL_BEGIN
 #if defined(AM_HAL_SPOTMGR_PROFILING) && defined(AM_HAL_SPOTMGR_PROFILING_VERBOSE)
@@ -2484,20 +2810,34 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
         sPwrStatus.ui32SsramPwrSt = PWRCTRL->SSRAMPWRST;
         sPwrStatus.eTempRange = eCurTempRangeStatic;
         sPwrStatus.eGpuState = (sPwrStatus.ui32DevPwrSt & PWRCTRL_DEVPWRSTATUS_PWRSTGFX_Msk) ?
-                               (g_eCurGpuPwrMode == AM_HAL_PWRCTRL_GPU_MODE_LOW_POWER ? AM_HAL_SPOTMGR_GPUSTATE_ACTIVE_LP : AM_HAL_SPOTMGR_GPUSTATE_ACTIVE_HP) :
+                               (PWRCTRL->GFXPERFREQ_b.GFXPERFREQ == AM_HAL_PWRCTRL_GPU_MODE_LOW_POWER ? AM_HAL_SPOTMGR_GPUSTATE_ACTIVE_LP : AM_HAL_SPOTMGR_GPUSTATE_ACTIVE_HP) :
                                AM_HAL_SPOTMGR_GPUSTATE_OFF;
-        sPwrStatus.eCpuState = eLastCpuStateStatic;
+        sPwrStatus.eCpuState = (PWRCTRL->MCUPERFREQ_b.MCUPERFREQ == AM_HAL_PWRCTRL_MCU_MODE_LOW_POWER) ? AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_LP :
+                               AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_HP;
         //
         // Get the requested/target status
         //
         switch (eStimulus)
         {
+            case AM_HAL_SPOTMGR_STIM_INIT_STATE:
+                break;
+
             case AM_HAL_SPOTMGR_STIM_DEVPWR:
                 if (bOn)
                 {
                     if (pArgs != NULL)
                     {
-                        sPwrStatus.ui32DevPwrSt |= *((uint32_t *)pArgs);
+                        //
+                        // Refuse SDIO power on if no temperature report is received.
+                        //
+                        if ((eCurTempRangeStatic == AM_HAL_SPOTMGR_TEMPCO_UNKNOWN) && ((*((uint32_t *)pArgs) & (PWRCTRL_DEVPWRSTATUS_PWRSTSDIO0_Msk | PWRCTRL_DEVPWRSTATUS_PWRSTSDIO1_Msk))))
+                        {
+                            ui32Status = AM_HAL_STATUS_INVALID_OPERATION;
+                        }
+                        else
+                        {
+                            sPwrStatus.ui32DevPwrSt |= *((uint32_t *)pArgs);
+                        }
                     }
                     else
                     {
@@ -2553,6 +2893,11 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                     eCurTempRangeStatic = sPwrStatus.eTempRange;
                     g_bTempLessThan50C = (eCurTempRangeStatic <= AM_HAL_SPOTMGR_TEMPCO_RANGE_MID);
 
+                    //
+                    // Set ANALDO according to the temperature.
+                    //
+                    spotmgr_analdo_set(eCurTempRangeStatic);
+
                     switch(eCurTempRangeStatic)
                     {
                         case AM_HAL_SPOTMGR_TEMPCO_RANGE_VERY_LOW:
@@ -2571,6 +2916,7 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                             psTempCo->fRangeLower = VDDC_VDDF_TEMPCO_THRESHOLD_HIGH - TEMP_HYSTERESIS;
                             psTempCo->fRangeHigher = HIGH_LIMIT;
                             break;
+                        case AM_HAL_SPOTMGR_TEMPCO_UNKNOWN:
                         case AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE:
                             psTempCo->fRangeLower = 0.0f;
                             psTempCo->fRangeHigher = 0.0f;
@@ -2590,13 +2936,13 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                     sPwrStatus.eCpuState = *((am_hal_spotmgr_cpu_state_e *)pArgs);
                     if (eLastCpuStateStatic != sPwrStatus.eCpuState)
                     {
-                        #ifdef AM_HAL_SPOTMGR_PROFILING
+#ifdef AM_HAL_SPOTMGR_PROFILING
                         if ((eLastCpuStateStatic >= AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP) ||
                             (sPwrStatus.eCpuState >= AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP))
                         {
                             bLogSleepChangeEvt = true;
                         }
-                        #endif
+#endif
 
                         //
                         // If CPU is going to deep sleep, need to determine the buck state
@@ -2628,9 +2974,19 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                             (sPwrStatus.eCpuState == AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_HP))
                         {
                             //
-                            // Handle this case in timer isr, just update eLastCpuStateStatic here.
+                            // Refuse CPU transition to HP if no temperature report is received.
                             //
-                            eLastCpuStateStatic = sPwrStatus.eCpuState;
+                            if (eCurTempRangeStatic == AM_HAL_SPOTMGR_TEMPCO_UNKNOWN)
+                            {
+                                ui32Status = AM_HAL_STATUS_INVALID_OPERATION;
+                            }
+                            else
+                            {
+                                //
+                                // Handle this case in timer isr, just update eLastCpuStateStatic here.
+                                //
+                                eLastCpuStateStatic = sPwrStatus.eCpuState;
+                            }
                         }
                         //
                         // If CPU is switching from HP to LP, voltage level will be reduced,
@@ -2673,7 +3029,17 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                 //
                 if (pArgs != NULL)
                 {
-                    sPwrStatus.eGpuState = *((am_hal_spotmgr_gpu_state_e *)pArgs);
+                    //
+                    // Refuse GPU power on if no temperature report is received.
+                    //
+                    if ((eCurTempRangeStatic == AM_HAL_SPOTMGR_TEMPCO_UNKNOWN) && (*((am_hal_spotmgr_gpu_state_e *)pArgs) != AM_HAL_SPOTMGR_GPUSTATE_OFF))
+                    {
+                        ui32Status = AM_HAL_STATUS_INVALID_OPERATION;
+                    }
+                    else
+                    {
+                        sPwrStatus.eGpuState = *((am_hal_spotmgr_gpu_state_e *)pArgs);
+                    }
                 }
                 else
                 {
@@ -2710,7 +3076,7 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                     //
                     // Update trims
                     //
-                    spotmgr_power_trims_update(ui32PowerState, g_ui32CurPowerStateStatic, ui32TonState, ui32CurTonStateStatic);
+                    ui32Status = spotmgr_power_trims_update(ui32PowerState, g_ui32CurPowerStateStatic, ui32TonState, ui32CurTonStateStatic);
                 }
                 //
                 // Maintain a static variable with current trim settings.
@@ -2741,36 +3107,89 @@ am_hal_spotmgr_pcm2_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
 
 //*****************************************************************************
 //
-//! @brief SIMOBUCK initialziation handling at stage just after enabling
-//!        SIMOBUCK for PCM2.2
+//! @brief SIMOBUCK initialziation handling at stage just before overriding
+//!        LDO/SIMOBUCK
 //!
 //! @return SUCCESS or other Failures.
 //
 //*****************************************************************************
+uint32_t am_hal_spotmgr_pcm2_2_simobuck_init_bfr_ovr(void)
+{
+    if (g_sSpotMgrINFO1regs.ui32SpotMgrINFO1GlobalValid == INFO1GLOBALVALID)
+    {
+        MCUCTRL->SIMOBUCK4_b.VDDCLVACTLOWTONTRIM = VDDCLVACTLOWTONTRIM_DEFAULT;
+        MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[7].PWRSTATE_b.TVRGFACTTRIM;
+        MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[7].PWRSTATE_b.TVRGCACTTRIM;
+        return AM_HAL_STATUS_SUCCESS;
+    }
+    else
+    {
+        return AM_HAL_STATUS_FAIL;
+    }
+}
+
+//*****************************************************************************
+//
+//! @brief SIMOBUCK initialziation handling at stage just after enabling
+//!        SIMOBUCK for PCM2.2
+//!
+//! @return SUCCESS or Failures.
+//
+//*****************************************************************************
 uint32_t am_hal_spotmgr_pcm2_2_simobuck_init_aft_enable(void)
 {
+    uint32_t ui32Status;
     if ( g_sSpotMgrINFO1regs.ui32SpotMgrINFO1GlobalValid == INFO1GLOBALVALID )
     {
         //
-        // Reduce CORELDOACTIVETRIM
+        // Reduce CORELDOACTIVETRIM, set CORELDOTEMPCOTRIM again.
         //
         MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = g_sSpotMgrINFO1regs.sPowerStateArray[7].PWRSTATE_b.CORELDOACTTRIM;
+        MCUCTRL->LDOREG1_b.CORELDOTEMPCOTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[7].PWRSTATE_b.CORELDOTEMPCOTRIM;
         //
         // Change memldo trim to support switching memldo reference to tvrgf
         //
+        am_hal_delay_us(100);
         MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.MEMLDOACTTRIM;
         MCUCTRL->D2ASPARE_b.MEMLDOREF = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.MEMLDOD2ASPARE;
+        am_hal_delay_us(100);
     }
-    return AM_HAL_STATUS_SUCCESS;
+    else
+    {
+        return AM_HAL_STATUS_FAIL;
+    }
+
+    ui32Status = am_hal_delay_us_status_check(AM_HAL_PWRCTRL_MAX_WAIT_SIMOBUCK_ACT_US,
+                                              (uint32_t) &(PWRCTRL->VRSTATUS),
+                                              PWRCTRL_VRSTATUS_SIMOBUCKST_Msk,
+                                              (PWRCTRL_VRSTATUS_SIMOBUCKST_ACT << PWRCTRL_VRSTATUS_SIMOBUCKST_Pos),
+                                              true);
+    //
+    // Check for success.
+    //
+    if (AM_HAL_STATUS_SUCCESS != ui32Status)
+    {
+        return ui32Status;
+    }
+    else
+    {
+        //
+        // Initialise MCU power state after enabling SIMOBUCK
+        //
+        return am_hal_spotmgr_pcm2_2_power_state_update(AM_HAL_SPOTMGR_STIM_INIT_STATE, false, NULL);
+    }
 }
 
+//
+// Fort PCM2.2, this function is not working. Please keep NO_TEMPSENSE_IN_DEEPSLEEP as false.
+//
 #if NO_TEMPSENSE_IN_DEEPSLEEP
 //*****************************************************************************
 //
 //! @brief Prepare SPOT manager for suspended tempco during deep sleep for
 //!        PCM2.2
 //!
-//! @return SUCCESS or other Failures.
+//! @return SUCCESS or Failures.
 //
 //*****************************************************************************
 uint32_t am_hal_spotmgr_pcm2_2_tempco_suspend(void)
@@ -2783,7 +3202,7 @@ uint32_t am_hal_spotmgr_pcm2_2_tempco_suspend(void)
         // Fix the temperature range to the highest and update the SPOT Manager before going to deepsleep.
         //
         sTempCo.fTemperature = VDDC_VDDF_TEMPCO_THRESHOLD_HIGH + 1.0f;
-        am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
+        return am_hal_spotmgr_pcm2_2_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
     }
     else
     {
@@ -2792,9 +3211,8 @@ uint32_t am_hal_spotmgr_pcm2_2_tempco_suspend(void)
         // Fix the temperature range to the lowest and update the SPOT Manager before going to deepsleep.
         //
         sTempCo.fTemperature =  VDDC_VDDF_TEMPCO_THRESHOLD_LOW - 1.0f;
-        am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
+        return am_hal_spotmgr_pcm2_2_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
     }
-    return AM_HAL_STATUS_SUCCESS;
 }
 #endif
 
@@ -2802,7 +3220,7 @@ uint32_t am_hal_spotmgr_pcm2_2_tempco_suspend(void)
 //
 //! @brief SPOT manager init for PCM2.2
 //!
-//! @return SUCCESS or other Failures.
+//! @return SUCCESS or Failures.
 //
 //*****************************************************************************
 uint32_t
@@ -2832,6 +3250,8 @@ am_hal_spotmgr_pcm2_2_init(void)
     }
     CHK_OFFSET_DELTA(AM_REG_OTP_INFO1_POWERSTATE19_O , AM_REG_OTP_INFO1_POWERSTATE0_O , 20);
     RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_POWERSTATE0_O  / 4), 20, (uint32_t *) &(g_sSpotMgrINFO1regs.sPowerStateArray[0]));
+    RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_L_TRIMCODE_O / 4),  1, (uint32_t *) &g_sSpotMgrINFO1regs.sLtrim);
+    RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_E_TRIMCODE_O / 4), 1, (uint32_t *) &g_sSpotMgrINFO1regs.sEtrim);
 
     CHK_OFFSET_DELTA(AM_REG_OTP_INFO1_VDDCLVACTTRIMADJ_O, AM_REG_OTP_INFO1_GPUVDDCTON_O, 5 );
     RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_GPUVDDCTON_O  / 4), 5, &info1buf[0]);
@@ -2843,10 +3263,40 @@ am_hal_spotmgr_pcm2_2_init(void)
 
     RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_MEMLDOCONFIG_O  / 4), 1, &info1buf[0]);
     g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG   = info1buf[0];
+
+    if (g_ui32MinorTrimVer == 0x5F)
+    {
+        float f32MvBoost;
+        uint32_t ui32CodeBoost, ui32Tmp1, ui32Tmp2;
+        ui32Tmp1 = (g_sSpotMgrINFO1regs.sEtrim.E_TRIMCODE_b.L16 + g_sSpotMgrINFO1regs.sEtrim.E_TRIMCODE_b.H16) -
+                   (g_sSpotMgrINFO1regs.sLtrim.L_TRIMCODE_b.L16 + g_sSpotMgrINFO1regs.sLtrim.L_TRIMCODE_b.H16);
+        ui32Tmp2 = TVRGFACTTRIM2 - TVRGFACTTRIM3;
+        ui32Tmp2 = (ui32Tmp2 >= 0) ? (ui32Tmp2) : (0);
+        f32MvBoost = 220 - 0.5f * ui32Tmp1;
+        f32MvBoost = (f32MvBoost > 0.0f) ? (f32MvBoost) : (0);
+        ui32CodeBoost = ((TVRGFACTTRIM3 == 0) && (ui32Tmp2 < 20)) ? (f32MvBoost * 20 / 45 + 0.5f) : (f32MvBoost * ui32Tmp2 / 45 + 0.5f);
+
+        for (uint32_t ps = 0; ps < sizeof(g_sSpotMgrINFO1regs.sPowerStateArray) / sizeof(am_hal_spotmgr_trim_settings_t); ps++)
+        {
+            uint32_t ui32Trvgftrim = g_sSpotMgrINFO1regs.sPowerStateArray[ps].PWRSTATE_b.TVRGFACTTRIM + ui32CodeBoost;
+            //
+            // Ensure ui32Trvgftrim is within the upper limit (0x7F) and the lower limit (0x8).
+            //
+            ui32Trvgftrim = (ui32Trvgftrim > 0x7F) ? (0x7F) : ((ui32Trvgftrim < 0x8) ? (0x8) : (ui32Trvgftrim));
+            g_sSpotMgrINFO1regs.sPowerStateArray[ps].PWRSTATE_b.TVRGFACTTRIM = ui32Trvgftrim;
+        }
+    }
     //
     // All done, mark the data as valid
     //
     g_sSpotMgrINFO1regs.ui32SpotMgrINFO1GlobalValid = INFO1GLOBALVALID;
+
+    //
+    // Forces ANALDO into active mode by default.
+    //
+    MCUCTRL->VRCTRL_b.ANALDOACTIVE = 1;
+    MCUCTRL->VRCTRL_b.ANALDOPDNB = 1;
+    MCUCTRL->VRCTRL_b.ANALDOOVER = 1;
 
     //
     // Initialise the timer for power boost
@@ -2856,7 +3306,7 @@ am_hal_spotmgr_pcm2_2_init(void)
 #ifdef AM_HAL_SPOTMGR_PROFILING
     am_hal_spotmgr_changelog_t changeLog;
     changeLog.u.s.pwrState = 7;
-    changeLog.u.s.tonState = 5;
+    changeLog.u.s.tonState = 6;
     changeLog.u.s.eStimulus = AM_HAL_SPOTMGR_PROFILING_ESTIM_INVALID;
     changeLog.u.s.bOn = AM_HAL_SPOTMGR_PROFILING_BON_INVALID;
     changeLog.args = 0xDEADBEEF;
@@ -2870,10 +3320,11 @@ am_hal_spotmgr_pcm2_2_init(void)
 //
 //! @brief Reset power state to POR default for PCM2.2
 //!
-//! @return SUCCESS or other Failures.
+//! @return SUCCESS or Failures.
 //
 //*****************************************************************************
-uint32_t am_hal_spotmgr_pcm2_2_default_reset(void)
+uint32_t
+am_hal_spotmgr_pcm2_2_default_reset(void)
 {
     am_hal_pwrctrl_temp_thresh_t dummy;
     //

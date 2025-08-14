@@ -2,13 +2,47 @@
 //
 //! @file am_util_crypto.c
 //!
-//! @brief Utility functions for the crypto module.
+//! @brief Cryptographic Utility Functions
 //!
-//! A few utils to help with crypto functionality
-//!
-//! @addtogroup crypto Crypto
+//! @addtogroup crypto_utils Crypto Utility Functions
 //! @ingroup utils
 //! @{
+//!
+//! Purpose: This module provides cryptographic utility functions for secure
+//!          operations across Ambiq Micro devices. It enables encryption,
+//!          decryption, hashing, and random number generation for embedded
+//!          applications requiring security features. The utilities support
+//!          various cryptographic algorithms and secure key management.
+//!
+//! @section utils_crypto_features Key Features
+//!
+//! 1. @b Encryption: Support for multiple encryption algorithms.
+//! 2. @b Key @b Management: Secure key storage and handling.
+//! 3. @b Random @b Numbers: Hardware-based random number generation.
+//! 4. @b Hashing: Cryptographic hash function support.
+//! 5. @b Security @b Features: Protected operation modes.
+//!
+//! @section utils_crypto_functionality Functionality
+//!
+//! - Initialize and configure crypto hardware
+//! - Perform encryption/decryption operations
+//! - Generate random numbers
+//! - Compute hash values
+//! - Manage cryptographic keys
+//!
+//! @section utils_crypto_usage Usage
+//!
+//! 1. Initialize crypto with am_util_crypto_init()
+//! 2. Perform cryptographic operations
+//! 3. Generate random numbers as needed
+//! 4. Clean up sensitive data
+//!
+//! @section utils_crypto_configuration Configuration
+//!
+//! - Select cryptographic algorithms
+//! - Configure key storage options
+//! - Set security parameters
+//! - Define operation modes
 //
 //*****************************************************************************
 
@@ -43,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -317,7 +351,8 @@ struct tm *g_gm_time;
 // Changes Ambiq RTC time to gmtime
 //
 //*****************************************************************************
-static void ambiq_time_to_gmtime_set(const am_hal_rtc_time_t *atm, struct tm *tm)
+static void
+ambiq_time_to_gmtime_set(const am_hal_rtc_time_t *atm, struct tm *tm)
 {
     tm->tm_year = atm->ui32Year;
     if (atm->ui32CenturyBit == 0)
@@ -341,7 +376,8 @@ static void ambiq_time_to_gmtime_set(const am_hal_rtc_time_t *atm, struct tm *tm
 // Crypto Set Ambiq RTC structure for use with am_util_crypto_get_time
 //
 //*****************************************************************************
-void am_util_crypto_ambiq_time_structure_set(am_hal_rtc_time_t *atm)
+void
+am_util_crypto_ambiq_time_structure_set(am_hal_rtc_time_t *atm)
 {
     g_am_util_rtc_time = atm;
 }
@@ -351,7 +387,8 @@ void am_util_crypto_ambiq_time_structure_set(am_hal_rtc_time_t *atm)
 // Crypto Set gmtime structure for use with am_util_crypto_get_time
 //
 //*****************************************************************************
-void am_util_crypto_gm_time_structure_set(struct tm *tm)
+void
+am_util_crypto_gm_time_structure_set(struct tm *tm)
 {
     g_gm_time = tm;
 }
@@ -362,7 +399,8 @@ void am_util_crypto_gm_time_structure_set(struct tm *tm)
 // Calculates time in seconds since 1/1/1970 until current RTC time
 //
 //*****************************************************************************
-time_t am_util_crypto_get_time( time_t * time )
+time_t
+am_util_crypto_get_time( time_t * time )
 {
     (void)time;
 

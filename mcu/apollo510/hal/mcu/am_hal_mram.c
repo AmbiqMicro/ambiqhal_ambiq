@@ -2,12 +2,47 @@
 //
 //! @file am_hal_mram.c
 //!
-//! @brief MRAM and ROM Helper Function Access
+//! @brief BootROM Helper Function Table
 //!
-//! @addtogroup mram4 MRAM Functionality
+//! @addtogroup mram4_ap510 MRAM Functionality
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides helper functions for accessing and programming
+//!          MRAM (Magnetic Random Access Memory) on Apollo5 devices. It supports
+//!          memory programming, filling operations, address validation, and
+//!          non-volatile memory management for persistent data storage.
+//!
+//! @section hal_mram_features Key Features
+//!
+//! 1. @b MRAM @b Programming: Secure programming of MRAM memory regions.
+//! 2. @b ROM @b Access: Helper functions for ROM-based operations.
+//! 3. @b Memory @b Filling: Efficient memory fill operations with patterns.
+//! 4. @b Security: Secure memory programming with key validation.
+//! 5. @b Alignment: Proper memory alignment and boundary checking.
+//!
+//! @section hal_mram_functionality Functionality
+//!
+//! - Program MRAM memory regions with data
+//! - Fill memory regions with specific patterns
+//! - Handle memory alignment and boundary validation
+//! - Support secure memory programming operations
+//! - Provide ROM-based helper functions
+//!
+//! @section hal_mram_usage Usage
+//!
+//! 1. Program MRAM using am_hal_mram_main_words_program()
+//! 2. Fill memory regions with am_hal_mram_main_fill()
+//! 3. Initialize memory regions as needed
+//! 4. Handle memory programming errors
+//! 5. Validate memory addresses and alignment
+//!
+//! @section hal_mram_configuration Configuration
+//!
+//! - @b Programming @b Keys: Configure secure programming keys
+//! - @b Memory @b Alignment: Ensure proper word alignment
+//! - @b Address @b Validation: Validate memory addresses and boundaries
+//! - @b Security: Set up secure memory programming parameters
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

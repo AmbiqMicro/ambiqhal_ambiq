@@ -4,10 +4,45 @@
 //!
 //! @brief HAL Utility Functions
 //!
-//! @addtogroup utils4 Utils - HAL Utility Functions
+//! @addtogroup utils4_ap510 Utils - HAL Utility Functions
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides utility functions for the HAL on Apollo5 devices,
+//!          including delay functions, status checking, and memory operations.
+//!          It supports precise timing control, status monitoring, and efficient
+//!          memory access for system-level operations and debugging.
+//!
+//! @section hal_utils_features Key Features
+//!
+//! 1. @b Delay @b Functions: Precise microsecond and cycle-based delay operations.
+//! 2. @b Status @b Monitoring: Check register status with timeout capabilities.
+//! 3. @b Memory @b Operations: Efficient word-based memory read operations.
+//! 4. @b Burst @b Mode: Support for burst mode status checking.
+//! 5. @b BootROM @b Integration: Integration with bootrom helper functions.
+//!
+//! @section hal_utils_functionality Functionality
+//!
+//! - Provide precise delay functions in microseconds and cycles
+//! - Monitor register status with timeout and equality checking
+//! - Support efficient memory read operations
+//! - Handle burst mode status and configuration
+//! - Integrate with bootrom helper functionality
+//!
+//! @section hal_utils_usage Usage
+//!
+//! 1. Use delay functions for precise timing control
+//! 2. Monitor register status with timeout capabilities
+//! 3. Perform efficient memory read operations
+//! 4. Check burst mode status as needed
+//! 5. Integrate with bootrom helper functions
+//!
+//! @section hal_utils_configuration Configuration
+//!
+//! - @b Delay @b Timing: Configure delay parameters and cycle counts
+//! - @b Status @b Monitoring: Set up timeout values and status checking
+//! - @b Memory @b Access: Configure memory read operations
+//! - @b Burst @b Mode: Set up burst mode operations
 //*****************************************************************************
 
 //*****************************************************************************
@@ -29,9 +64,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -44,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -107,7 +139,7 @@ typedef enum
 #if defined(__IAR_SYSTEMS_ICC__)
 __ramfunc void
 #else
-void __attribute__((naked, section(".itcm")))
+void __attribute__((naked, section(".itcm_text")))
 #endif
 br_util_delay_cycles(uint32_t ui32Cycles)
 {
@@ -264,7 +296,7 @@ am_hal_delay_us_status_check(uint32_t ui32usMaxDelay, uint32_t ui32Address,
                                 // return statement on a non-void function
 __ramfunc uint32_t
 #else
-uint32_t __attribute__((naked, section(".itcm")))
+uint32_t __attribute__((naked, section(".itcm_text")))
 #endif
 internal_hal_read_word(uint32_t *pAddr)
 {
@@ -293,7 +325,7 @@ internal_hal_read_word(uint32_t *pAddr)
 #if defined(__IAR_SYSTEMS_ICC__)
 __ramfunc void
 #else
-void __attribute__((naked, section(".itcm")))
+void __attribute__((naked, section(".itcm_text")))
 #endif
 internal_hal_read_words(uint32_t *pSrcAddr, uint32_t *pDstAddr, uint32_t numWords)
 {
@@ -319,7 +351,8 @@ internal_hal_read_words(uint32_t *pSrcAddr, uint32_t *pDstAddr, uint32_t numWord
 //!  I-Cache.
 //
 //*****************************************************************************
-void am_hal_read_words(uint32_t *pSrcAddr, uint32_t *pDstAddr, uint32_t numWords)
+void
+am_hal_read_words(uint32_t *pSrcAddr, uint32_t *pDstAddr, uint32_t numWords)
 {
     internal_hal_read_words(pSrcAddr, pDstAddr, numWords);
 }

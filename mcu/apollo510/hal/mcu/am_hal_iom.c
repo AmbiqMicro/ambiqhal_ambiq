@@ -4,10 +4,50 @@
 //!
 //! @brief Functions for interfacing with IO Master serial (SPI/I2C) modules.
 //!
-//! @addtogroup iom4 IOM - IO Master (SPI/I2C)
+//! @addtogroup iom4_ap510 IOM - IO Master (SPI/I2C)
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//! IO Master (IOM) modules on Apollo5 devices. It supports SPI and
+//! I2C master communication, DMA transfers, command queue operations,
+//! and interrupt handling for flexible serial master operations.
+//!
+//! @section iom_features Key Features
+//!
+//! 1. @b SPI @b Master: Full SPI master communication with configurable modes.
+//! 2. @b I2C @b Master: I2C master communication with multiple clock speeds.
+//! 3. @b DMA @b Transfers: High-speed DMA-based data transfer operations.
+//! 4. @b Command @b Queue: Advanced command queue for complex transaction sequences.
+//! 5. @b Interrupt @b Handling: Comprehensive interrupt management and status monitoring.
+//! 6. @b Power @b Management: Power state control and state retention capabilities.
+//!
+//! @section iom_functionality Functionality
+//!
+//! - Initialize and configure IOM modules for SPI and I2C communication
+//! - Perform blocking and non-blocking data transfers
+//! - Manage DMA transfers with callback support
+//! - Handle command queue operations and sequencing
+//! - Support high-priority transaction processing
+//! - Provide interrupt-driven operation with status monitoring
+//! - Enable power management and state retention
+//! - Support full-duplex SPI communication
+//!
+//! @section iom_usage Usage
+//!
+//! 1. Initialize IOM using am_hal_iom_initialize()
+//! 2. Configure interface settings with am_hal_iom_configure()
+//! 3. Enable IOM module with am_hal_iom_enable()
+//! 4. Perform transfers using blocking or non-blocking functions
+//! 5. Handle interrupts and manage power states as needed
+//!
+//! @section iom_configuration Configuration
+//!
+//! - @b Interface @b Modes: SPI and I2C master mode configurations
+//! - @b Clock @b Management: Configurable clock sources and frequencies
+//! - @b DMA @b Settings: Transfer control buffer and threshold configuration
+//! - @b Command @b Queue: Configurable queue depth and entry management
+//! - @b Interrupt @b Masking: Selective interrupt enable/disable control
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +81,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -337,6 +377,85 @@ typedef struct
 
 } am_hal_iom_state_t;
 
+
+#define FSELMAX 10  // This is used freq divider computation the highest value that can be used is 8
+#define FSEL_MAX_REGISTER_VAL 8
+
+//
+//! Clock divider table
+//
+static const uint32_t ui32FselClockLookup[FSELMAX] = {
+    375000,  // this is actally the location of 375,000
+    0,  // this is off
+    48000000,  // 2
+    24000000,
+    12000000,
+    6000000,
+    3000000,
+    1500000,  // 7
+    750000,  // 8
+    375000,  // 9, this is used in the divider selection loop, entry 9 doesn't exist in the actual register
+};
+
+//
+//! return value from clock comparator
+//
+typedef enum
+{
+    eLEFT,
+    eRIGHT,
+}
+iom_ab_chooser_e;
+
+//
+//! frequency calc return codes
+//
+typedef enum
+{
+    eFREQ_ERROR_NO_ERROR,
+    eUSE_LOWER_BASE_FREQ_WARNING,
+    eREQ_FREQ_TOO_HIGH_WARNING,
+
+} iom_freq_calc_errors;
+//
+//! define fixed-point duty cycle scaling at 1024 , so 512 is 50%
+//
+#define DUTY_CYCLE_SCALING 1024
+
+//
+//! Parameters use din clock divider search
+//
+typedef struct
+{
+    uint32_t ui32Phase;          //!< Phase bias when exact 50% duty is not achievable (0 = longer low, 1 = longer high)
+
+    uint32_t ui32Fsel;           //!< FSEL (2 - 7): base clock selector (e.g., FSEL=2 for 48MHz)
+    uint32_t ui32Div3;           //!< Set to 1 to divide base clock by 3 before TOTPER logic
+    uint32_t ui32DivEn;          //!< Set to 1 to enable TOTPER-based division; 0 = bypass (simple divide by 1 or 3)
+
+    uint32_t ui32TotPer;         //!< TOTPER register value (TOTPER + 1) = total waveform period in cycles)
+    uint32_t ui32LowPer;         //!< Lower +1 is the low cycle count, must be less than TOTPER
+    uint32_t ui32OutClock;       //!< Output frequency in Hz, based on the current parameters
+
+    int32_t  ui32DC_1024;        //!< Duty cycle scaled by 1024 (e.g., 512 = 50%, 768 = 75%)
+    int32_t  ui32DC_deviation;   //!< Absolute deviation from 50% duty cycle (in 1/1024 units)
+
+    uint32_t ui32DesiredFreq;    //!< User-requested target frequency in Hz
+    int32_t  i32Diff;            //!< Signed difference between actual and desired frequency (Hz)
+    uint32_t ui32AbsDiff;        //!< Absolute frequency error (Hz)
+
+    iom_freq_calc_errors  eErrors; //!< Errors encountered during Freq computations
+
+    am_hal_iom_clock_sel_priority_e eClockSelPriority; //!< Selection strategy (freq match, symmetry, or hybrid)
+}
+iom_clock_comp_parms_t;
+
+static void iom_compute_freq_helper(iom_clock_comp_parms_t* pcp);
+static iom_ab_chooser_e compare_lr(iom_clock_comp_parms_t *left, iom_clock_comp_parms_t *right);
+static iom_clock_comp_parms_t *compare_div1_3(iom_clock_comp_parms_t *psDiv1L, iom_clock_comp_parms_t *psDiv3R);
+static uint32_t iom_compute_freq_cp( iom_clock_comp_parms_t *pcp);
+static int32_t iom_clock_selector(iom_clock_comp_parms_t *psClockL);
+
 //*****************************************************************************
 //
 // Globals
@@ -352,8 +471,13 @@ am_hal_iom_state_t          g_IOMhandles[AM_REG_IOM_NUM_MODULES];
 
 //*****************************************************************************
 //
-//! Get IOM Pause Value
-//
+//! @brief Get IOM pause value based on current block state.
+//!
+//! @param pIOMState - Pointer to IOM state structure.
+//! @param pause - Pause value to process.
+//!
+//! @return Returns the processed pause value.
+//!
 //*****************************************************************************
 static uint32_t
 get_pause_val(am_hal_iom_state_t *pIOMState, uint32_t pause)
@@ -382,12 +506,20 @@ get_pause_val(am_hal_iom_state_t *pIOMState, uint32_t pause)
 
 //*****************************************************************************
 //
-//! Function to build the IOM CMD value.
-// Returns the CMD value, but does not set the CMD register.
-//
-// The OFFSETHI register must still be handled by the caller, e.g.
-//      AM_REGn(IOM, ui32Module, OFFSETHI) = (uint32_t)(ui32Offset >> 8);
-//
+//! @brief Build the IOM CMD value.
+//!
+//! @param ui32CS - Chip select value.
+//! @param ui32Dir - Transfer direction.
+//! @param ui32Cont - Continue flag.
+//! @param ui64Offset - Offset value.
+//! @param ui32OffsetCnt - Offset count.
+//! @param ui32nBytes - Number of bytes to transfer.
+//!
+//! @return Returns the built CMD value.
+//!
+//! @note The OFFSETHI register must still be handled by the caller, e.g.
+//!       AM_REGn(IOM, ui32Module, OFFSETHI) = (uint32_t)(ui32Offset >> 8);
+//!
 //*****************************************************************************
 static uint32_t
 build_cmd(uint32_t ui32CS,     uint32_t ui32Dir, uint32_t ui32Cont,
@@ -431,8 +563,12 @@ build_cmd(uint32_t ui32CS,     uint32_t ui32Dir, uint32_t ui32Cont,
 
 //*****************************************************************************
 //
-//! Function to build CMD lists.
-//
+//! @brief Build command list for IOM transaction.
+//!
+//! @param pIOMState - Pointer to IOM state structure.
+//! @param pCQEntry - Pointer to command queue entry.
+//! @param psTransaction - Pointer to transaction structure.
+//!
 //*****************************************************************************
 static void
 build_txn_cmdlist(am_hal_iom_state_t       *pIOMState,
@@ -517,14 +653,13 @@ build_txn_cmdlist(am_hal_iom_state_t       *pIOMState,
 
 //*****************************************************************************
 //
-//! enable_submodule() - Utilizes the built-in fields that indicate whether which
-//                      submodule is supported, then enables that submodule.
-//
-//  Input: ui32Type = 0, set for SPI.
-//         ui32Type = 1, set for I2C.
-//
-//  Returns true if the submodule was enabled or false otherwise.
-//
+//! @brief Enable IOM submodule.
+//!
+//! @param ui32Module - IOM module number.
+//! @param ui32Type - Submodule type (0 for SPI, 1 for I2C).
+//!
+//! @return Returns true if the submodule was enabled or false otherwise.
+//!
 //*****************************************************************************
 static bool
 enable_submodule(uint32_t ui32Module, uint32_t ui32Type)
@@ -597,8 +732,11 @@ internal_iom_get_int_err(uint32_t ui32Module, uint32_t ui32IntStatus)
 
 //*****************************************************************************
 //
-// Reset on Error handling.
-//
+//! @brief Reset IOM on error.
+//!
+//! @param pIOMState - Pointer to IOM state structure.
+//! @param ui32IntMask - Interrupt mask for error handling.
+//!
 //*****************************************************************************
 static void
 internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask)
@@ -738,187 +876,630 @@ internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask
     //
     IOMn(ui32Module)->INTEN = curIntCfg;
 }
-
-//*****************************************************************************
-// compute_freq()
 //*****************************************************************************
 //
-// Compute the interface frequency based on the given parameters
-//
-static uint32_t
-compute_freq(uint32_t ui32HFRCfreqHz,
-             uint32_t ui32Fsel, uint32_t ui32Div3,
-             uint32_t ui32DivEn, uint32_t ui32TotPer)
-{
-    uint32_t ui32Denomfinal, ui32ClkFreq;
-
-    ui32Denomfinal = ((1 << (ui32Fsel - 1)) * (1 + ui32Div3 * 2) * (1 + ui32DivEn * (ui32TotPer)));
-    ui32ClkFreq = (ui32HFRCfreqHz) / ui32Denomfinal;                           // Compute the set frequency value
-    ui32ClkFreq +=  (((ui32HFRCfreqHz) % ui32Denomfinal) > (ui32Denomfinal / 2)) ? 1 : 0;
-
-    return ui32ClkFreq;
-} // compute_freq()
-
-//*****************************************************************************
-// onebit()
-//*****************************************************************************
-//
-// A power of 2?
-// Return true if ui32Value has exactly 1 bit set, otherwise false.
-//
-static bool
-onebit(uint32_t ui32Value)
-{
-    return ui32Value  &&  !(ui32Value & (ui32Value - 1));
-} // onebit()
-
-//*****************************************************************************
-//
-// iom_get_interface_clock_cfg()
-//
-// Returns the proper settings for the CLKCFG register.
-//
-// ui32FreqHz - The desired interface frequency in Hz.
-//
-// Given a desired serial interface clock frequency, this function computes
-// the appropriate settings for the various fields in the CLKCFG register
-// and returns the 32-bit value that should be written to that register.
-// The actual interface frequency may be slightly lower than the specified
-// frequency, but the actual frequency is also returned.
-//
-// Note A couple of criteria that this algorithm follow are:
-//  1. For power savings, choose the highest FSEL possible.
-//  2. Use DIV3 when possible rather than DIVEN.
-//
-// Return An unsigned 64-bit value.
-// The lower 32-bits represent the value to use to set CLKCFG.
-// The upper 32-bits represent the actual frequency (in Hz) that will result
-// from setting CLKCFG with the lower 32-bits.
-//
-// 0 (64 bits) = error. Note that the caller must check the entire 64 bits.
-// It is not an error if only the low 32-bits are 0 (this is a valid value).
-// But the entire 64 bits returning 0 is an error.
+//! @brief Finalize computed clock settings and derive output frequency.
 //!
+//! Given a fully populated clock profile (including FSEL, Div3, TOTPER, LOWPER),
+//! this function calculates the actual output frequency and duty cycle. It assumes
+//! the configuration is already valid and doesn't perform any searching or guessing.
+//!
+//! The computed fields include:
+//!   - ui32OutClock         (actual frequency in Hz)
+//!   - ui32DC_1024          (duty cycle, scaled to 1024 units)
+//!   - ui32DC_deviation     (absolute deviation from 50% duty cycle)
+//!   - i32Diff / ui32AbsDiff (error from desired frequency)
+//!
+//! Used internally for scoring and comparison between candidate configurations.
+//!
+//! @param pcp Pointer to a clock configuration struct with valid divider settings.
+//!
+//! @return The actual output frequency in Hz.
+//
 //*****************************************************************************
-static
-uint64_t iom_get_interface_clock_cfg(uint32_t ui32FreqHz, uint32_t ui32Phase )
+static uint32_t
+iom_compute_freq_cp( iom_clock_comp_parms_t *pcp)
 {
-    uint32_t ui32Fsel, ui32Div3, ui32DivEn, ui32TotPer, ui32LowPer;
-    uint32_t ui32Denom, ui32v1, ui32Denomfinal, ui32ClkFreq, ui32ClkCfg;
-    uint32_t ui32HFRCfreqHz;
-    int32_t i32Div, i32N;
+    //
+    // get base frequency (start at the highest frequency for this module)
+    //
+    uint32_t ui32HFRCfreqHz = ui32FselClockLookup[pcp->ui32Fsel] ;
 
-    if ( ui32FreqHz == 0 )
+    //
+    // divide input freq by 3 if feature is enabled
+    //
+    if ( pcp->ui32Div3 )
     {
-        return 0;
+        ui32HFRCfreqHz /= 3 ;
     }
 
-    //
-    // Set the HFRC clock frequency.
-    //
-    ui32HFRCfreqHz = AM_HAL_CLKGEN_FREQ_MAX_HZ;
-
-    //
-    // Compute various parameters used for computing the optimal CLKCFG setting.
-    //
-    i32Div = (ui32HFRCfreqHz / ui32FreqHz) + ((ui32HFRCfreqHz % ui32FreqHz) ? 1 : 0);    // Round up (ceiling)
-
-    //
-    // Compute N (count the number of LS zeros of Div) = ctz(Div) = log2(Div & (-Div))
-    //
-    i32N = 31 - AM_INSTR_CLZ((i32Div & (-i32Div)));
-
-    if ( i32N > 6 )
-    {
-        i32N = 6;
-    }
-
-    ui32Div3 = ( (ui32FreqHz < (ui32HFRCfreqHz / 16384))            ||
-                 ( ((ui32FreqHz >= (ui32HFRCfreqHz / 3))    &&
-                    (ui32FreqHz <= ((ui32HFRCfreqHz / 2) - 1)) ) ) ) ? 1 : 0;
-    ui32Denom = ( 1 << i32N ) * ( 1 + (ui32Div3 * 2) );
-    ui32TotPer = i32Div / ui32Denom;
-    ui32TotPer += (i32Div % ui32Denom) ? 1 : 0;
-    ui32v1 = 31 - AM_INSTR_CLZ(ui32TotPer);     // v1 = log2(TotPer)
-    ui32Fsel = (ui32v1 > 7) ? ui32v1 + i32N - 7 : i32N;
-    ui32Fsel++;
-
-    if ( ui32Fsel > 7 )
+    if ( pcp->ui32DivEn )
     {
         //
-        // This is an error, can't go that low.
+        // toper divider is enabled
         //
-        return 0;
-    }
+        uint32_t ui32Denomfinal = (1 + pcp->ui32TotPer);
 
-    if ( ui32v1 > 7 )
-    {
-        ui32DivEn = ui32TotPer;     // Save TotPer for the round up calculation
-        ui32TotPer = ui32TotPer>>(ui32v1-7);
-        ui32TotPer += ((ui32DivEn) % (1 << (ui32v1 - 7))) ? 1 : 0;
-    }
+        pcp->ui32OutClock = ui32HFRCfreqHz / ui32Denomfinal;
 
-    ui32DivEn = ( (ui32FreqHz >= (ui32HFRCfreqHz / 4)) ||
-                  ((1 << (ui32Fsel - 1)) == i32Div) ) ? 0 : 1;
+        // duty cycle is dc = (lowper+1)/(totPer+1) ==> (ui32DenomFinal/2) /ui32DenomFinal
+        // when ui32Denomfinal is odd, dc != 50%
 
-    if (ui32Phase == 1)
-    {
-        ui32LowPer = (ui32TotPer - 2) / 2;          // Longer high phase
+        uint32_t dc_1024  = ((1 + pcp->ui32LowPer) * DUTY_CYCLE_SCALING) / ui32Denomfinal;
+        pcp->ui32DC_1024 = (int32_t) dc_1024;
     }
     else
     {
-        ui32LowPer = (ui32TotPer - 1) / 2;          // Longer low phase
+        //
+        // no other dividers are enabled
+        //
+        pcp->ui32OutClock = ui32HFRCfreqHz ;
+        pcp->ui32DC_1024 = DUTY_CYCLE_SCALING / 2;
     }
 
-    ui32ClkCfg = _VAL2FLD(IOM0_CLKCFG_FSEL,   ui32Fsel)     |
-                 _VAL2FLD(IOM0_CLKCFG_DIV3,   ui32Div3)     |
-                 _VAL2FLD(IOM0_CLKCFG_DIVEN,  ui32DivEn)    |
-                 _VAL2FLD(IOM0_CLKCFG_LOWPER, ui32LowPer)   |
-                 _VAL2FLD(IOM0_CLKCFG_TOTPER, ui32TotPer - 1);
+    int32_t dec_devo = pcp->ui32DC_1024 - (DUTY_CYCLE_SCALING / 2); // how far from 50% duty cycle
+    pcp->ui32DC_deviation = (dec_devo < 0) ? -dec_devo : dec_devo;  // make positive
 
     //
-    // Now, compute the actual frequency, which will be returned.
+    // compute difference from requested, this is used in to select best method
+    // actual freq. should not be greater than requested
     //
-    ui32ClkFreq = compute_freq(ui32HFRCfreqHz, ui32Fsel, ui32Div3, ui32DivEn, ui32TotPer - 1);
+    pcp->i32Diff = (int32_t) pcp->ui32DesiredFreq - (int32_t) pcp->ui32OutClock ;
+    pcp->ui32AbsDiff = (uint32_t) ((pcp->i32Diff < 0) ? -pcp->i32Diff : pcp->i32Diff) ;
 
+    return pcp->ui32OutClock;
+
+} // iom_compute_freq_cp
+//*****************************************************************************
+//
+//! @brief Compute divider values for a given base clock and mode.
+//!
+//! This function calculates the TOTPER and LOWPER divider settings that produce
+//! the closest achievable frequency to the requested value. It assumes a fixed
+//! base clock (FSEL) and divider mode (/1 or /3), and tries to find the best
+//! divider settings that do not exceed the requested frequency.
+//!
+//! It also computes the resulting duty cycle, frequency error, and flags any
+//! out-of-range conditions.
+//!
+//! If TOTPER is not needed (i.e., divide-by-1 with no division), it disables it.
+//!
+//! @param pcp  Pointer to the clock profile structure. Must have FSEL, Div3,
+//!             and DesiredFreq already set. The function fills in the rest.
+//
+//*****************************************************************************
+static void
+iom_compute_freq_helper(iom_clock_comp_parms_t* pcp)
+{
     //
-    // Determine if the actual frequency is a power of 2 (MHz).
+    // first pull the clock speed out of the table
     //
-    if ( (ui32ClkFreq % 250000) == 0 )
+    uint32_t ui32HFRCfreqHz = ui32FselClockLookup[pcp->ui32Fsel];
+    //
+    // divide by 3 if in that mode
+    //
+    if ( pcp->ui32Div3 )
+    {
+        ui32HFRCfreqHz /= 3;
+    }
+
+    uint32_t baseFreq = ui32HFRCfreqHz;  // this is the base freq
+
+    // if this divides clean (like 24,000,000 / 3 mhz) or not,
+    // looking for the divider that gets closest without going over
+    uint32_t ui32bDiv = (baseFreq + pcp->ui32DesiredFreq - 1) / pcp->ui32DesiredFreq;
+
+    // the largest divider TOTPER can be is 256
+
+    pcp->eErrors = eFREQ_ERROR_NO_ERROR;
+    if (ui32bDiv == 0)
+    {
+        pcp->eErrors = eREQ_FREQ_TOO_HIGH_WARNING;
+        return;
+    }
+
+    if ( ui32bDiv == 1 )
     {
         //
-        // If the actual clock frequency is a power of 2 ranging from 250KHz up,
-        // we can simplify the CLKCFG value using DIV3 (which also results in a
-        // better duty cycle).
+        // there is no div used here
         //
-        ui32Denomfinal = ui32ClkFreq / (uint32_t)250000;
-
-        if ( onebit(ui32Denomfinal) )
+        pcp->ui32DivEn = 0;
+        pcp->ui32TotPer = 0;
+        pcp->ui32LowPer = 0;
+    }
+    else
+    {
+        bool computeTotPer = true;
+        if (ui32bDiv & 0x01)
         {
             //
-            // These configurations can be simplified by using DIV3.  Configs
-            // using DIV3 have a 50% duty cycle, while those from DIVEN will
-            // have a 66/33 duty cycle.
+            // non symmetrical dc
             //
-            ui32TotPer = ui32LowPer = ui32DivEn = 0;
-            ui32Div3 = 1;
+            if ( pcp->eClockSelPriority == AM_HAL_IOM_FORCE_SYMMETRICAL_DC)
+            {
+                //
+                // force DC symmetry by lowering output freq
+                //
+                ui32bDiv++;
+                pcp->ui32TotPer = ui32bDiv - 1;
+                pcp->ui32LowPer = (pcp->ui32TotPer - 1) / 2;
+                computeTotPer = false;
+            }
+        }
+        if (ui32bDiv > 256 )
+        {
+            pcp->eErrors = eUSE_LOWER_BASE_FREQ_WARNING;
+            return;
+        }
+        if (computeTotPer)
+        {
+            pcp->ui32TotPer = ui32bDiv-1;
+            pcp->ui32LowPer = pcp->ui32Phase ? (pcp->ui32TotPer - 1) / 2 : (pcp->ui32TotPer) / 2;
+        }
+        pcp->ui32DivEn = 1;
+    }
 
-            //
-            // Now, compute the return values.
-            //
-            ui32ClkFreq = compute_freq(ui32HFRCfreqHz, ui32Fsel, ui32Div3, ui32DivEn, ui32TotPer);
+    //
+    // take the data just generated above and compute the output statistics
+    //
+    iom_compute_freq_cp( pcp );
+} // iom_compute_freq_helper
 
-    ui32ClkCfg = _VAL2FLD(IOM0_CLKCFG_FSEL,   ui32Fsel)     |
-                 _VAL2FLD(IOM0_CLKCFG_DIV3,   1)            |
-                 _VAL2FLD(IOM0_CLKCFG_DIVEN,  0)            |
-                 _VAL2FLD(IOM0_CLKCFG_LOWPER, 0)            |
-                 _VAL2FLD(IOM0_CLKCFG_TOTPER, 0);
+//*****************************************************************************
+//
+//! @brief Compare clock profiles for divide-by-1 vs divide-by-3 paths.
+//!
+//! This function compares two completed clock configurations: one using a direct base
+//! clock (divide-by-1), and the other using the divide-by-3 prescaler. The selection is
+//! made based on the specified clock selection priority (accuracy, symmetry, or balance).
+//!
+//! The priority policy influences how much importance is given to frequency accuracy
+//! vs. duty cycle symmetry.
+//! In some cases, div3 may produce better frequency, symmetry, or power use.
+//!
+//! All else being equal, the divide-by-3 configuration is preferred to reduce power.
+//!
+//! @param psDiv1L   Pointer to divide-by-1 clock profile (typically from FSEL search).
+//! @param psDiv3R   Pointer to divide-by-3 clock profile.
+//!
+//! @return Pointer to the preferred profile (either psDiv1L or psDiv3R).
+//
+//*****************************************************************************
+static iom_clock_comp_parms_t *
+compare_div1_3(iom_clock_comp_parms_t *psDiv1L, iom_clock_comp_parms_t *psDiv3R)
+{
+    //
+    // left is intended to have a higher base freq. if right matches it, then right is better
+    //
+    switch (psDiv1L->eClockSelPriority)
+    {
+        case AM_HAL_IOM_FORCE_SYMMETRICAL_DC:
+            // compare dc difference
+            if (psDiv1L->ui32DC_deviation != psDiv3R->ui32DC_deviation)
+            {
+                if (psDiv1L->ui32DC_deviation < psDiv3R->ui32DC_deviation)
+                {
+                    return psDiv1L;
+                }
+                break;
+            }
+            if (psDiv1L->ui32AbsDiff != psDiv3R->ui32AbsDiff)
+            {
+                if (psDiv1L->ui32AbsDiff < psDiv3R->ui32AbsDiff)
+                {
+                    return psDiv1L;
+                }
+            }
+            break ;
+        case AM_HAL_IOM_PREFER_SYMMETRICAL_DC:
+            // compare dc difference
+            if ((psDiv1L->ui32DC_deviation > 10) || (psDiv3R->ui32DC_deviation > 10))
+            {
+                // if dc not in 1 % (1024 / 100)
+                if (psDiv1L->ui32DC_deviation != psDiv3R->ui32DC_deviation)
+                {
+                    if (psDiv1L->ui32DC_deviation < psDiv3R->ui32DC_deviation)
+                    {
+                        return psDiv1L;
+                    }
+                    break ;
+                }
+            }
+            if (psDiv1L->ui32AbsDiff != psDiv3R->ui32AbsDiff)
+            {
+                if (psDiv1L->ui32AbsDiff < psDiv3R->ui32AbsDiff)
+                {
+                    return psDiv1L;
+                }
+            }
+            break;
+
+        case AM_HAL_IOM_BALANCED_SELECTION:
+        default:
+            {
+                bool preferD3 = true ;
+                if (psDiv1L->ui32DC_deviation != psDiv3R->ui32DC_deviation)
+                {
+                    if ( (psDiv1L->ui32DC_deviation < 10) && psDiv3R->ui32DC_deviation < 10)
+                    {
+                        // if dc not in 1 % (1024 / 100)
+                        if (psDiv1L->ui32DC_deviation < psDiv3R->ui32DC_deviation)
+                        {
+                            preferD3 = false ;
+                        }
+                    }
+                    else if (psDiv1L->ui32DC_deviation < psDiv3R->ui32DC_deviation)
+                    {
+                        preferD3 = false ;
+                    }
+                }
+                if (psDiv1L->ui32AbsDiff == psDiv3R->ui32AbsDiff)
+                {
+                    return preferD3 ? psDiv3R : psDiv1L ;
+                }
+            }
+
+            return (psDiv1L->ui32AbsDiff < psDiv3R->ui32AbsDiff) ? psDiv1L : psDiv3R ;
+
+        case AM_HAL_IOM_PREFER_FREQ_MATCH:
+            if (psDiv1L->ui32AbsDiff != psDiv3R->ui32AbsDiff)
+            {
+                if (psDiv1L->ui32AbsDiff < psDiv3R->ui32AbsDiff)
+                {
+                    return psDiv1L;
+                }
+                break;
+            }
+            if (psDiv1L->ui32DC_deviation != psDiv3R->ui32DC_deviation)
+            {
+                if (psDiv1L->ui32DC_deviation < psDiv3R->ui32DC_deviation)
+                {
+                    return psDiv1L;
+                }
+            }
+            break;
+    } // switch
+    return psDiv3R ;
+} // compareDiv1_3
+
+//*****************************************************************************
+//
+//! @brief Compare two clock profiles to decide which one is better.
+//!
+//! This function is used during the FSEL sweep when evaluating multiple base
+//! clocks. It compares two fully computed clock configurations: a "left" (higher
+//! base clock) and a "right" (lower base clock) candidate.
+//!
+//! The right-hand (lower clock) profile can't be better than the left
+//! If the right-hand (lower clock) profile is as good as the left,
+//! it becomes the new baseline. Otherwise, the search ends with the current higher freq profile.
+//!
+//! Comparison is based on the specified selection priority:
+//!   - Frequency error
+//!   - Duty cycle symmetry
+//!   - Combined heuristics (if BALANCED_SELECTION is used)
+//!
+//! @param left   Pointer to the reference (higher base clock) profile.
+//! @param right  Pointer to the candidate (lower base clock) profile.
+//!
+//! @return eLEFT if the left profile is as good as the right,
+//!         eRIGHT if the right is better.
+//
+//************************************************************************
+static iom_ab_chooser_e
+compare_lr(iom_clock_comp_parms_t *left, iom_clock_comp_parms_t *right)
+{
+    // left is intended to have higher freq. is right matches it, then right is better
+    switch (left->eClockSelPriority)
+    {
+        case AM_HAL_IOM_FORCE_SYMMETRICAL_DC:
+            // compare dc difference
+            if (left->ui32DC_deviation < right->ui32DC_deviation)
+            {
+                return eLEFT;
+            }
+            // compare freq difference
+            if (left->ui32AbsDiff < right->ui32AbsDiff)
+            {
+                return eLEFT;
+            }
+            break;
+        case AM_HAL_IOM_PREFER_SYMMETRICAL_DC:
+            if (left->ui32DC_deviation < right->ui32DC_deviation)
+            {
+                return eLEFT;
+            }
+            // compare freq difference
+            if (left->ui32AbsDiff < right->ui32AbsDiff)
+            {
+                return eLEFT;
+            }
+            break;
+        case AM_HAL_IOM_BALANCED_SELECTION:
+        default:
+            if ((left->ui32DC_deviation > 10) || (right->ui32DC_deviation > 10))
+            {
+                // dc not within 1%, pick best dc
+                if ( left->ui32DC_deviation < right->ui32DC_deviation)
+                {
+                    return eLEFT;
+                }
+            }
+            // compare freq difference
+            if (left->ui32AbsDiff < right->ui32AbsDiff)
+            {
+                return eLEFT;
+            }
+            break;
+        case AM_HAL_IOM_PREFER_FREQ_MATCH:
+            // compare freq difference
+            if (left->ui32AbsDiff < right->ui32AbsDiff)
+            {
+                return eLEFT;
+            }
+            if (left->ui32DC_deviation < right->ui32DC_deviation)
+            {
+                return eLEFT;
+            }
+            break ;
+    } // switch
+    return eRIGHT;
+} // compareLR
+
+//*****************************************************************************
+//
+//! @brief Search for the best clock configuration for a single divider mode (/1 or /3).
+//!
+//! Given a starting clock profile (`psClockL`) with a base clock (FSEL) and divider mode
+//! (either divide-by-1 or divide-by-3), this function iteratively searches from the highest
+//! valid FSEL (starting at 48 MHz) downward. It finds the best clock divider settings to
+//! match the requested output frequency as closely as possible.
+//!
+//! For each FSEL candidate, it computes divider settings (TOTPER, LOWPER) and evaluates
+//! the resulting frequency and duty cycle. It stops when reducing the base clock begins to
+//! degrade performance. The assumption is that higher base clocks will always be equal or
+//! better when using the same divider path.
+//!
+//! The result is stored back into the provided `psClockL` structure.
+//!
+//! This function does not compare across modes (e.g. /1 vs /3): That is done in another function
+//!
+//! @param psClockL   Pointer to clock configuration struct with the desired frequency,
+//!                   divider mode, and search preferences. Updated in-place with best match.
+//!
+//! @return
+//!     - 0     : Success - valid configuration found.
+//!     - -1    : Failure - frequency too low (no valid FSEL).
+//!     - -2    : Failure - frequency too high (requires sub-1 divider).
+//
+//*****************************************************************************
+static int32_t
+iom_clock_selector(iom_clock_comp_parms_t *psClockL)
+{
+    //
+    // first search for invalid frequencies for this entry
+    //
+    while (true)
+    {
+        //
+        // computer divider for original freq.
+        // if desired, freq is too low, or too high this exists with an error
+        // first compute freq params for the base freq
+        // this function will use the contents of psClockL to
+        // compute additional parameters for this divider option
+        //
+        iom_compute_freq_helper(psClockL);
+        if (psClockL->eErrors == eREQ_FREQ_TOO_HIGH_WARNING)
+        {
+            return -2;
+        }
+        if (psClockL->eErrors == eFREQ_ERROR_NO_ERROR)
+        {
+            //
+            // found the first (highest) freq that can be divided to work
+            // so continue with selection
+            //
+            break;
+        }
+        //
+        // The previous base freq was too high, lower the base freq, by
+        // increasing Fsel
+        //
+
+        if (++psClockL->ui32Fsel >= FSELMAX)
+        {
+            //
+            // this is an error, freq too low
+            //
+            return -1;
         }
     }
 
-    return ( ((uint64_t)ui32ClkFreq) << 32) | (uint64_t)ui32ClkCfg;
+    //
+    // Establish the base right structure
+    // This is where the current (left) base freq /2 is computed
+    // Copy left (ref) struct to right,
+    // from now on computations will be done into the right and
+    // will be compared to the left. If the right is as good as the left,
+    // it will become the reference (left), the lower freq(right) will never
+    // be better than the higher freq (right)
+    //
+    iom_clock_comp_parms_t psClockpR = *psClockL;
 
-} //iom_get_interface_clock_cfg()
+    while (true)
+    {
+
+        //
+        // prepare the second (right) for comparison
+        // advance to the next slowest base clock
+        //
+        if (++psClockpR.ui32Fsel >= FSELMAX)
+        {
+            //
+            // Done.
+            // Ran out of clock dividers
+            // whatever is in the L struct is the best
+            //
+            break;
+        }
+
+        //
+        // Right side computation
+        // Compute clock params using the new base clock
+        //
+        iom_compute_freq_helper( &psClockpR );
+
+        //
+        // compare left (higher freq) and right, if right is good enough to pass, use that
+        //
+        iom_ab_chooser_e lr = compare_lr(psClockL, &psClockpR);
+        if (lr == eLEFT)
+        {
+            //
+            // right is inferior to left, so that is the end of this search
+            // nothing will improve with a lower base clock
+            //
+            break;
+        }
+
+        //
+        // The lower freq was as good as higher freq so:
+        // The lower freq now becomes the ref (higher freq).
+        // Do another loop
+        // Copy right into Left as right is the new reference
+        //
+        *psClockL = psClockpR;
+    }
+
+    return 0;  // success
+} //iom_clockSelector()
+
+//*****************************************************************************
+//
+//! @brief Compute the best IOM CLKCFG register settings for a desired output frequency.
+//!
+//! This function attempts to match the requested SPI clock frequency by evaluating
+//! all valid base clocks (FSEL) with and without a divide-by-3 prescaler. It calculates
+//! the best available divider settings (TOTPER, LOWPER) to achieve the requested frequency,
+//! while balancing duty cycle symmetry and frequency accuracy based on the provided priority.
+//!
+//! The function evaluates two independent search paths:
+//!   - One using direct division (no /3 prescaler)
+//!   - One using the divide-by-3 prescaler before the TOTPER divider
+//!
+//! Each path searches from highest to lowest base clock, retaining the lowest FSEL that
+//! produces an equivalent result. This favors lower power when performance is equal.
+//!
+//! The best of the two resulting profiles is chosen according to the specified priority mode
+//! (frequency accuracy, duty cycle symmetry, or a balance).
+//!
+//! If no valid configuration is found, the function returns zero (0).
+//!
+//! @param ui32FreqHz            Desired output frequency in Hz (must be > 0).
+//! @param ui32Phase             If odd divider, selects whether the extra clock cycle goes
+//!                              to the high or low period. (0 = longer low, 1 = longer high).
+//! @param eClockSelPriority     Selection policy from ::am_hal_iom_clock_sel_priority_e.
+//!
+//! @return 64-bit result:
+//!     - Upper 32 bits = actual output frequency achieved (Hz)
+//!     - Lower 32 bits = value to write to IOMx->CLKCFG register
+//!
+//! @note A return value of 0 (both halves) indicates failure to match any valid configuration.
+//!       A nonzero result may still have some deviation from the requested frequency.
+//!
+//*****************************************************************************
+uint64_t
+iom_get_interface_clock_cfg(uint32_t ui32FreqHz,
+                            uint32_t ui32Phase,
+                            am_hal_iom_clock_sel_priority_e eClockSelPriority)
+{
+
+    if (ui32FreqHz == 0)
+    {
+        return 0;
+    }
+
+    if (eClockSelPriority >= AM_HAL_IOM_CLOCK_SEL_PRIO_MAX)
+    {
+        //
+        // user probably allocating iom config struct on stack
+        // choose default which will always be at zero
+        //
+        eClockSelPriority = (am_hal_iom_clock_sel_priority_e) 0;
+    }
+
+    //
+    // Load up two utility structs
+    // that are used to find the best div1 and best div3 options
+    // After they are found, div1 and div3 solutions will be compared
+    //
+    iom_clock_comp_parms_t clockD1;
+    iom_clock_comp_parms_t clockD3;
+    clockD1.ui32Phase       = ui32Phase;
+    clockD1.ui32DesiredFreq = ui32FreqHz;
+    clockD1.eClockSelPriority    = eClockSelPriority;
+    clockD1.ui32Fsel        = 2;   // first valid divider 48,000,000
+    clockD1.ui32Div3        = 0;
+    clockD3                  = clockD1; // copy one struct into the other
+    clockD3.ui32Div3        = 1;        // this struct will be used for /3 tests
+
+    int32_t div1Status = iom_clock_selector(&clockD1);
+    int32_t div3Status = iom_clock_selector(&clockD3);
+
+    //
+    // This will hold a pointer to the winning clock profile (div1 or div3)
+    //
+    iom_clock_comp_parms_t *psChosenProfile = 0;
+
+    if (div1Status >= 0)
+    {
+        //
+        // divide by one trial found a valid solution
+        //
+        if (div3Status >= 0)
+        {
+            //
+            // clock div3 will get priority when all else equal
+            //
+            psChosenProfile = compare_div1_3(&clockD1, &clockD3);
+        }
+        else
+        {
+            psChosenProfile = &clockD1;
+        }
+    }
+    else if (div3Status >= 0)
+    {
+        psChosenProfile = &clockD3;
+    }
+
+    if (psChosenProfile == 0)
+    {
+        return 0 ; // failure
+    }
+
+    // if 375Khz base is selected, that needs a register value of 0, not 9
+    if (psChosenProfile->ui32Fsel > FSEL_MAX_REGISTER_VAL)
+    {
+        psChosenProfile->ui32Fsel = 0;
+    }
+
+    uint32_t ui32ClkCfg = _VAL2FLD( IOM0_CLKCFG_FSEL, psChosenProfile->ui32Fsel);
+
+    if (psChosenProfile->ui32DivEn)
+    {
+        ui32ClkCfg |= _VAL2FLD( IOM0_CLKCFG_DIVEN, 1) |
+            _VAL2FLD( IOM0_CLKCFG_TOTPER, psChosenProfile->ui32TotPer) |
+            _VAL2FLD( IOM0_CLKCFG_LOWPER, psChosenProfile->ui32LowPer);
+    }
+    if (psChosenProfile->ui32Div3)
+    {
+        ui32ClkCfg |=  _VAL2FLD( IOM0_CLKCFG_DIV3, 1);
+    }
+
+    uint64_t output = ((uint64_t)(psChosenProfile->ui32OutClock) << 32) | ui32ClkCfg;
+    return output;
+} // iom_get_interface_clock_cfg()
 
 //*****************************************************************************
 //
@@ -1146,7 +1727,10 @@ am_hal_iom_CQAbort(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief Dummy Callback.
+//! @brief Dummy callback function.
+//!
+//! @param pCallbackCtxt - Callback context (unused).
+//! @param status - Status value (unused).
 //!
 //*****************************************************************************
 static void iom_dummy_callback(void *pCallbackCtxt, uint32_t status)
@@ -1157,6 +1741,9 @@ static void iom_dummy_callback(void *pCallbackCtxt, uint32_t status)
 //*****************************************************************************
 //
 //! @brief Callback when end of sequence is reached.
+//!
+//! @param pCallbackCtxt - Callback context containing IOM state.
+//! @param status - Status value from the transaction.
 //!
 //*****************************************************************************
 static void iom_seq_loopback(void *pCallbackCtxt, uint32_t status)
@@ -1226,12 +1813,8 @@ static uint32_t iom_cq_pause(am_hal_iom_state_t *pIOMState)
 //
 //! @brief Program the DMA directly.
 //!
-//! @param pHandle       - pointer the IOM instance handle.
+//! @param pHandle - Pointer to the IOM instance handle.
 //!
-//! This function pauses the Command Queue operation.
-//!
-//! @return HAL status of the operation.
-//
 //*****************************************************************************
 static void
 program_dma(void *pHandle)
@@ -1280,13 +1863,11 @@ program_dma(void *pHandle)
 //
 //! @brief Schedule a high priority transaction.
 //!
-//! @param pIOMState       - pointer to the IOM internal state.
-//! @param numTrans        - number of transaction to schedule in a block.
-//!
-//! This function pauses the Command Queue operation.
+//! @param pIOMState - Pointer to the IOM internal state.
+//! @param numTrans - Number of transactions to schedule in a block.
 //!
 //! @return HAL status of the operation.
-//
+//!
 //*****************************************************************************
 static uint32_t
 sched_hiprio(am_hal_iom_state_t *pIOMState, uint32_t numTrans)
@@ -1866,7 +2447,8 @@ am_hal_iom_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
 // IOM interrupt service routine
 //
 //*****************************************************************************
-uint32_t am_hal_iom_interrupt_service(void *pHandle, uint32_t ui32IntMask)
+uint32_t
+am_hal_iom_interrupt_service(void *pHandle, uint32_t ui32IntMask)
 {
     uint32_t ui32Module;
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
@@ -2284,7 +2866,16 @@ am_hal_iom_configure(void *pHandle, const am_hal_iom_config_t *psConfig)
         //
         // Determine the CLKCFG value for SPI.
         //
-        ui32ClkCfg = iom_get_interface_clock_cfg(psConfig->ui32ClockFreq, (psConfig->eSpiMode & 2) >> 1);
+        uint64_t ui64ClkCfgRet =
+            iom_get_interface_clock_cfg( psConfig->ui32ClockFreq,
+                (psConfig->eSpiMode & 2) >> 1,
+                psConfig->eClockSelPriority);
+
+        if ( ui64ClkCfgRet == 0)
+        {
+            return AM_HAL_STATUS_INVALID_OPERATION;
+        }
+        ui32ClkCfg = (uint32_t)ui64ClkCfgRet;
 
         //
         // Set the SPI configuration.
@@ -2349,7 +2940,7 @@ am_hal_iom_configure(void *pHandle, const am_hal_iom_config_t *psConfig)
                 break;
             case AM_HAL_IOM_1MHZ:
                 //
-                // settings below should give ~860 kHz
+                // The settings below should give ~860 kHz
                 //
                 ui32ClkCfg = _VAL2FLD(IOM0_CLKCFG_TOTPER, 0x0B)                         |
                              _VAL2FLD(IOM0_CLKCFG_LOWPER, 0x05)                         |
@@ -3194,7 +3785,8 @@ am_hal_iom_spi_blocking_fullduplex(void *pHandle,
 // This function allows advanced settings
 //
 //*****************************************************************************
-uint32_t am_hal_iom_control(void *pHandle, am_hal_iom_request_e eReq, void *pArgs)
+uint32_t
+am_hal_iom_control(void *pHandle, am_hal_iom_request_e eReq, void *pArgs)
 {
     am_hal_iom_state_t *pIOMState = (am_hal_iom_state_t*)pHandle;
     uint32_t status = AM_HAL_STATUS_SUCCESS;
@@ -3335,7 +3927,7 @@ uint32_t am_hal_iom_control(void *pHandle, am_hal_iom_request_e eReq, void *pArg
                     break;
                 }
                 default:
-                    ;
+                   ;
             }
             if (status == AM_HAL_STATUS_SUCCESS)
             {
@@ -3702,10 +4294,11 @@ uint32_t am_hal_iom_control(void *pHandle, am_hal_iom_request_e eReq, void *pArg
 // IOM High Priority transfer function
 //
 //*****************************************************************************
-uint32_t am_hal_iom_highprio_transfer(void *pHandle,
-                                      am_hal_iom_transfer_t *psTransaction,
-                                      am_hal_iom_callback_t pfnCallback,
-                                      void *pCallbackCtxt)
+uint32_t
+am_hal_iom_highprio_transfer(void *pHandle,
+                             am_hal_iom_transfer_t *psTransaction,
+                             am_hal_iom_callback_t pfnCallback,
+                             void *pCallbackCtxt)
 {
     am_hal_iom_state_t           *pIOMState = (am_hal_iom_state_t *)pHandle;
     uint32_t                      ui32Status = AM_HAL_STATUS_SUCCESS;

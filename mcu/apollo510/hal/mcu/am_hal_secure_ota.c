@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for secure over-the-air.
 //!
-//! @addtogroup secure_ota Secure OTA Functionality
+//! @addtogroup secure_ota_ap510 Secure OTA Functionality
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for secure over-the-air (OTA) update
+//!          functionality on Apollo5 devices. It supports secure firmware updates,
+//!          OTA descriptor management, and image validation for secure remote
+//!          firmware updates and system maintenance.
+//!
+//! @section hal_secure_ota_features Key Features
+//!
+//! 1. @b Secure @b Updates: Secure over-the-air firmware update support.
+//! 2. @b OTA @b Descriptor: Management of OTA descriptor structures.
+//! 3. @b Image @b Validation: Secure image validation and verification.
+//! 4. @b Flash @b Programming: Secure flash programming for updates.
+//! 5. @b Status @b Monitoring: OTA status and progress monitoring.
+//!
+//! @section hal_secure_ota_functionality Functionality
+//!
+//! - Initialize OTA functionality and descriptor management
+//! - Add new firmware images to OTA descriptor
+//! - Validate and verify firmware images
+//! - Handle secure flash programming operations
+//! - Monitor OTA status and progress
+//!
+//! @section hal_secure_ota_usage Usage
+//!
+//! 1. Initialize OTA using am_hal_ota_init()
+//! 2. Add firmware images with am_hal_ota_add()
+//! 3. Monitor OTA status and progress
+//! 4. Handle secure flash programming
+//! 5. Validate firmware images as needed
+//!
+//! @section hal_secure_ota_configuration Configuration
+//!
+//! - @b Flash @b Keys: Configure secure flash programming keys
+//! - @b OTA @b Descriptor: Set up OTA descriptor structures
+//! - @b Image @b Validation: Configure image validation parameters
+//! - @b Security: Set up secure update parameters
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -67,21 +102,11 @@ static am_hal_secure_ota_state_t gSOtaState;
 
 //*****************************************************************************
 //
-//! @brief  Initialize OTA state
-//!
-//! Initializes the OTA state. This should be called before doing any other operation
-//!
-//! @param  ui32ProgramKey - The Flash programming key
-//! @param  pOtaDesc should be start of a flash page designated for OTA Descriptor
-//!
-//! This call will erase the flash page, which will then be incrementally
-//! populated as OTA's are added.  It will also initialize the OTAPOINTER to point
-//! to this descriptor, marking it as invalid at the same time
-//!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success
+// Initializes the OTA state. This should be called before doing any other operation
 //
 //*****************************************************************************
-uint32_t am_hal_ota_init(uint32_t ui32ProgramKey, am_hal_otadesc_t *pOtaDesc)
+uint32_t
+am_hal_ota_init(uint32_t ui32ProgramKey, am_hal_otadesc_t *pOtaDesc)
 {
     am_hal_mcuctrl_device_t sDevice;
     uint32_t otaDescAddr = (uint32_t)pOtaDesc;
@@ -115,21 +140,11 @@ uint32_t am_hal_ota_init(uint32_t ui32ProgramKey, am_hal_otadesc_t *pOtaDesc)
 // Add a new OTA to descriptor
 //*****************************************************************************
 //
-//! @brief  Add a new image for OTA
-//!
-//! Adds a new image to the OTA Descriptor.
-//!
-//! @param  ui32ProgamKey - The Flash programming key
-//! @param  imageMagic image magic# identifying type of image being added to OTA descr
-//! @param  pImage should point to the start of new image to be added to descr
-//!
-//! This will program the next available entry in OTA descriptor. It will also set
-//! appropriate state in the OTA pointer register
-//!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success
+// Adds a new image to the OTA Descriptor.
 //
 //*****************************************************************************
-uint32_t am_hal_ota_add(uint32_t ui32ProgamKey, uint8_t imageMagic, uint32_t *pImage)
+uint32_t
+am_hal_ota_add(uint32_t ui32ProgamKey, uint8_t imageMagic, uint32_t *pImage)
 {
     uint32_t imageAddr = (uint32_t)pImage;
     uint32_t status = AM_HAL_STATUS_SUCCESS;
@@ -165,7 +180,8 @@ uint32_t am_hal_ota_add(uint32_t ui32ProgamKey, uint8_t imageMagic, uint32_t *pI
 //  Get Current OTA Descriptor state
 //
 //*****************************************************************************
-uint32_t am_hal_get_ota_status(uint32_t maxOta, am_hal_ota_status_t *pStatus, uint32_t *pOtaDescStatus)
+uint32_t
+am_hal_get_ota_status(uint32_t maxOta, am_hal_ota_status_t *pStatus, uint32_t *pOtaDescStatus)
 {
     uint32_t numOta = 0;
     am_hal_otadesc_t *pOtaDesc = (am_hal_otadesc_t *)AM_HAL_OTA_GET_BLOB_PTR(MCUCTRL->OTAPOINTER);
@@ -196,20 +212,11 @@ uint32_t am_hal_get_ota_status(uint32_t maxOta, am_hal_ota_status_t *pStatus, ui
 
 //*****************************************************************************
 //
-//! @brief  Initialize SBR OTA state
-//!
-//! Initializes the SBR OTA state.
-//!
-//! @param  ui32ProgramKey - The Flash programming key
-//! @param  pImage should point to the start of OTA image in MRAM
-//!
-//! This call will initialize the OTAPOINTER to instruct SBR to initiate OTA of supplies
-//! image upon reboot
-//!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success
+// Initializes the SBR OTA state.
 //
 //*****************************************************************************
-uint32_t am_hal_sbr_ota_init(uint32_t *pImage)
+uint32_t
+am_hal_sbr_ota_init(uint32_t *pImage)
 {
     am_hal_mcuctrl_device_t sDevice;
     uint32_t imageAddr = (uint32_t)pImage;
@@ -242,19 +249,8 @@ uint32_t am_hal_sbr_ota_init(uint32_t *pImage)
 //  Get Current SBR OTA Status
 //
 //*****************************************************************************
-//*****************************************************************************
-//
-//! @brief  Get Current SBR OTA Status
-//!
-//! @param  pStatus - Return Parameter - populated by this function indicating the OTA
-//! status
-//!
-//! This will retrieve the current SBR OTA status
-//!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success
-//
-//*****************************************************************************
-uint32_t am_hal_get_sbr_ota_status(am_hal_ota_status_t *pStatus)
+uint32_t
+am_hal_get_sbr_ota_status(am_hal_ota_status_t *pStatus)
 {
     *((uint32_t *)pStatus) = MCUCTRL->OTAPOINTER & AM_HAL_SBR_OTA_STATUS_MASK;
     return AM_HAL_STATUS_SUCCESS;

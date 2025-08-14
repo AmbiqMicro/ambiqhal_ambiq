@@ -2,16 +2,11 @@
 //
 //! @file am_hal_global.h
 //!
-//! @brief Locate all HAL global variables here.
-
-//! This module contains global variables that are used throughout the HAL,
-//! but not necessarily those designated as const (which typically end up in
-//! flash). Consolidating globals here will make it easier to manage them.
+//! @brief Locate global variables here.
 //!
-//! @addtogroup globals Globals - HAL globals
+//! @addtogroup globals_ap510 Globals - HAL globals
 //! @ingroup apollo510_hal
 //! @{
-//
 //*****************************************************************************
 
 //*****************************************************************************
@@ -45,7 +40,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_GLOBAL_H

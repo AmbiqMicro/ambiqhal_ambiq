@@ -4,9 +4,45 @@
 //!
 //! @brief Functions for interfacing with the MCUCTRL.
 //!
-//! @addtogroup mcuctrl4 MCUCTRL - MCU Control
+//! @addtogroup mcuctrl4_ap510 MCUCTRL - MCU Control
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides functions for interfacing with the MCU Control
+//!          (MCUCTRL) module on Apollo5 devices. It supports device information
+//!          retrieval, external clock control, status monitoring, and chip
+//!          configuration for system management and initialization.
+//!
+//! @section hal_mcuctrl_features Key Features
+//!
+//! 1. @b Device @b Information: Retrieve chip ID, revision, and vendor information.
+//! 2. @b Memory @b Configuration: Access memory size and configuration data.
+//! 3. @b External @b Clock: Manage external clock status and configuration.
+//! 4. @b System @b Control: Provide system control and status operations.
+//! 5. @b Feature @b Detection: Identify device features and capabilities.
+//!
+//! @section hal_mcuctrl_functionality Functionality
+//!
+//! - Retrieve device information and chip identification
+//! - Access memory configuration and size information
+//! - Manage external clock status and configuration
+//! - Provide system control and status operations
+//! - Support for device feature detection and configuration
+//!
+//! @section hal_mcuctrl_usage Usage
+//!
+//! 1. Get device information using am_hal_mcuctrl_info_get()
+//! 2. Retrieve memory configuration as needed
+//! 3. Check external clock status
+//! 4. Access system control functions
+//! 5. Query device features and capabilities
+//!
+//! @section hal_mcuctrl_configuration Configuration
+//!
+//! - @b Device @b Info: Access chip ID, revision, and vendor data
+//! - @b Memory @b Sizes: Retrieve ITCM, DTCM, and SSRAM configurations
+//! - @b External @b Clocks: Configure external clock sources
+//! - @b System @b Control: Set up system control operations
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -94,8 +130,18 @@ uint32_t g_ui32xtalhscaptrim = XTALHSCAPTRIM_DEFAULT;
 //  Gets all relevant device information.
 //
 // ****************************************************************************
-#define JEDEC_RD_DELAY
+#define JEDEC_RD_DELAY  am_hal_delay_us(1);
 
+//*****************************************************************************
+//
+//! @brief Get device information from MCU control registers.
+//!
+//! @param psDevice - Pointer to device information structure to populate.
+//!
+//! This function reads device information from various MCU control registers
+//! including chip ID, revision, vendor ID, SKU, and memory sizes.
+//!
+//*****************************************************************************
 static void
 device_info_get(am_hal_mcuctrl_device_t *psDevice)
 {
@@ -359,7 +405,7 @@ am_hal_mcuctrl_control(am_hal_mcuctrl_control_e eControl, void *pArgs)
             //
             // Set the default trim code for CAP1/CAP2, it impacts frequency accuracy and should be retrimmed
             //
-            ui32Reg = _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAP2TRIM, g_ui32xtalhscap2trim)    |
+            ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAP2TRIM, g_ui32xtalhscap2trim)    |
                       _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAPTRIM, g_ui32xtalhscaptrim)      |
             //
             // Set the transconductance of crystal to maximum, it accelerate the startup sequence
@@ -530,6 +576,11 @@ am_hal_mcuctrl_control(am_hal_mcuctrl_control_e eControl, void *pArgs)
 
 } // am_hal_mcuctrl_control()
 
+//*****************************************************************************
+//
+// Get external 32KHz clock status.
+//
+//*****************************************************************************
 uint32_t
 am_hal_mcuctrl_extclk32k_status_get(am_hal_mcuctrl_ext32k_status_e *peStatus)
 {
@@ -552,6 +603,11 @@ am_hal_mcuctrl_extclk32k_status_get(am_hal_mcuctrl_ext32k_status_e *peStatus)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// Get external 32MHz clock status.
+//
+//*****************************************************************************
 uint32_t
 am_hal_mcuctrl_extclk32m_status_get(am_hal_mcuctrl_ext32m_status_e *peStatus)
 {
@@ -609,12 +665,18 @@ am_hal_mcuctrl_status_get(am_hal_mcuctrl_status_t *psStatus)
 
 } // am_hal_mcuctrl_status_get()
 
-// ****************************************************************************
+//*****************************************************************************
 //
-//  trim_version_get()
-//  Get TRIM version which is stored in INFO1.
-//
-// ****************************************************************************
+//! @brief Get TRIM version from INFO1 register.
+//!
+//! @param psFeature - Pointer to feature structure to store trim version.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//! This function reads the trim version information from the INFO1 register
+//! and decodes it according to the chip revision and PCM version.
+//!
+//*****************************************************************************
 static uint32_t
 trim_version_get(am_hal_mcuctrl_feature_t *psFeature)
 {

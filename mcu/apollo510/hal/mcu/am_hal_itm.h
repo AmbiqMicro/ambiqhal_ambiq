@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for operating the instrumentation trace macrocell
 //!
-//! @addtogroup itm4 ITM - Instrumentation Trace Macrocell
+//! @addtogroup itm4_ap510 ITM - Instrumentation Trace Macrocell
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -84,8 +84,8 @@ extern uint32_t am_hal_itm_print_registers[AM_HAL_ITM_PRINT_NUM_REGS];
 //*****************************************************************************
 //*****************************************************************************
 //
-// Sets certain ITM parameters if something other than defaults are required.
-//
+//! @brief Sets certain ITM parameters if something other than defaults are required.
+//!
 //! @param ui32ItmBaud - Set to one of the following:
 //!         AM_HAL_TPIU_BAUD_DEFAULT    (1M)
 //!         AM_HAL_TPIU_BAUD_2M
@@ -98,7 +98,9 @@ extern uint32_t am_hal_itm_print_registers[AM_HAL_ITM_PRINT_NUM_REGS];
 //!
 //! @note The ui32ItmBaud parameter was formerly the parameter (and now
 //!       deprecated) to the TPIU function, am_hal_tpiu_enable().
-//
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 extern uint32_t am_hal_itm_parameters_set(uint32_t ui32ItmBaud);
 
@@ -107,7 +109,9 @@ extern uint32_t am_hal_itm_parameters_set(uint32_t ui32ItmBaud);
 //! @brief Enables the ITM
 //!
 //! This function enables the ARM ITM.
-//
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 extern uint32_t am_hal_itm_enable(void);
 
@@ -116,7 +120,9 @@ extern uint32_t am_hal_itm_enable(void);
 //! @brief Disables the ITM
 //!
 //! This function completely disables the ARM ITM.
-//
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 extern uint32_t am_hal_itm_disable(void);
 
@@ -129,7 +135,7 @@ extern uint32_t am_hal_itm_disable(void);
 //! time to complete or in some cases, to timeout.
 //!
 //! @return AM_HAL_STATUS_SUCCESS = ITM and TPIU pipelines are flushed.
-//
+//!
 //*****************************************************************************
 extern uint32_t am_hal_itm_tpiu_pipeline_flush(void);
 
@@ -140,7 +146,7 @@ extern uint32_t am_hal_itm_tpiu_pipeline_flush(void);
 //! This function determines whether ITM is busy.
 //!
 //! @return True if not busy, false if busy (timed out or other error).
-//
+//!
 //*****************************************************************************
 extern bool am_hal_itm_not_busy(void);
 
@@ -150,7 +156,7 @@ extern bool am_hal_itm_not_busy(void);
 //!
 //! Sends a sync packet. This can be useful for external software should it
 //! become out of sync with the ITM stream.
-//
+//!
 //*****************************************************************************
 extern void am_hal_itm_sync_send(void);
 
@@ -168,7 +174,7 @@ extern void am_hal_itm_sync_send(void);
 //! \e ITM_PRIVMASK_8_15 - enable ports 8 through 15
 //! \e ITM_PRIVMASK_16_23 - enable ports 16 through 23
 //! \e ITM_PRIVMASK_24_31 - enable ports 24 through 31
-//
+//!
 //*****************************************************************************
 extern void am_hal_itm_trace_port_enable(uint8_t ui8portNum);
 
@@ -176,7 +182,7 @@ extern void am_hal_itm_trace_port_enable(uint8_t ui8portNum);
 //
 //! @brief Disable tracing on the given ITM stimulus port.
 //!
-//! @param ui8portNum
+//! @param ui8portNum - Set ports to be disabled
 //!
 //! Disables tracing on the ports referred to by \e ui8portNum by writing the
 //! associated bit in the Trace Privilege Register in the ITM. The value for
@@ -186,7 +192,7 @@ extern void am_hal_itm_trace_port_enable(uint8_t ui8portNum);
 //! \e ITM_PRIVMASK_8_15 - disable ports 8 through 15
 //! \e ITM_PRIVMASK_16_23 - disable ports 16 through 23
 //! \e ITM_PRIVMASK_24_31 - disable ports 24 through 31
-//
+//!
 //*****************************************************************************
 extern void am_hal_itm_trace_port_disable(uint8_t ui8portNum);
 
@@ -197,7 +203,7 @@ extern void am_hal_itm_trace_port_disable(uint8_t ui8portNum);
 //! @param ui32StimReg - stimulus register
 //!
 //! @return true if not busy, false if busy (timed out or other error).
-//
+//!
 //*****************************************************************************
 extern bool am_hal_itm_stimulus_not_busy(uint32_t ui32StimReg);
 
@@ -209,7 +215,7 @@ extern bool am_hal_itm_stimulus_not_busy(uint32_t ui32StimReg);
 //! @param ui32Value - value to be written.
 //!
 //! Write a word to the desired stimulus register.
-//
+//!
 //*****************************************************************************
 extern void am_hal_itm_stimulus_reg_word_write(uint32_t ui32StimReg,
                                                uint32_t ui32Value);
@@ -222,7 +228,7 @@ extern void am_hal_itm_stimulus_reg_word_write(uint32_t ui32StimReg,
 //! @param ui16Value - short to be written.
 //!
 //! Write a short to the desired stimulus register.
-//
+//!
 //*****************************************************************************
 extern void am_hal_itm_stimulus_reg_short_write(uint32_t ui32StimReg,
                                                 uint16_t ui16Value);
@@ -235,7 +241,7 @@ extern void am_hal_itm_stimulus_reg_short_write(uint32_t ui32StimReg,
 //! @param ui8Value - byte to be written.
 //!
 //! Write a byte to the desired stimulus register.
-//
+//!
 //*****************************************************************************
 extern void am_hal_itm_stimulus_reg_byte_write(uint32_t ui32StimReg,
                                                uint8_t ui8Value);
@@ -244,7 +250,7 @@ extern void am_hal_itm_stimulus_reg_byte_write(uint32_t ui32StimReg,
 //! @brief Poll the print stimulus registers until not busy.
 //!
 //! @return true if not busy, false if busy (timed out or other error).
-//
+//!
 //*****************************************************************************
 extern bool am_hal_itm_print_not_busy(void);
 
@@ -255,7 +261,7 @@ extern bool am_hal_itm_print_not_busy(void);
 //! @param pcString pointer to the character sting
 //!
 //! This function prints a sting out of the ITM.
-//
+//!
 //*****************************************************************************
 extern void am_hal_itm_print(char *pcString);
 

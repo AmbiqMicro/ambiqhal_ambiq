@@ -4,7 +4,7 @@
 //!
 //! @brief INFO helper functions
 //!
-//! @addtogroup info5 INFO Functionality
+//! @addtogroup info5_ap510 INFO Functionality
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_INFO_H
@@ -93,15 +93,29 @@ extern bool am_hal_info0_valid(void);
 
 //*****************************************************************************
 //
+// AM_INFO_FLD2VAL()
+// This macro allows decoding of INFOx register fields, similar
+// to the CMSIS _FLD2VAL macro.
+// Parameters:
+//  info: 0, 1, or C (C must be capitalized)
+//  field: The field of the register.
+//  value: The value of the entire register as read from the INFOx space.
+//
+// AM_INFO_VAL2FLD() is not provided as the INFOx register definitions already generate these for each register.
+//
+//*****************************************************************************
+#define AM_INFO_FLD2VAL(info, field, value) (((uint32_t)(value) & AM_REG_INFO ##info## _ ## field ## _Msk) >> AM_REG_INFO ## info ## _ ## field ## _Pos)
+
+//*****************************************************************************
+//
 //! @brief Read data from INFO0.
 //!
-//! This function reads INFO0 data from the device.
 //! The data to be read depends on the eInfoSpace parameter.
 //!
-//! @param eInfoSpace - Specifies which info space to be read.
-//!     AM_HAL_INFO_INFOSPACE_CURRENT_INFO0     // Currently active INFO0
-//!     AM_HAL_INFO_INFOSPACE_OTP_INFO0         // INFO0 from OTP  (regardless of current)
-//!     AM_HAL_INFO_INFOSPACE_MRAM_INFO0        // INFO0 from MRAM (regardless of current)
+//! @param eInfoSpace Specifies which info space to read (INFO0, OTP/MRAM).
+//!     - AM_HAL_INFO_INFOSPACE_CURRENT_INFO0: Currently active INFO0.
+//!     - AM_HAL_INFO_INFOSPACE_OTP_INFO0:     INFO0 from OTP  (regardless of current).
+//!     - AM_HAL_INFO_INFOSPACE_MRAM_INFO0:    INFO0 from MRAM (regardless of current).
 //!
 //! @param ui32wordOffset - Word offset of the first data word to be read.
 //!     - For the "CURRENT" types, the offset is ALWAYS specified by the OTP
@@ -147,10 +161,10 @@ am_hal_info0_read(am_hal_info_infospace_e eInfoSpace,
 //! This function reads INFO1 data from the device.
 //! The data to be read depends on the eInfoSpace parameter.
 //!
-//! @param eInfoSpace - Specifies which info space to be read.
-//!     AM_HAL_INFO_INFOSPACE_CURRENT_INFO1     // Currently active INFO1
-//!     AM_HAL_INFO_INFOSPACE_OTP_INFO1         // INFO1 from OTP  (regardless of current)
-//!     AM_HAL_INFO_INFOSPACE_MRAM_INFO1        // INFO1 from MRAM (regardless of current)
+//! @param eInfoSpace     Specifies which info space to read (INFO1, OTP/MRAM).
+//!     - AM_HAL_INFO_INFOSPACE_CURRENT_INFO1: Currently active INFO1.
+//!     - AM_HAL_INFO_INFOSPACE_OTP_INFO1:     INFO1 from OTP  (regardless of current).
+//!     - AM_HAL_INFO_INFOSPACE_MRAM_INFO1:    INFO1 from MRAM (regardless of current).
 //!
 //! @param ui32wordOffset - Word offset of the first data word to be read.
 //!     - For the "CURRENT" types, the offset is ALWAYS specified by the OTP
@@ -193,9 +207,9 @@ am_hal_info1_read(am_hal_info_infospace_e eInfoSpace,
 //! @brief This programs up to N words of INFO0.
 //!
 //! @param eInfoSpace - Specifies which info space to be read.
-//!     AM_HAL_INFO_INFOSPACE_CURRENT_INFO0     // Currently active INFO0
-//!     AM_HAL_INFO_INFOSPACE_OTP_INFO0         // INFO0 from OTP  (regardless of current)
-//!     AM_HAL_INFO_INFOSPACE_MRAM_INFO0        // INFO0 from MRAM (regardless of current)
+//!     - AM_HAL_INFO_INFOSPACE_CURRENT_INFO0: Currently active INFO0.
+//!     - AM_HAL_INFO_INFOSPACE_OTP_INFO0:     INFO0 from OTP  (regardless of current).
+//!     - AM_HAL_INFO_INFOSPACE_MRAM_INFO0:    INFO0 from MRAM (regardless of current).
 //! @param ui32InfoKey - The programming key, AM_HAL_MRAM_INFO_KEY.
 //! @param pui32Src - Pointer to word aligned array of data to program into
 //! INFO0.
@@ -222,16 +236,17 @@ am_hal_info1_read(am_hal_info_infospace_e eInfoSpace,
 //! am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_OTP);
 //! am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_OTP);
 //!
-//! @return 0 for success, non-zero for failure.
-//!     1   ui32InfoKey is invalid.
-//!     2   ui32Offset is invalid.
-//!     3   Dst addressing range would be exceeded.  That is, (ui32Offset +
-//!         (ui32NumWords * 4)) is greater than the last valid address.
-//!     4   pui32Src is invalid.
-//!     5   Src addressing range would be exceeded.  That is, (pui32Src +
-//!         (ui32NumWords * 4)) is greater than the last valid address.
-//!     6   Flash controller hardware timeout.
-//!     9   OTP is not active.
+//! @return Status of function return
+//!     - 0   for success, non-zero for failure.
+//!     - 1   ui32InfoKey is invalid.
+//!     - 2   ui32Offset is invalid.
+//!     - 3   Dst addressing range would be exceeded.  That is, (ui32Offset +
+//!           (ui32NumWords * 4)) is greater than the last valid address.
+//!     - 4   pui32Src is invalid.
+//!     - 5   Src addressing range would be exceeded.  That is, (pui32Src +
+//!           (ui32NumWords * 4)) is greater than the last valid address.
+//!     - 6   Flash controller hardware timeout.
+//!     - 9   OTP is not active.
 //
 //*****************************************************************************
 extern uint32_t

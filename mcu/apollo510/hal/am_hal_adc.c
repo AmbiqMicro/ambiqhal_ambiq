@@ -2,12 +2,61 @@
 //
 //! @file am_hal_adc.c
 //!
-//! @brief Functions for interfacing with the Analog to Digital Converter.
+//! @brief Analog-to-Digital Converter (ADC) HAL implementation.
 //!
-//! @addtogroup adc4 ADC - Analog-to-Digital Converter
+//! @addtogroup adc4_ap510 ADC - Analog-to-Digital Converter
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides a comprehensive hardware abstraction layer
+//! for the Analog-to-Digital Converter (ADC) peripheral on Apollo5 devices.
+//! It enables configuration, control, and data acquisition from the ADC,
+//! supporting voltage and temperature measurements, DMA transfers, and
+//! multiple sampling modes for flexible and efficient analog signal capture.
+//!
+//! @section hal_adc_features Key Features
+//!
+//! 1. @b Flexible @b Configuration: Supports multiple ADC modes, slot
+//!    configurations, and trigger sources for a wide range of applications.
+//!
+//! 2. @b DMA @b Support: Enables high-speed, low-latency data transfers
+//!    from the ADC to memory using DMA.
+//!
+//! 3. @b Calibration @b and @b Trimming: Provides mechanisms for calibration
+//!    coefficients and temperature compensation to ensure accurate results.
+//!
+//! 4. @b Power @b Management: Includes functions for power control and
+//!    low-power operation of the ADC peripheral.
+//!
+//! 5. @b Interrupt @b Handling: Comprehensive interrupt support for
+//!    conversion completion, error conditions, and custom user events.
+//!
+//! @section hal_adc_functionality Functionality
+//!
+//! The module provides the following capabilities:
+//! - Initialization and deinitialization of the ADC peripheral
+//! - Configuration of ADC slots, triggers, and operational modes
+//! - Enabling/disabling the ADC and managing power states
+//! - Reading ADC samples (single, burst, or DMA-driven)
+//! - Handling ADC interrupts and status queries
+//! - Applying calibration and correction factors
+//!
+//! @section hal_adc_usage Usage
+//!
+//! 1. Initialize the ADC using am_hal_adc_initialize()
+//! 2. Configure the ADC with am_hal_adc_configure() and related functions
+//! 3. Enable the ADC and start conversions
+//! 4. Retrieve conversion results via polling, interrupt, or DMA
+//! 5. Deinitialize the ADC when no longer needed
+//!
+//! @section hal_adc_configuration Configuration
+//!
+//! - @b AM_HAL_ADC_CALIB_TEMP_DEFAULT: Default temperature calibration value
+//! - @b AM_HAL_ADC_CALIB_AMBIENT_DEFAULT: Default ambient voltage calibration
+//! - @b AM_HAL_ADC_CALIB_ADC_OFFSET_DEFAULT: Default ADC offset calibration
+//! - @b DMA: Enable/disable DMA for high-speed data transfer
+//! - @b Interrupts: Configure interrupt sources and handlers as needed
+//!
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +90,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -243,19 +292,7 @@ bool     g_bDoADCadjust   = false;
 
 //*****************************************************************************
 //
-//! @brief ADC initialization function
-//!
-//! @param ui32Module - module instance.
-//! @param ppHandle   - returns the handle for the module instance.
-//!
-//! This function accepts a module instance, allocates the interface and then
-//! returns a handle to be used by the remaining interface functions.
-//!
-//! @return status    - generic or interface specific status.
-//!
-//! @note A return of AM_HAL_STATUS_SUCCESS does not infer that the
-//! temperature calibrations are valid. The caller must check the bMeasured
-//! structure element in order to determine that.
+// ADC initialization function
 //
 //*****************************************************************************
 uint32_t
@@ -400,14 +437,7 @@ am_hal_adc_initialize(uint32_t ui32Module, void **ppHandle)
 
 //*****************************************************************************
 //
-//! @brief ADC deinitialization function
-//!
-//! @param pHandle       - returns the handle for the module instance.
-//!
-//! This function accepts a handle to an instance and de-initializes the
-//! interface.
-//!
-//! @return status      - generic or interface specific status.
+// ADC deinitialization function
 //
 //*****************************************************************************
 uint32_t
@@ -439,14 +469,7 @@ am_hal_adc_deinitialize(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief ADC configuration function
-//!
-//! @param pHandle   - handle for the module instance.
-//! @param psConfig  - pointer to the configuration structure.
-//!
-//! This function configures the ADC for operation.
-//!
-//! @return status      - generic or interface specific status.
+// ADC configuration function
 //
 //*****************************************************************************
 uint32_t
@@ -639,14 +662,7 @@ am_hal_adc_configure_slot(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief ADC internal repeat trigger timer configuration function
-//!
-//! @param pHandle - handle for the module instance.
-//! @param pConfig - pointer to the configuration structure.
-//!
-//! This function configures the ADC internal repeat trigger timer for operation.
-//!
-//! @return status      - generic or interface specific status.
+// ADC internal repeat trigger timer configuration function
 //
 //*****************************************************************************
 uint32_t
@@ -744,13 +760,7 @@ am_hal_adc_irtt_enable(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief ADC internal repeating trigger timer disable function
-//!
-//! @param pHandle   - handle for the module instance.
-//!
-//! This function disables internal repeating trigger timer.
-//!
-//! @return status      - generic or interface specific status.
+// ADC internal repeating trigger timer disable function
 //
 //*****************************************************************************
 uint32_t
@@ -783,14 +793,7 @@ am_hal_adc_irtt_disable(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief ADC DMA configuration function
-//!
-//! @param pHandle   - handle for the module instance.
-//! @param pDMAConfig  - pointer to the configuration structure.
-//!
-//! This function configures the ADC DMA for operation.
-//!
-//! @return status      - generic or interface specific status.
+// ADC DMA configuration function
 //
 //*****************************************************************************
 uint32_t
@@ -1169,13 +1172,7 @@ am_hal_adc_enable(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief ADC disable function
-//!
-//! @param pHandle   - handle for the module instance.
-//!
-//! This function disables the ADC operation.
-//!
-//! @return status      - generic or interface specific status.
+// ADC disable function
 //
 //*****************************************************************************
 uint32_t
@@ -1232,14 +1229,7 @@ am_hal_adc_disable(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief ADC status function
-//!
-//! @param pHandle - handle for the interface.
-//! @param pStatus - return status for the interface
-//!
-//! This function returns the current status of the DMA operation.
-//!
-//! @return status - DMA status flags.
+// This function returns the current status of the DMA operation..
 //
 //*****************************************************************************
 uint32_t
@@ -1285,14 +1275,7 @@ am_hal_adc_status_get(void *pHandle, am_hal_adc_status_t *pStatus )
 
 //*****************************************************************************
 //
-//! @brief ADC enable interrupts function
-//!
-//! @param pHandle       - handle for the interface.
-//! @param ui32IntMask  - ADC interrupt mask.
-//!
-//! This function enables the specific indicated interrupts.
-//!
-//! @return status      - generic or interface specific status.
+// ADC enable interrupts function
 //
 //*****************************************************************************
 uint32_t
@@ -1324,14 +1307,7 @@ am_hal_adc_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
 
 //*****************************************************************************
 //
-//! @brief ADC disable interrupts function
-//!
-//! @param pHandle       - handle for the interface.
-//! @param ui32IntMask  - ADC interrupt mask.
-//!
-//! This function disable the specific indicated interrupts.
-//!
-//! @return status      - generic or interface specific status.
+// ADC disable interrupts function
 //
 //*****************************************************************************
 uint32_t
@@ -1413,14 +1389,7 @@ am_hal_adc_interrupt_status(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief ADC interrupt clear
-//!
-//! @param pHandle         - handle for the interface.
-//! @param ui32IntMask    - uint32_t for interrupts to clear
-//!
-//! This function clears the interrupts for the given peripheral.
-//!
-//! @return status      - generic or interface specific status.
+// ADC interrupt clear function
 //
 //*****************************************************************************
 uint32_t
@@ -1452,7 +1421,12 @@ am_hal_adc_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
 
 //*****************************************************************************
 //
-// sample_correction_apply()
+//! @brief Apply sample correction to ADC samples.
+//!
+//! @param ui32Sample - Raw ADC sample value.
+//! @param bApplyCorrection - Flag to apply correction (false for temperature).
+//!
+//! @return Returns the corrected sample value.
 //
 //*****************************************************************************
 static uint32_t
@@ -1605,13 +1579,7 @@ am_hal_adc_samples_read(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief Issue Software Trigger to the ADC.
-//!
-//! @param pHandle   - handle for the module instance.
-//!
-//! This function triggers the ADC operation.
-//!
-//! @return status      - generic or interface specific status.
+// ADC software trigger function
 //
 //*****************************************************************************
 uint32_t
@@ -1643,16 +1611,7 @@ am_hal_adc_sw_trigger(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief ADC power control function
-//!
-//! @param pHandle       - handle for the interface.
-//! @param ePowerState  - the desired power state to move the peripheral to.
-//! @param bRetainState - flag (if true) to save/restore peripheral state upon
-//!                       power state change.
-//!
-//! This function updates the peripheral to a given power state.
-//!
-//! @return status      - generic or interface specific status.
+// ADC power control function
 //
 //*****************************************************************************
 uint32_t

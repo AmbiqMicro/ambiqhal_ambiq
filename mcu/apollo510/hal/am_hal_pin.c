@@ -4,14 +4,42 @@
 //!
 //! @brief Function select information for Apollo510 GPIOs.
 //!
-//! Date: 02/13/2024
-//!
-//! @addtogroup pin Pin Functionality
+//! @addtogroup pin_ap510 Pin Functionality
 //! @ingroup apollo510_hal
 //! @{
-//
-// This is a generated file, do not modify!
-//
+//!
+//! Purpose: This is a generated file that provides the function select (FUNCSEL)
+//! information for all GPIO pins on Apollo510 devices. It maps each pin to its
+//! available functions and is used by the HAL for pin configuration and
+//! multiplexing. Do not modify this file directly; regenerate it using the
+//! provided script if updates are needed.
+//!
+//! @section hal_pin_features Key Features
+//!
+//! 1. @b Complete @b Pin @b Mapping: Lists all available functions for every GPIO pin.
+//! 2. @b Auto-Generated: Maintained by a script to ensure accuracy and consistency.
+//! 3. @b Multiplexing @b Support: Enables flexible pin function selection.
+//! 4. @b Integration: Used by HAL and board support code for pin configuration.
+//! 5. @b Documentation: Provides a reference for developers configuring pins.
+//!
+//! @section hal_pin_functionality Functionality
+//!
+//! - Map each GPIO pin to its available functions
+//! - Support pin multiplexing and alternate function selection
+//! - Serve as a reference for HAL pin configuration routines
+//! - Enable automated updates via script regeneration
+//!
+//! @section hal_pin_usage Usage
+//!
+//! 1. Use this file as a reference for available pin functions
+//! 2. Configure pins in application or board support code using HAL APIs
+//! 3. Regenerate this file using the generate_funcsel.py script if pin definitions change
+//!
+//! @section hal_pin_configuration Configuration
+//!
+//! - @b Scripted @b Generation: Use ambiqsuite/scripts/apollo5/generate_funcsel.py
+//! - @b Pin @b Definitions: Update pin definitions in the script as needed
+//! - @b Integration: Ensure this file is included in HAL and board builds
 //*****************************************************************************
 
 //*****************************************************************************
@@ -45,7 +73,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

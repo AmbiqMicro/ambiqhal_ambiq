@@ -4,11 +4,44 @@
 //!
 //! @brief SPOT manager functions that manage power states for PCM0.7 parts.
 //!
-//! @addtogroup spotmgr5b SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr_07_ap510 SPOTMGR - SPOT Manager PCM0.7
 //! @ingroup apollo510_hal
 //! @{
-//
-// ****************************************************************************
+//!
+//! Purpose: This module provides SPOT manager functionality for PCM0.7
+//! Apollo5 devices, supporting power state management, peripheral
+//! control, and system optimization. It enables efficient power
+//! management and system reliability for PCM0.7-based designs.
+//!
+//! @section hal_spotmgr_pcm0_7_features Key Features
+//!
+//! 1. @b PCM0.7 @b Support: Power management for PCM0.7 hardware.
+//! 2. @b TON @b Configuration: Manage TON levels for different power states.
+//! 3. @b SIMOBUCK/LDO @b Integration: Control power domain transitions.
+//! 4. @b GPU/SDIO @b Handling: Special handling for GPU and SDIO power events.
+//! 5. @b Extensible: Support for custom power management strategies.
+//!
+//! @section hal_spotmgr_pcm0_7_functionality Functionality
+//!
+//! - Manage power state transitions for PCM0.7 hardware
+//! - Configure TON levels for various power states
+//! - Integrate with SIMOBUCK, LDO, and other power domains
+//! - Handle GPU and SDIO power event handling
+//! - Provide hooks for board-specific power management
+//!
+//! @section hal_spotmgr_pcm0_7_usage Usage
+//!
+//! 1. Initialize SPOT manager for PCM0.7 hardware
+//! 2. Handle power state transitions in response to events
+//! 3. Integrate with board and application power management
+//! 4. Extend with custom logic as needed
+//!
+//! @section hal_spotmgr_pcm0_7_configuration Configuration
+//!
+//! - @b PCM @b Version: Select PCM0.7 for hardware
+//! - @b TON @b Levels: Configure TON levels for power states
+//! - @b GPU/SDIO: Set up event handling as required
+//****************************************************************************
 
 // ****************************************************************************
 //
@@ -41,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -338,6 +371,8 @@ am_hal_spotmgr_pcm0_7_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
 
     switch (eStimulus)
     {
+        case AM_HAL_SPOTMGR_STIM_INIT_STATE:
+            break;
         case AM_HAL_SPOTMGR_STIM_CPU_STATE:
             // Nothing to be done for PCM0.7
             break;
@@ -373,6 +408,8 @@ am_hal_spotmgr_pcm0_7_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
         case AM_HAL_SPOTMGR_STIM_SSRAMPWR:
             // Nothing to be done for PCM0.7
             break;
+        case AM_HAL_SPOTMGR_STIM_BACK_TO_DEFAULT_STATE:
+            break;
     }
 
     return ui32Status;
@@ -405,8 +442,10 @@ uint32_t am_hal_spotmgr_pcm0_7_simobuck_init_bfr_enable(void)
 //*****************************************************************************
 uint32_t am_hal_spotmgr_pcm0_7_simobuck_init_aft_enable(void)
 {
+    am_hal_delay_us(100);
     MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM = 0;
     MCUCTRL->D2ASPARE_b.MEMLDOREF = 0x1;
+    am_hal_delay_us(100);
     return AM_HAL_STATUS_SUCCESS;
 }
 

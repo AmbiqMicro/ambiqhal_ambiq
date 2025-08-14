@@ -2,15 +2,46 @@
 //
 //! @file am_util_ble_em9305.c
 //!
-//! @brief EM9305 BLE functions not covered by the HAL.
+//! @brief Utility functions for the EM9305 BLE module.
 //!
-//! This file contains functions for interacting with the Apollo4 BLE hardware
-//! that are not already covered by the HAL. Most of these commands either
-//! adjust RF settings or facilitate RF testing operations.
-//!
-//! @addtogroup em9305_util EM9305 - BLE Functions
+//! @addtogroup ble_em9305_utils EM9305 BLE Utility Functions
 //! @ingroup utils
 //! @{
+//!
+//! Purpose: This module provides utility functions for the EM9305 BLE controller,
+//!          enabling configuration, initialization, and management of EM9305
+//!          specific features. The utilities support power management, firmware
+//!          updates, and BLE stack integration for optimal wireless performance.
+//!
+//! @section utils_ble_em9305_features Key Features
+//!
+//! 1. @b Firmware @b Updates: Support for EM9305 firmware management.
+//! 2. @b Power @b Control: Efficient power state management.
+//! 3. @b Configuration: Device-specific setup and initialization.
+//! 4. @b Stack @b Integration: BLE stack support for EM9305.
+//! 5. @b Error @b Handling: Robust error detection and recovery.
+//!
+//! @section utils_ble_em9305_functionality Functionality
+//!
+//! - Initialize and configure EM9305 hardware
+//! - Manage firmware updates and verification
+//! - Control power states and modes
+//! - Handle device-specific features
+//! - Process error conditions
+//!
+//! @section utils_ble_em9305_usage Usage
+//!
+//! 1. Initialize EM9305 with am_util_ble_em9305_init()
+//! 2. Configure device settings
+//! 3. Manage firmware updates as needed
+//! 4. Handle power management
+//!
+//! @section utils_ble_em9305_configuration Configuration
+//!
+//! - Set up firmware update parameters
+//! - Configure power management options
+//! - Define error handling behavior
+//! - Set stack integration options
 //
 //*****************************************************************************
 
@@ -45,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
