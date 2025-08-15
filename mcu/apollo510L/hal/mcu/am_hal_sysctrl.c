@@ -2,12 +2,47 @@
 //
 //! @file am_hal_sysctrl.c
 //!
-//! @brief Functions for interfacing with the M4F system control registers
+//! @brief Functions for interfacing with the M55 system control registers
 //!
-//! @addtogroup sysctrl5 SYSCTRL - System Control
+//! @addtogroup sysctrl4_ap510L SYSCTRL - System Control
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides system control functions for Apollo5
+//! devices, including power management, sleep mode control, and system
+//! bus synchronization. It enables efficient power management and
+//! reliable system operation across different power states.
+//!
+//! @section hal_sysctrl_features Key Features
+//!
+//! 1. @b Sleep @b Management: Control normal and deep sleep modes.
+//! 2. @b Power @b Control: Manage buck converter and power states.
+//! 3. @b FPU @b Control: Enable/disable floating-point unit operations.
+//! 4. @b System @b Reset: Provide system reset functionality.
+//! 5. @b Clock @b Management: Control clock multiplexer and reset operations.
+//!
+//! @section hal_sysctrl_functionality Functionality
+//!
+//! - Control system sleep and deep sleep modes
+//! - Manage power states and buck converter operation
+//! - Enable/disable FPU and configure stacking
+//! - Handle system reset operations
+//! - Control clock multiplexer and reset functionality
+//!
+//! @section hal_sysctrl_usage Usage
+//!
+//! 1. Configure sleep modes using am_hal_sysctrl_sleep()
+//! 2. Control FPU operations as needed
+//! 3. Manage power states and buck converter
+//! 4. Handle system reset when required
+//! 5. Configure clock multiplexer operations
+//!
+//! @section hal_sysctrl_configuration Configuration
+//!
+//! - @b Sleep @b Modes: Configure normal and deep sleep parameters
+//! - @b Power @b States: Set up buck converter and power management
+//! - @b FPU @b Settings: Configure floating-point unit operations
+//! - @b Clock @b Control: Set up clock multiplexer and reset operations
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -111,11 +146,19 @@ void
 am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
 {
     bool bSimobuckAct = false;
-    am_hal_pwrctrl_pwrmodctl_cpdlp_t sActCpdlpConfig;
     bool bReportedDeepSleep = false;
     bool bBuckIntoLPinDS = false;
-    uint32_t  ui32CpdlpConfig = 0;
+    am_hal_pwrctrl_pwrmodctl_cpdlp_t sActCpdlpConfig;
     am_hal_spotmgr_cpu_state_e eCpuSt;
+    uint32_t  ui32CpdlpConfig = 0;
+
+    //
+    // Inform clkmgr to release pre-started clocks that is not yet claimed.
+    //
+    if (eSleepType >= AM_HAL_SYSCTRL_SLEEP_DEEP)
+    {
+        am_hal_clkmgr_control(AM_HAL_CLKMGR_RELEASE_PRESTART_CLK, NULL);
+    }
 
     //
     // Disable interrupts and save the previous interrupt state.
@@ -149,10 +192,12 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
         if (eSleepType >= AM_HAL_SYSCTRL_SLEEP_DEEPER)
         {
             PWRCTRL->CPUPWRCTRL_b.DEEPERSLEEPEN = 1;
+            eCpuSt = AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEPER;
         }
         else
         {
             PWRCTRL->CPUPWRCTRL_b.DEEPERSLEEPEN = 0;
+            eCpuSt = AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP;
         }
         //
         // Set the CPDLPSTATE configuration in deepsleep mode
@@ -178,7 +223,6 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
         //
         // Report CPU state change
         //
-        eCpuSt = AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP;
         am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_CPU_STATE, false, (void *) &eCpuSt);
         //
         // Prepare the data for reporting CPU status after waking up.
@@ -215,6 +259,9 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
             {
                 if (!g_bAppFrcBuckAct && !g_bFrcBuckAct)
                 {
+                    //
+                    // This implies upon deepsleep, buck can transition into LP mode
+                    //
                     bBuckIntoLPinDS = true;
 
                     //
@@ -250,13 +297,13 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
         if (PWRCTRL->CPUPWRCTRL_b.SLEEPMODE) // ARM sleep
         {
             sNSCpdlpConfig.eRlpConfig = sActCpdlpConfig.eRlpConfig;
-            sNSCpdlpConfig.eElpConfig = AM_HAL_PWRCTRL_ELP_ON_CLK_OFF;
+            sNSCpdlpConfig.eElpConfig = AM_HAL_PWRCTRL_ELP_RET;
             sNSCpdlpConfig.eClpConfig = AM_HAL_PWRCTRL_CLP_ON_CLK_OFF;
         }
         else // Ambiq sleep
         {
             sNSCpdlpConfig.eRlpConfig = sActCpdlpConfig.eRlpConfig;
-            sNSCpdlpConfig.eElpConfig = AM_HAL_PWRCTRL_ELP_ON_CLK_OFF; // or can leave at 0x0 as we will turn the clocks off at the source
+            sNSCpdlpConfig.eElpConfig = AM_HAL_PWRCTRL_ELP_RET; // or can leave at 0x0 as we will turn the clocks off at the source
             sNSCpdlpConfig.eClpConfig = AM_HAL_PWRCTRL_CLP_ON_CLK_OFF; // or can leave at 0x0 as we will turn the clocks off at the source
         }
         //
@@ -341,6 +388,14 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
     // Restore the interrupt state.
     //
     AM_CRITICAL_END
+
+    //
+    // Inform clkmgr to resume pre-started clocks that was released.
+    //
+    if (eSleepType >= AM_HAL_SYSCTRL_SLEEP_DEEP)
+    {
+        am_hal_clkmgr_control(AM_HAL_CLKMGR_RESUME_PRESTART_CLK, NULL);
+    }
 }
 
 //*****************************************************************************

@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -74,23 +74,45 @@ extern "C"
 3.  CLK_GEN   C_
 4.  STIMER (system timer) ST_
 5.  TIMER     T_
-6.      VOS       V_
-7.      Other     O_
+6.  SYSCTRL   SC_
+7.  PDM       PDM_
 ****************************************************************************/
 
-#define MCUCTRL_HFRC            (*(volatile uint32_t*)0x400200C0)
-#define MCUCTRL_HFRC2           (*(volatile uint32_t*)0x400200C4)
-#define MCUCTRL_VREFGEN         (*(volatile uint32_t*)0x40020040)
-#define MCUCTRL_VREFGEN3        (*(volatile uint32_t*)0x40020048)
-#define MCUCTRL_VREFGEN5        (*(volatile uint32_t*)0x40020050)
-#define MCUCTRL_MISCPWRCTRL     (*(volatile uint32_t*)0x40020198)
-#define MCUCTRL_SRAMTRIMHP     (*(volatile uint32_t*)0x40020330)
-#define MCUCTRL_SRAMTRIM       (*(volatile uint32_t*)0x40020334)
-#define MCUCTRL_CPUICACHETRIM   (*(volatile uint32_t*)0x40020424)
-#define MCUCTRL_CPUDCACHETRIM   (*(volatile uint32_t*)0x40020428)
-#define MCUCTRL_SSRAMTRIM       (*(volatile uint32_t*)0x4002042C)
+#define MCUCTRL_HFRC            (*(volatile uint32_t*)0x4000A8C0)
+#define MCUCTRL_VREFGEN         (*(volatile uint32_t*)0x4000A840)
+#define MCUCTRL_VREFGEN3        (*(volatile uint32_t*)0x4000A848)
+#define MCUCTRL_VREFGEN5        (*(volatile uint32_t*)0x4000A850)
+#define MCUCTRL_MISCPWRCTRL     (*(volatile uint32_t*)0x4000A998)
+#define MCUCTRL_SRAMTRIMHP      (*(volatile uint32_t*)0x4000AB30)
+#define MCUCTRL_SRAMTRIM        (*(volatile uint32_t*)0x4000AB34)
+#define MCUCTRL_CPUICACHETRIM   (*(volatile uint32_t*)0x4000AC24)
+#define MCUCTRL_CPUDCACHETRIM   (*(volatile uint32_t*)0x4000AC28)
+#define MCUCTRL_SSRAMTRIM       (*(volatile uint32_t*)0x4000AC2C)
+
+#define SYSCTRL_ICTR            (*(volatile uint32_t*)0xE000E004)
+#define SYSCTRL_ACTLR           (*(volatile uint32_t*)0xE000E008)
+#define SYSCTRL_ICSR            (*(volatile uint32_t*)0xE000ED04)
+#define SYSCTRL_VTOR            (*(volatile uint32_t*)0xE000ED08)
+#define SYSCTRL_AIRCR           (*(volatile uint32_t*)0xE000ED0C)
+#define SYSCTRL_SCR             (*(volatile uint32_t*)0xE000ED10)
+#define SYSCTRL_CCR             (*(volatile uint32_t*)0xE000ED14)
+#define SYSCTRL_SHPR1           (*(volatile uint32_t*)0xE000ED18)
+#define SYSCTRL_SHPR2           (*(volatile uint32_t*)0xE000ED1C)
+#define SYSCTRL_SHPR3           (*(volatile uint32_t*)0xE000ED20)
+#define SYSCTRL_SHCSR           (*(volatile uint32_t*)0xE000ED24)
+#define SYSCTRL_CFSR            (*(volatile uint32_t*)0xE000ED28)
+#define SYSCTRL_HFSR            (*(volatile uint32_t*)0xE000ED2C)
+#define SYSCTRL_MMFAR           (*(volatile uint32_t*)0xE000ED34)
+#define SYSCTRL_BFAR            (*(volatile uint32_t*)0xE000ED38)
+#define SYSCTRL_CPACR           (*(volatile uint32_t*)0xE000ED88)
+#define SYSCTRL_DEMCR           (*(volatile uint32_t*)0xE000EDFC)
+#define SYSCTRL_STIR            (*(volatile uint32_t*)0xE000EF00)
+#define SYSCTRL_FPCCR           (*(volatile uint32_t*)0xE000EF34)
+#define SYSCTRL_FPCAR           (*(volatile uint32_t*)0xE000EF38)
+#define SYSCTRL_FPDSCR          (*(volatile uint32_t*)0xE000EF3C)
 
 //Define the Power profiling data structure block by block
+//Block 1: Power Control (P_)
 typedef struct
 {
     bool     bSingle;   //single shot debug on/off
@@ -111,27 +133,19 @@ typedef struct
     uint32_t P_MEMPWREVENTEN;
     uint32_t P_MMSOVERRIDE;
     uint32_t P_CPUPWRCTRL;
-    uint32_t P_PWRCTRLMODESTATUS;
     uint32_t P_CPUPWRSTATUS;
     uint32_t P_PWRACKOVR;
     uint32_t P_PWRCNTDEFVAL;
-    uint32_t P_GFXPERFREQ;
-    uint32_t P_GFXPWRSWSEL;
     uint32_t P_EPURETCFG;
+    uint32_t P_CM4PWRCTRL;
+    uint32_t P_CM4PWRSTATE;
     uint32_t P_VRCTRL;
     uint32_t P_LEGACYVRLPOVR;
     uint32_t P_VRSTATUS;
     uint32_t P_SRAMCTRL;
     uint32_t P_ADCSTATUS;
-    uint32_t P_AUDADCSTATUS;
-    uint32_t P_TONCNTRCTRL;
-    uint32_t P_LPOVRTHRESHVDDS;
-    uint32_t P_LPOVRHYSTCNT;
-    uint32_t P_LPOVRTHRESHVDDF;
-    uint32_t P_LPOVRTHRESHVDDC;
-    uint32_t P_LPOVRTHRESHVDDCLV;
-    uint32_t P_LPOVRSTAT;
     uint32_t P_MRAMEXTCTRL;
+    uint32_t P_I3CISOCTRL;
     uint32_t P_EMONCTRL;
     uint32_t P_EMONCFG0;
     uint32_t P_EMONCFG1;
@@ -156,8 +170,7 @@ typedef struct
 }
 am_util_pp_b1_t;
 
-//Define the Power profiling data structure block by block
-//Block 2: MCU Ctrl
+//Block 2: MCU Control (M_)
 typedef struct
 {
     uint32_t M_CHIPPN;
@@ -179,7 +192,6 @@ typedef struct
     uint32_t M_LDOREG1;
     uint32_t M_LDOREG2;
     uint32_t M_HFRC;
-    uint32_t M_HFRC2;
     uint32_t M_LFRC;
     uint32_t M_BODCTRL;
     uint32_t M_ADCPWRCTRL;
@@ -187,13 +199,10 @@ typedef struct
     uint32_t M_ADCBATTLOAD;
     uint32_t M_XTALCTRL;
     uint32_t M_XTALGENCTRL;
-    uint32_t M_XTALHSTRIMS;
     uint32_t M_XTALHSCTRL;
-    uint32_t M_BGTLPCTRL;
     uint32_t M_MRAMCRYPTOPWRCTRL;
-    uint32_t M_MISCPWRCTRL;
-    uint32_t M_BODISABLE;
     uint32_t M_D2ASPARE;
+    uint32_t M_BODISABLE;
     uint32_t M_BOOTLOADER;
     uint32_t M_SHADOWVALID;
     uint32_t M_SCRATCH0;
@@ -204,26 +213,20 @@ typedef struct
     uint32_t M_DBGCTRL;
     uint32_t M_OTAPOINTER;
     uint32_t M_APBDMACTRL;
-    uint32_t M_FORCEAXICLKEN;
-    uint32_t M_SRAMTRIMHP;
-    uint32_t M_SRAMTRIM;
     uint32_t M_KEXTCLKSEL;
     uint32_t M_SIMOBUCK0;
     uint32_t M_SIMOBUCK1;
     uint32_t M_SIMOBUCK2;
     uint32_t M_SIMOBUCK3;
     uint32_t M_SIMOBUCK4;
-    uint32_t M_SIMOBUCK5;
     uint32_t M_SIMOBUCK6;
     uint32_t M_SIMOBUCK7;
     uint32_t M_SIMOBUCK8;
     uint32_t M_SIMOBUCK9;
     uint32_t M_SIMOBUCK10;
     uint32_t M_SIMOBUCK11;
-    uint32_t M_SIMOBUCK12;
-    uint32_t M_SIMOBUCK13;
-    uint32_t M_SIMOBUCK14;
-    uint32_t M_SIMOBUCK15;
+    uint32_t M_D2ASPARE2;
+    uint32_t M_I3CPHYCTRL;
     uint32_t M_PWRSW0;
     uint32_t M_PWRSW1;
     uint32_t M_USBRSTCTRL;
@@ -239,161 +242,227 @@ typedef struct
     uint32_t M_SRAMWPROT1;
     uint32_t M_SRAMWPROT2;
     uint32_t M_SRAMWPROT3;
-    uint32_t M_SRAMWPROT4;
-    uint32_t M_SRAMWPROT5;
     uint32_t M_SRAMRPROT0;
     uint32_t M_SRAMRPROT1;
     uint32_t M_SRAMRPROT2;
     uint32_t M_SRAMRPROT3;
-    uint32_t M_SRAMRPROT4;
-    uint32_t M_SRAMRPROT5;
-    uint32_t M_CPUICACHETRIM;
-    uint32_t M_CPUDCACHETRIM;
-    uint32_t M_SSRAMTRIM;
-    uint32_t M_AUDADCPWRCTRL;
-    uint32_t M_AUDIO1;
-    uint32_t M_PGAADCIFCTRL;
-    uint32_t M_PGACTRL1;
-    uint32_t M_PGACTRL2;
-    uint32_t M_AUDADCPWRDLY;
     uint32_t M_SDIO0CTRL;
     uint32_t M_SDIO1CTRL;
     uint32_t M_PDMCTRL;
-    uint32_t M_MMSMISCCTRL;
-    uint32_t M_FLASHWPROT4;
-    uint32_t M_FLASHWPROT5;
-    uint32_t M_FLASHWPROT6;
-    uint32_t M_FLASHWPROT7;
-    uint32_t M_FLASHRPROT4;
-    uint32_t M_FLASHRPROT5;
-    uint32_t M_FLASHRPROT6;
-    uint32_t M_FLASHRPROT7;
-    uint32_t M_PWRSW2;
+    uint32_t M_SSRAMMISCCTRL;
+    uint32_t M_DISPSTATUS;
     uint32_t M_CPUCFG;
     uint32_t M_PLLCTL0;
     uint32_t M_PLLDIV0;
     uint32_t M_PLLDIV1;
     uint32_t M_PLLSTAT;
     uint32_t M_PLLMUXCTL;
+    uint32_t M_CM4CODEBASE;
+    uint32_t M_RADIOFINECNT;
+    uint32_t M_RADIOCLKNCNT;
 }
 am_util_pp_b2_t;
 
-//Define the Power profiling data structure block by block
-//Block 3: CLK_GEN ST and Timer
+//Block 3: Clock Generator (C_) System Timer (ST_) and Timer (T_)
 typedef struct
 {
     uint32_t C_OCTRL;
     uint32_t C_CLKOUT;
-    uint32_t C_STATUS;
     uint32_t C_HFADJ;
     uint32_t C_CLOCKENSTAT;
     uint32_t C_CLOCKEN2STAT;
     uint32_t C_CLOCKEN3STAT;
     uint32_t C_MISC;
-    uint32_t C_HF2ADJ0;
-    uint32_t C_HF2ADJ1;
-    uint32_t C_HF2ADJ2;
-    uint32_t C_HF2VAL;
     uint32_t C_LFRCCTRL;
-    uint32_t C_DISPCLKCTRL;
     uint32_t C_CLKGENSPARES;
     uint32_t C_HFRCIDLECOUNTERS;
     uint32_t C_MSPIIOCLKCTRL;
     uint32_t C_CLKCTRL;
 
     uint32_t ST_STCFG;
+    uint32_t ST_STTMR;
+    uint32_t ST_SCAPCTRL0;
+    uint32_t ST_SCAPCTRL1;
+    uint32_t ST_SCAPCTRL2;
+    uint32_t ST_SCAPCTRL3;
+    uint32_t ST_SCMPR0;
+    uint32_t ST_SCMPR1;
+    uint32_t ST_SCMPR2;
+    uint32_t ST_SCMPR3;
+    uint32_t ST_SCMPR4;
+    uint32_t ST_SCMPR5;
+    uint32_t ST_SCMPR6;
+    uint32_t ST_SCMPR7;
+    uint32_t ST_SCAPT0;
+    uint32_t ST_SCAPT1;
+    uint32_t ST_SCAPT2;
+    uint32_t ST_SCAPT3;
+    uint32_t ST_SNVR0;
+    uint32_t ST_SNVR1;
+    uint32_t ST_HALSTATES;
+    uint32_t ST_STMINTEN;
     uint32_t ST_STMINTSTAT;
+    uint32_t ST_STMINTCLR;
+    uint32_t ST_STMINTSET;
 
     uint32_t T_CTRL;
     uint32_t T_STATUS;
     uint32_t T_GLOBEN;
+    uint32_t T_INTEN;
     uint32_t T_INTSTAT;
+    uint32_t T_INTCLR;
+    uint32_t T_INTSET;
     uint32_t T_CTRL0;
+    uint32_t T_TIMER0;
+    uint32_t T_TMR0CMP0;
+    uint32_t T_TMR0CMP1;
+    uint32_t T_MODE0;
+    uint32_t T_TMR0LMTVAL;
     uint32_t T_CTRL1;
+    uint32_t T_TIMER1;
+    uint32_t T_TMR1CMP0;
+    uint32_t T_TMR1CMP1;
+    uint32_t T_MODE1;
+    uint32_t T_TMR1LMTVAL;
     uint32_t T_CTRL2;
+    uint32_t T_TIMER2;
+    uint32_t T_TMR2CMP0;
+    uint32_t T_TMR2CMP1;
+    uint32_t T_MODE2;
+    uint32_t T_TMR2LMTVAL;
     uint32_t T_CTRL3;
+    uint32_t T_TIMER3;
+    uint32_t T_TMR3CMP0;
+    uint32_t T_TMR3CMP1;
+    uint32_t T_MODE3;
+    uint32_t T_TMR3LMTVAL;
     uint32_t T_CTRL4;
+    uint32_t T_TIMER4;
+    uint32_t T_TMR4CMP0;
+    uint32_t T_TMR4CMP1;
+    uint32_t T_MODE4;
+    uint32_t T_TMR4LMTVAL;
     uint32_t T_CTRL5;
+    uint32_t T_TIMER5;
+    uint32_t T_TMR5CMP0;
+    uint32_t T_TMR5CMP1;
+    uint32_t T_MODE5;
+    uint32_t T_TMR5LMTVAL;
     uint32_t T_CTRL6;
+    uint32_t T_TIMER6;
+    uint32_t T_TMR6CMP0;
+    uint32_t T_TMR6CMP1;
+    uint32_t T_MODE6;
+    uint32_t T_TMR6LMTVAL;
     uint32_t T_CTRL7;
+    uint32_t T_TIMER7;
+    uint32_t T_TMR7CMP0;
+    uint32_t T_TMR7CMP1;
+    uint32_t T_MODE7;
+    uint32_t T_TMR7LMTVAL;
     uint32_t T_CTRL8;
+    uint32_t T_TIMER8;
+    uint32_t T_TMR8CMP0;
+    uint32_t T_TMR8CMP1;
+    uint32_t T_MODE8;
+    uint32_t T_TMR8LMTVAL;
     uint32_t T_CTRL9;
+    uint32_t T_TIMER9;
+    uint32_t T_TMR9CMP0;
+    uint32_t T_TMR9CMP1;
+    uint32_t T_MODE9;
+    uint32_t T_TMR9LMTVAL;
     uint32_t T_CTRL10;
+    uint32_t T_TIMER10;
+    uint32_t T_TMR10CMP0;
+    uint32_t T_TMR10CMP1;
+    uint32_t T_MODE10;
+    uint32_t T_TMR10LMTVAL;
     uint32_t T_CTRL11;
+    uint32_t T_TIMER11;
+    uint32_t T_TMR11CMP0;
+    uint32_t T_TMR11CMP1;
+    uint32_t T_MODE11;
+    uint32_t T_TMR11LMTVAL;
     uint32_t T_CTRL12;
+    uint32_t T_TIMER12;
+    uint32_t T_TMR12CMP0;
+    uint32_t T_TMR12CMP1;
+    uint32_t T_MODE12;
+    uint32_t T_TMR12LMTVAL;
     uint32_t T_CTRL13;
+    uint32_t T_TIMER13;
+    uint32_t T_TMR13CMP0;
+    uint32_t T_TMR13CMP1;
+    uint32_t T_MODE13;
+    uint32_t T_TMR13LMTVAL;
     uint32_t T_CTRL14;
+    uint32_t T_TIMER14;
+    uint32_t T_TMR14CMP0;
+    uint32_t T_TMR14CMP1;
+    uint32_t T_MODE14;
+    uint32_t T_TMR14LMTVAL;
     uint32_t T_CTRL15;
-
+    uint32_t T_TIMER15;
+    uint32_t T_TMR15CMP0;
+    uint32_t T_TMR15CMP1;
+    uint32_t T_MODE15;
+    uint32_t T_TMR15LMTVAL;
+    uint32_t T_TIMERSPARES;
 }
 am_util_pp_b3_t;
 
-//Block 4: Application specific registers, AUDADC
+//Block 4: System Control (SC_)
 typedef struct
 {
-  uint32_t AU_CFG;
-  uint32_t AU_STAT;
-  uint32_t AU_SWT;
-  uint32_t AU_SL0CFG;
-  uint32_t AU_SL1CFG;
-  uint32_t AU_SL2CFG;
-  uint32_t AU_SL3CFG;
-  uint32_t AU_SL4CFG;
-  uint32_t AU_SL5CFG;
-  uint32_t AU_SL6CFG;
-  uint32_t AU_SL7CFG;
-  uint32_t AU_WULIM;
-  uint32_t AU_WLLIM;
-  uint32_t AU_SCWLIM;
-  uint32_t AU_FIFO;
-  uint32_t AU_FIFOPR;
-  uint32_t AU_FIFOSTAT;
-  uint32_t AU_DATAOFFSET;
-  uint32_t AU_ZXCFG;
-  uint32_t AU_ZXLIM;
-  uint32_t AU_GAINCFG;
-  uint32_t AU_GAIN;
-  uint32_t AU_SATCFG;
-  uint32_t AU_SATLIM;
-  uint32_t AU_SATMAX;
-  uint32_t AU_SATCLR;
-  uint32_t AU_IEREN;
-  uint32_t AU_IERSTAT;
-  uint32_t AU_IERCLR;
-  uint32_t AU_IERSET;
-  uint32_t AU_DMATRIGEN;
-  uint32_t AU_DMATRIGSTAT;
-  uint32_t AU_DMACFG;
-  uint32_t AU_DMATOTCOUNT;
-  uint32_t AU_DMATARGADDR;
-  uint32_t AU_DMASTAT;
+    uint32_t SC_ICTR;
+    uint32_t SC_ACTLR;
+    uint32_t SC_ICSR;
+    uint32_t SC_VTOR;
+    uint32_t SC_AIRCR;
+    uint32_t SC_SCR;
+    uint32_t SC_CCR;
+    uint32_t SC_SHPR1;
+    uint32_t SC_SHPR2;
+    uint32_t SC_SHPR3;
+    uint32_t SC_SHCSR;
+    uint32_t SC_CFSR;
+    uint32_t SC_HFSR;
+    uint32_t SC_MMFAR;
+    uint32_t SC_BFAR;
+    uint32_t SC_CPACR;
+    uint32_t SC_DEMCR;
+    uint32_t SC_STIR;
+    uint32_t SC_FPCCR;
+    uint32_t SC_FPCAR;
+    uint32_t SC_FPDSCR;
 }
 am_util_pp_b4_t;
 
-//Block 5: Application specific registers, PDM
+//Block 5: Application specific registers, PDM (PDM_)
 typedef struct
 {
-  uint32_t PDM_CTRL;
-  uint32_t PDM_CORECFG0;
-  uint32_t PDM_CORECFG1;
-  uint32_t PDM_CORECTRL;
-  uint32_t PDM_FIFOCNT;
-  uint32_t PDM_FIFOREAD;
-  uint32_t PDM_FIFOFLUSH;
-  uint32_t PDM_FIFOTHR;
-  uint32_t PDM_INTEN;
-  uint32_t PDM_INTSTAT;
-  uint32_t PDM_INTCLR;
-  uint32_t PDM_INTSET;
-  uint32_t PDM_DMATRIGEN;
-  uint32_t PDM_DMATRIGSTAT;
-  uint32_t PDM_DMACFG;
-  uint32_t PDM_DMATARGADDR;
-  uint32_t PDM_DMASTAT;
-  uint32_t PDM_DMATARGADDRNEXT;
-  uint32_t PDM_DMATOTCOUNTNEXT;
-  uint32_t PDM_DMAENNEXTCTRL;
-  uint32_t PDM_DMATOTCOUNT;
+    uint32_t PDM_CTRL;
+    uint32_t PDM_CORECFG0;
+    uint32_t PDM_CORECFG1;
+    uint32_t PDM_CORECTRL;
+    uint32_t PDM_FIFOCNT;
+    uint32_t PDM_FIFOREAD;
+    uint32_t PDM_FIFOFLUSH;
+    uint32_t PDM_FIFOTHR;
+    uint32_t PDM_INTEN;
+    uint32_t PDM_INTSTAT;
+    uint32_t PDM_INTCLR;
+    uint32_t PDM_INTSET;
+    uint32_t PDM_DMATRIGEN;
+    uint32_t PDM_DMATRIGSTAT;
+    uint32_t PDM_DMACFG;
+    uint32_t PDM_DMATARGADDR;
+    uint32_t PDM_DMASTAT;
+    uint32_t PDM_DMATARGADDRNEXT;
+    uint32_t PDM_DMATOTCOUNTNEXT;
+    uint32_t PDM_DMAENNEXTCTRL;
+    uint32_t PDM_DMATOTCOUNT;
 }
 am_util_pp_b5_t;
 

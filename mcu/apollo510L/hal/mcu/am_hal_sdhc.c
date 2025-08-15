@@ -4,9 +4,45 @@
 //!
 //! @brief Functions for interfacing with the SDHC.
 //!
-//! @addtogroup sdhc SDHC host controller
+//! @addtogroup sdhc_ap510L SDHC host controller
 //! @ingroup apollo510L_hal
 //! @{
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//!          the SD Host Controller (SDHC) on Apollo5 devices. It supports
+//!          SD card initialization, data transfer, command execution, and
+//!          interrupt handling for secure digital memory card operations.
+//!
+//! @section hal_sdhc_features Key Features
+//!
+//! 1. @b SD @b Card @b Support: Full SD card initialization and management.
+//! 2. @b Data @b Transfer: High-speed data transfer operations.
+//! 3. @b Command @b Execution: SD command execution and response handling.
+//! 4. @b Interrupt @b Support: Comprehensive interrupt management for SD events.
+//! 5. @b Bus @b Configuration: Flexible bus width and clock configuration.
+//!
+//! @section hal_sdhc_functionality Functionality
+//!
+//! - Initialize and configure SD Host Controller
+//! - Handle SD card detection and initialization
+//! - Execute SD commands and handle responses
+//! - Support data transfer operations (read/write)
+//! - Manage SDHC interrupts and status monitoring
+//!
+//! @section hal_sdhc_usage Usage
+//!
+//! 1. Initialize SDHC using am_hal_sdhc_initialize()
+//! 2. Configure bus parameters and clock settings
+//! 3. Set up SD card and host configuration
+//! 4. Execute SD commands and handle data transfer
+//! 5. Monitor SDHC interrupts and status
+//!
+//! @section hal_sdhc_configuration Configuration
+//!
+//! - @b Bus @b Width: Configure 1-bit, 4-bit, or 8-bit bus width
+//! - @b Clock @b Settings: Set up SD bus clock frequencies
+//! - @b Voltage @b Levels: Configure bus voltage levels
+//! - @b Interrupts: Set up interrupt sources and handlers
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

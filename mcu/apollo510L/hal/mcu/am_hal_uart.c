@@ -4,9 +4,45 @@
 //!
 //! @brief Hardware abstraction for the UART
 //!
-//! @addtogroup uart UART Functionality
+//! @addtogroup uart_ap510L UART Functionality
 //! @ingroup apollo510L_hal
 //! @{
+//!
+//! Purpose: This module provides comprehensive UART (Universal Asynchronous
+//!          Receiver/Transmitter) hardware abstraction for Apollo5 devices.
+//!          It supports UART configuration, data transfer, interrupt handling,
+//!          and DMA operations for serial communication applications.
+//!
+//! @section hal_uart_features Key Features
+//!
+//! 1. @b UART @b Configuration: Flexible baud rate and parameter configuration.
+//! 2. @b Data @b Transfer: Support for blocking and non-blocking data transfer.
+//! 3. @b DMA @b Support: High-speed DMA-based data transfer operations.
+//! 4. @b Interrupt @b Handling: Comprehensive interrupt management for UART events.
+//! 5. @b FIFO @b Management: Advanced FIFO handling and buffer management.
+//!
+//! @section hal_uart_functionality Functionality
+//!
+//! - Initialize and configure UART peripheral
+//! - Handle data transfer operations (blocking/non-blocking)
+//! - Support DMA-based high-speed transfers
+//! - Manage FIFO buffers and data flow
+//! - Handle UART interrupts and status monitoring
+//!
+//! @section hal_uart_usage Usage
+//!
+//! 1. Initialize UART using am_hal_uart_initialize()
+//! 2. Configure UART parameters and baud rate
+//! 3. Set up DMA or interrupt handling as needed
+//! 4. Perform data transfer operations
+//! 5. Handle UART events and status monitoring
+//!
+//! @section hal_uart_configuration Configuration
+//!
+//! - @b Baud @b Rate: Configure UART baud rate and timing
+//! - @b Data @b Format: Set up data bits, parity, and stop bits
+//! - @b DMA @b Settings: Configure DMA transfer parameters
+//! - @b Interrupts: Set up interrupt sources and handlers
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -1197,6 +1233,27 @@ am_hal_uart_clock_enable(uint32_t ui32Module, bool bEnable, am_hal_uart_clock_sr
 
     if ( bEnable )
     {
+        if (eUartRequestClk == AM_HAL_CLKMGR_CLK_ID_PLLPOSTDIV)
+        {
+            uint32_t ui32PLLPOSTDIVFreq = 0;
+
+            //
+            // Get the PLLPOSTDIV frequency.
+            //
+            ui32Status = am_hal_clkmgr_clock_config_get(AM_HAL_CLKMGR_CLK_ID_PLLPOSTDIV, &ui32PLLPOSTDIVFreq, NULL);
+            if (ui32Status != AM_HAL_STATUS_SUCCESS)
+            {
+                return ui32Status;
+            }
+            //
+            // Check if current PLLPOSTDIV frequency matches the expected frequency.
+            //
+            if (ui32PLLPOSTDIVFreq != AM_HAL_UART_PLLCLK_FREQ)
+            {
+                return AM_HAL_STATUS_FAIL;
+            }
+        }
+
         //
         // Request destination clock from clock manager
         //

@@ -2,12 +2,47 @@
 //
 //! @file am_hal_timer.c
 //!
-//! @brief
+//! @brief Functions for interfacing with the timer (TIMER).
 //!
-//! @addtogroup timer Timer Functionality
+//! @addtogroup timer_ap510L Timer Functionality
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for configuring, controlling, and
+//!          managing the Timer peripheral on Apollo5 devices. It supports
+//!          multiple timer instances, various clock sources, compare events,
+//!          and interrupt handling for precise timing and PWM applications.
+//!
+//! @section hal_timer_features Key Features
+//!
+//! 1. @b Multiple @b Timers: Support for multiple timer instances.
+//! 2. @b Flexible @b Clock @b Sources: Various clock source options and dividers.
+//! 3. @b Compare @b Events: Dual compare channels for precise timing control.
+//! 4. @b Interrupt @b Support: Comprehensive interrupt handling for timer events.
+//! 5. @b Output @b Control: Configurable timer output for PWM applications.
+//!
+//! @section hal_timer_functionality Functionality
+//!
+//! - Configure timer parameters and clock sources
+//! - Start, stop, and control timer operations
+//! - Set up compare events and timing control
+//! - Handle timer interrupts and status monitoring
+//! - Configure timer outputs for external control
+//!
+//! @section hal_timer_usage Usage
+//!
+//! 1. Configure the timer using am_hal_timer_config()
+//! 2. Start the timer with am_hal_timer_enable()
+//! 3. Set up compare events as needed
+//! 4. Handle timer interrupts and monitor status
+//! 5. Stop or restart the timer as required
+//!
+//! @section hal_timer_configuration Configuration
+//!
+//! - @b Timer @b Instances: Select appropriate timer number
+//! - @b Clock @b Sources: Choose from various clock options
+//! - @b Compare @b Values: Configure compare channels
+//! - @b Interrupts: Set up interrupt sources and handlers
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

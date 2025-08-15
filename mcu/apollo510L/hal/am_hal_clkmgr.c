@@ -5,11 +5,46 @@
 //! @brief Clock manager functions that manage system clocks and minimize
 //!        power consumption by powering down clocks when possible.
 //!
-//! @addtogroup clkmgr510L CLKMGR - Clock Manager
-//! @ingroup apollo330P_510L_hal
+//! @addtogroup clkmgr_ap510L CLKMGR - Clock Manager
+//! @ingroup apollo510L_hal
 //! @{
-//
-// ****************************************************************************
+//!
+//! Purpose: This module provides comprehensive clock management functions for
+//! Apollo5 devices, handling system clocks including HFRC, HFRC2, SYSPLL,
+//! XTAL_HS, XTAL_LS, and LFRC. It manages clock requests, releases,
+//! configuration, and power management to minimize power consumption.
+//!
+//! @section hal_clkmgr_features Key Features
+//!
+//! 1. @b Multi-Clock @b Support: Manage HFRC, HFRC2, SYSPLL, XTAL_HS, XTAL_LS, LFRC.
+//! 2. @b Power @b Management: Automatic clock gating and power-down for efficiency.
+//! 3. @b User @b Tracking: Track multiple users requesting the same clock.
+//! 4. @b Clock @b Stabilization: Handle clock startup and stabilization timing.
+//! 5. @b Configuration @b Management: Dynamic clock configuration and frequency control.
+//!
+//! @section hal_clkmgr_functionality Functionality
+//!
+//! - Request and release system clocks with user tracking
+//! - Configure clock frequencies and parameters
+//! - Handle clock stabilization and startup timing
+//! - Manage power states and automatic clock gating
+//! - Support for board-specific clock configurations
+//!
+//! @section hal_clkmgr_usage Usage
+//!
+//! 1. Request clocks using am_hal_clkmgr_clock_request()
+//! 2. Configure clock parameters as needed
+//! 3. Monitor clock status and user counts
+//! 4. Release clocks when no longer needed
+//! 5. Use board info functions for custom configurations
+//!
+//! @section hal_clkmgr_configuration Configuration
+//!
+//! - @b Board @b Info: Configure board-specific clock parameters
+//! - @b User @b IDs: Track clock usage by different modules
+//! - @b Stabilization @b Timing: Set up clock startup delays
+//! - @b Power @b States: Configure automatic power management
+//****************************************************************************
 
 // ****************************************************************************
 //
@@ -42,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -54,7 +89,7 @@
 #include "mcu/am_hal_clkgen_private.h"
 
 #define AM_HAL_CLKMGR_HFRC_ADJ_WAIT_TIME_US             (10000)
-#define AM_HAL_CLKMGR_XTAL_HS_STARTUP_WAIT_TIME_US      (1500)
+#define AM_HAL_CLKMGR_XTAL_HS_STARTUP_WAIT_TIME_US      (3000)
 #define AM_HAL_CLKMGR_CLOCK_STABILIZING_LOOP_US         (10)
 
 #define AM_HAL_CLKMGR_HFRC_ADJ_WAIT_LOOP_CNT            (AM_HAL_CLKMGR_HFRC_ADJ_WAIT_TIME_US / AM_HAL_CLKMGR_CLOCK_STABILIZING_LOOP_US)
@@ -125,6 +160,10 @@ static bool g_bSysPllDisabledForDeepSleep = false;
 static am_hal_clkmgr_syspll_fref_priority_t g_sFrefPriority = {.high = AM_HAL_SYSPLL_FREFSEL_HFRC192DIV4,
                                                                .mid  = AM_HAL_SYSPLL_FREFSEL_XTAL48MHz,
                                                                .low  = AM_HAL_SYSPLL_FREFSEL_EXTREFCLK};
+
+// Variable to record the clocks that are released as a result of prestart
+// release control
+static uint32_t g_ui32PrestartReleasedClk = 0;
 
 //-----------------------------------------------------------------------------
 // Static function prototypes
@@ -769,6 +808,10 @@ static uint32_t am_hal_clkmgr_request_LFRC(am_hal_clkmgr_user_id_e eUserId)
     //
     AM_CRITICAL_BEGIN
     am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_LFRC, eUserId, true);
+    if ( eUserId != AM_HAL_CLKMGR_USER_ID_PRESTART )
+    {
+        am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_LFRC, AM_HAL_CLKMGR_USER_ID_PRESTART, false);
+    }
     AM_CRITICAL_END
 
     return AM_HAL_STATUS_SUCCESS;
@@ -878,6 +921,10 @@ static uint32_t am_hal_clkmgr_request_XTAL_LS(am_hal_clkmgr_user_id_e eUserId)
         // Set User Flag for XTAL_LS clock
         //
         am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_XTAL_LS, eUserId, true);
+        if ( eUserId != AM_HAL_CLKMGR_USER_ID_PRESTART )
+        {
+            am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_XTAL_LS, AM_HAL_CLKMGR_USER_ID_PRESTART, false);
+        }
     }
     AM_CRITICAL_END
 
@@ -967,6 +1014,10 @@ static uint32_t am_hal_clkmgr_request_EXTREF_CLK(am_hal_clkmgr_user_id_e eUserId
     // Set User Flag for EXTREF_CLK clock
     //
     am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_EXTREF_CLK, eUserId, true);
+    if ( eUserId != AM_HAL_CLKMGR_USER_ID_PRESTART )
+    {
+        am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_EXTREF_CLK, AM_HAL_CLKMGR_USER_ID_PRESTART, false);
+    }
     AM_CRITICAL_END
 
     return AM_HAL_STATUS_SUCCESS;
@@ -1234,6 +1285,10 @@ static uint32_t am_hal_clkmgr_request_XTAL_HS(am_hal_clkmgr_user_id_e eUserId)
         // Set user flag for XTAL_HS clock
         //
         am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_XTAL_HS, eUserId, true);
+        if ( eUserId != AM_HAL_CLKMGR_USER_ID_PRESTART )
+        {
+            am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_XTAL_HS, AM_HAL_CLKMGR_USER_ID_PRESTART, false);
+        }
 
         //
         // Update clock request wait timer
@@ -1486,6 +1541,10 @@ static uint32_t am_hal_clkmgr_request_HFRC(am_hal_clkmgr_user_id_e eUserId)
         if (ui32Status == AM_HAL_STATUS_SUCCESS)
         {
             am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_HFRC, eUserId, true);
+            if ( eUserId != AM_HAL_CLKMGR_USER_ID_PRESTART )
+            {
+                am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_HFRC, AM_HAL_CLKMGR_USER_ID_PRESTART, false);
+            }
         }
 
         if (g_bClkStabilizing_HFRC_ADJ)
@@ -1811,6 +1870,10 @@ static uint32_t am_hal_clkmgr_request_PLLVCO(am_hal_clkmgr_user_id_e eUserId)
     //
     AM_CRITICAL_BEGIN
     am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_PLLVCO, eUserId, true);
+    if ( eUserId != AM_HAL_CLKMGR_USER_ID_PRESTART )
+    {
+        am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_PLLVCO, AM_HAL_CLKMGR_USER_ID_PRESTART, false);
+    }
     AM_CRITICAL_END
 
     ui32Status = am_hal_clkmgr_request_SYSPLL(AM_HAL_CLKMGR_USER_ID_PLLVCO);
@@ -1895,6 +1958,10 @@ static uint32_t am_hal_clkmgr_request_PLLPOSTDIV(am_hal_clkmgr_user_id_e eUserId
     //
     AM_CRITICAL_BEGIN
     am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_PLLPOSTDIV, eUserId, true);
+    if ( eUserId != AM_HAL_CLKMGR_USER_ID_PRESTART )
+    {
+        am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_PLLPOSTDIV, AM_HAL_CLKMGR_USER_ID_PRESTART, false);
+    }
     AM_CRITICAL_END
 
     ui32Status = am_hal_clkmgr_request_SYSPLL(AM_HAL_CLKMGR_USER_ID_PLLPOSTDIV);
@@ -2065,6 +2132,15 @@ uint32_t am_hal_clkmgr_clock_request(am_hal_clkmgr_clock_id_e eClockId, am_hal_c
     if (eUserId >= AM_HAL_CLKMGR_USER_ID_MAX)
     {
         return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    //
+    // If pre-start user is requesting for a clock, and the clock is already
+    // started, return success directly.
+    //
+    if ((eUserId == AM_HAL_CLKMGR_USER_ID_PRESTART) && (am_hal_clkmgr_is_requested(eClockId)))
+    {
+        return AM_HAL_STATUS_SUCCESS;
     }
 
     switch(eClockId)
@@ -2405,6 +2481,31 @@ uint32_t am_hal_clkmgr_control(am_hal_clkmgr_control_e eControl, const void *pCo
             if (ui32Status == AM_HAL_STATUS_SUCCESS)
             {
                 memcpy(&g_sFrefPriority, prio, sizeof(am_hal_clkmgr_syspll_fref_priority_t));
+            }
+            break;
+        }
+
+        case AM_HAL_CLKMGR_RELEASE_PRESTART_CLK:
+        {
+            am_hal_clkmgr_clock_id_e eClkID;
+            for (eClkID = AM_HAL_CLKMGR_CLK_ID_LFRC; eClkID < AM_HAL_CLKMGR_CLK_ID_MAX; eClkID++)
+            {
+                if (am_hal_clkmgr_is_requested_by_user(eClkID, AM_HAL_CLKMGR_USER_ID_PRESTART))
+                {
+                    g_ui32PrestartReleasedClk |= (1 << eClkID);
+                    am_hal_clkmgr_clock_release(eClkID, AM_HAL_CLKMGR_USER_ID_PRESTART);
+                }
+            }
+            break;
+        }
+
+        case AM_HAL_CLKMGR_RESUME_PRESTART_CLK:
+        {
+            while (g_ui32PrestartReleasedClk)
+            {
+                uint32_t ui32BitSetPos = __builtin_ctz(g_ui32PrestartReleasedClk);
+                am_hal_clkmgr_clock_request((am_hal_clkmgr_clock_id_e)ui32BitSetPos, AM_HAL_CLKMGR_USER_ID_PRESTART);
+                g_ui32PrestartReleasedClk &= ~(1U << ui32BitSetPos);
             }
             break;
         }

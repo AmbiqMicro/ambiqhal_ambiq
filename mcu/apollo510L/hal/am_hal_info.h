@@ -4,7 +4,7 @@
 //!
 //! @brief INFO helper functions
 //!
-//! @addtogroup info5 INFO Functionality
+//! @addtogroup info5_ap510L INFO Functionality
 //! @ingroup apollo510L_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_INFO_H
@@ -80,6 +80,21 @@ typedef enum
 //
 //*****************************************************************************
 extern bool am_hal_info0_valid(void);
+
+//*****************************************************************************
+//
+// AM_INFO_FLD2VAL()
+// This macro allows decoding of INFOx register fields, similar
+// to the CMSIS _FLD2VAL macro.
+// Parameters:
+//  info: 0, 1, or C (C must be capitalized)
+//  field: The field of the register.
+//  value: The value of the entire register as read from the INFOx space.
+//
+// AM_INFO_VAL2FLD() is not provided as the INFOx register definitions already generate these for each register.
+//
+//*****************************************************************************
+#define AM_INFO_FLD2VAL(info, field, value) (((uint32_t)(value) & AM_REG_INFO ##info## _ ## field ## _Msk) >> AM_REG_INFO ## info ## _ ## field ## _Pos)
 
 //*****************************************************************************
 //

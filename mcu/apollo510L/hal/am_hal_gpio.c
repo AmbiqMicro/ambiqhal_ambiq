@@ -4,10 +4,44 @@
 //!
 //! @brief General Purpose Input Output Functionality
 //!
-//! @addtogroup gpio GPIO - General Purpose Input Output
+//! @addtogroup gpio_ap510L GPIO - General Purpose Input Output
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides a comprehensive hardware abstraction layer for
+//! General Purpose Input/Output (GPIO) pins on Apollo5 devices. It enables pin
+//! configuration, state reading/writing, interrupt handling, and various GPIO
+//! modes for flexible digital I/O control.
+//!
+//! @section hal_gpio_features Key Features
+//!
+//! 1. @b Pin @b Configuration: Configure pins as input, output, or special functions.
+//! 2. @b State @b Control: Read and write pin states with various options.
+//! 3. @b Interrupt @b Support: Comprehensive interrupt handling for GPIO events.
+//! 4. @b Function @b Selection: Support for multiple pin functions and modes.
+//! 5. @b Power @b Management: Efficient pin state management for low-power operation.
+//!
+//! @section hal_gpio_functionality Functionality
+//!
+//! - Configure GPIO pins for various modes and functions
+//! - Read and write pin states with different options
+//! - Set up and handle GPIO interrupts
+//! - Manage pin configurations and overrides
+//! - Support for multiple GPIO channels and interrupt sources
+//!
+//! @section hal_gpio_usage Usage
+//!
+//! 1. Configure pins using am_hal_gpio_pinconfig() or related functions
+//! 2. Read/write pin states as needed
+//! 3. Set up interrupts if required
+//! 4. Handle GPIO events in interrupt service routines
+//!
+//! @section hal_gpio_configuration Configuration
+//!
+//! - @b Pin @b Modes: Input, output, tristate, open-drain, disabled
+//! - @b Pull-up/Pull-down: Configure internal pull resistors
+//! - @b Interrupts: Set up interrupt channels and masks
+//! - @b Function @b Selection: Choose pin functions and modes
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +75,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

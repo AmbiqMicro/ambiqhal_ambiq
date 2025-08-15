@@ -22,7 +22,7 @@ released.
 URL
 ===
 
-   https://github.com/AmbiqMicro/ambiqhal_ambiq/tree/apollo510-dev
+   https://github.com/AmbiqMicro/hal-zephyr-alpha
 
 Status
 ======
@@ -37,6 +37,8 @@ Status
 | Apollo4 Blue Plus      | v4.5.0                         |
 +------------------------+--------------------------------+
 | Apollo510              | v5.0.0                         |
++------------------------+--------------------------------+
+| Apollo510L             | v5.2.alpha.1                   |
 +------------------------+--------------------------------+
 
 Purpose

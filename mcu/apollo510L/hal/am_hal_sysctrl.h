@@ -2,9 +2,9 @@
 //
 //! @file am_hal_sysctrl.h
 //!
-//! @brief Functions for interfacing with the M4F system control registers
+//! @brief Functions for interfacing with the M55 system control registers
 //!
-//! @addtogroup sysctrl4 SYSCTRL - System Control
+//! @addtogroup sysctrl4_ap510L SYSCTRL - System Control
 //! @ingroup apollo510L_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SYSCTRL_H
@@ -64,6 +64,8 @@ typedef enum
   AM_HAL_SYSCTRL_SLEEP_DEEP,
   AM_HAL_SYSCTRL_SLEEP_DEEPER
 } am_hal_sysctrl_sleep_type_e;
+
+#define AM_HAL_SYSCTRL_SLEEP_DEEPMAX    AM_HAL_SYSCTRL_SLEEP_DEEPER
 //! @}
 
 //*****************************************************************************

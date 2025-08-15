@@ -1,16 +1,49 @@
-// ****************************************************************************
+//*****************************************************************************
 //
 //! @file am_hal_spotmgr_trimver_1.c
 //!
-//! @brief SPOT manager functions that manage power states
+//! @brief SPOT Manager Trim Version 1 Implementation.
 //!
-//! @addtogroup spotmgr510l SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr_trim1_ap510L SPOT Manager Trim Version 1
 //! @ingroup apollo510L_hal
 //! @{
-//
-// ****************************************************************************
+//!
+//! Purpose: This module implements version 1 of the SPOT (System Power Optimization)
+//! trim settings. It provides specific voltage, frequency, and power optimization
+//! configurations for Apollo5 devices using the version 1 trim specifications.
+//!
+//! @section hal_spotmgr_trim1_features Key Features
+//!
+//! 1. @b Trim @b Settings: Version 1 specific trim configurations.
+//! 2. @b Calibration @b Data: Factory-calibrated power parameters.
+//! 3. @b Power @b Curves: Optimized voltage-frequency relationships.
+//! 4. @b Operating @b Points: Pre-defined performance-power points.
+//! 5. @b Temperature @b Compensation: Thermal adjustment parameters.
+//!
+//! @section hal_spotmgr_trim1_functionality Functionality
+//!
+//! - Load and apply version 1 trim settings
+//! - Manage calibrated operating points
+//! - Handle temperature compensation
+//! - Provide version-specific optimizations
+//! - Support power profile transitions
+//!
+//! @section hal_spotmgr_trim1_usage Usage
+//!
+//! 1. Initialize trim version 1 settings
+//! 2. Apply calibrated parameters
+//! 3. Monitor and adjust operating points
+//! 4. Handle temperature variations
+//!
+//! @section hal_spotmgr_trim1_configuration Configuration
+//!
+//! - @b Trim @b Values: Version 1 specific calibration data
+//! - @b Operating @b Points: Pre-defined performance levels
+//! - @b Temperature @b Ranges: Thermal compensation settings
+//! - @b Version @b Control: Trim version management
+//*****************************************************************************
 
-// ****************************************************************************
+//*****************************************************************************
 //
 // Copyright (c) 2025, Ambiq Micro, Inc.
 // All rights reserved.
@@ -29,9 +62,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -44,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-c53721a2d8 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -54,8 +84,6 @@
 #include "am_mcu_apollo.h"
 
 #if !AM_HAL_SPOTMGR_TRIMVER_1_DISABLE
-
-
 
 //*****************************************************************************
 //
@@ -74,9 +102,9 @@ spotmgr_buck_deepsleep_state_determine(am_hal_spotmgr_power_status_t * psPwrStat
     // peripheral or SYSPLL enabled in deepsleep or temperature range is HIGH, the
     // simobuck must be forced to stay in active mode in deepsleep.
     //
-    if ((psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH) ||
-        (psPwrStatus->ui32DevPwrSt & DEVPWRST_MONITOR_PERIPH_MASK)    ||
-        (psPwrStatus->ui32AudSSPwrSt & AUDSSPWRST_MONITOR_PERIPH_MASK)||
+    if ((psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH)   ||
+        (psPwrStatus->ui32DevPwrSt & DEVPWRST_MONITOR_PERIPH_MASK)      ||
+        (psPwrStatus->ui32AudSSPwrSt & AUDSSPWRST_MONITOR_PERIPH_MASK)  ||
         (MCUCTRL->PLLCTL0_b.SYSPLLPDB == MCUCTRL_PLLCTL0_SYSPLLPDB_ENABLE))
     {
         g_bFrcBuckAct = true;
@@ -125,6 +153,7 @@ spotmgr_buck_deepsleep_state_determine(am_hal_spotmgr_power_status_t * psPwrStat
         }
     }
 }
+
 //*****************************************************************************
 //
 //! Inline function to convert temperature in float to temperature range
@@ -201,16 +230,54 @@ am_hal_spotmgr_trimver_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus,
     bool bLogSleepChangeEvt = false;
 #endif
     //
+    // static variable for temperature range
+    //
+    static am_hal_spotmgr_tempco_range_e eCurTempRangeStatic = AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH; // For safety, set the default range to HIGH
+    //
     // Check if SIMOBUCK is enabled
     //
-    if ( PWRCTRL->VRSTATUS_b.SIMOBUCKST != PWRCTRL_VRSTATUS_SIMOBUCKST_ACT )
+    if ((PWRCTRL->VRSTATUS_b.SIMOBUCKST != PWRCTRL_VRSTATUS_SIMOBUCKST_ACT) &&
+        (eStimulus != AM_HAL_SPOTMGR_STIM_INIT_STATE))
     {
+        //
+        // If the stimulus is temperature, note it down even if SIMOBUCK is not active
+        //
+        if (eStimulus == AM_HAL_SPOTMGR_STIM_TEMP)
+        {
+            if (pArgs != NULL)
+            {
+                am_hal_spotmgr_tempco_param_t *psTemp = (am_hal_spotmgr_tempco_param_t *)pArgs;
+                eCurTempRangeStatic = spotmgr_temp_to_range(psTemp->fTemperature);
+
+                switch(eCurTempRangeStatic)
+                {
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_LOW:
+                        psTemp->fRangeLower = LOW_LIMIT;
+                        psTemp->fRangeHigher = BUCK_LP_TEMP_THRESHOLD;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH:
+                        psTemp->fRangeLower = BUCK_LP_TEMP_THRESHOLD - TEMP_HYSTERESIS;
+                        psTemp->fRangeHigher = HIGH_LIMIT;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE:
+                        psTemp->fRangeLower = 0.0f;
+                        psTemp->fRangeHigher = 0.0f;
+                        return AM_HAL_STATUS_INVALID_ARG;
+                }
+            }
+            else
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+        }
+        //
+        // Return success when SIMOBUCK is not active
+        //
         return AM_HAL_STATUS_SUCCESS;
     }
     //
     // Static variables for storing the last/current status, initialise them to the default values after MCU powering up.
     //
-    static am_hal_spotmgr_tempco_range_e eCurTempRangeStatic = AM_HAL_SPOTMGR_TEMPCO_RANGE_LOW;    // The default state is 7. The temp range is VERY_LOW in state 7.
     static am_hal_spotmgr_cpu_state_e eLastCpuStateStatic = AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_LP;          // The default CPU state after MCU powering up is LP.
     AM_CRITICAL_BEGIN
 #if defined(AM_HAL_SPOTMGR_PROFILING) && defined(AM_HAL_SPOTMGR_PROFILING_VERBOSE)
@@ -259,12 +326,16 @@ am_hal_spotmgr_trimver_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus,
         sPwrStatus.eGpuState = (sPwrStatus.ui32DevPwrSt & PWRCTRL_DEVPWRSTATUS_PWRSTGFX_Msk) ?
                                AM_HAL_SPOTMGR_GPUSTATE_ACTIVE :
                                AM_HAL_SPOTMGR_GPUSTATE_OFF;
-        sPwrStatus.eCpuState = eLastCpuStateStatic;
+        sPwrStatus.eCpuState = (PWRCTRL->MCUPERFREQ_b.MCUPERFREQ == AM_HAL_PWRCTRL_MCU_MODE_LOW_POWER) ? AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_LP :
+                               ((PWRCTRL->MCUPERFREQ_b.MCUPERFREQ == AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE1) ? AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_HP1 : AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_HP2);
         //
         // Get the requested/target status
         //
         switch (eStimulus)
         {
+            case AM_HAL_SPOTMGR_STIM_INIT_STATE:
+                break;
+
             case AM_HAL_SPOTMGR_STIM_DEVPWR:
                 if (bOn)
                 {
@@ -446,6 +517,15 @@ uint32_t
 am_hal_spotmgr_trimver_1_init(void)
 {
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
+#ifdef AM_HAL_SPOTMGR_PROFILING
+    am_hal_spotmgr_changelog_t changeLog;
+    changeLog.u.s.pwrState = 0;
+    changeLog.u.s.tonState = 0;
+    changeLog.u.s.eStimulus = AM_HAL_SPOTMGR_PROFILING_ESTIM_INVALID;
+    changeLog.u.s.bOn = AM_HAL_SPOTMGR_PROFILING_BON_INVALID;
+    changeLog.args = 0xDEADBEEF;
+    am_hal_spotmgr_log_change(&changeLog);
+#endif
 
     return ui32Status;
 }
@@ -453,44 +533,51 @@ am_hal_spotmgr_trimver_1_init(void)
 //*****************************************************************************
 //
 //! @brief Reset power state to POR default
+//!        Do not report a fixed temperature here, user must report temperature
+//!        after transioning to a new image to make sure SIMOBUCK state is
+//!        correct in deep sleep or deeper sleep.
 //!
 //! @return SUCCESS or other Failures.
 //
 //*****************************************************************************
 uint32_t am_hal_spotmgr_trimver_1_default_reset(void)
 {
-    am_hal_pwrctrl_temp_thresh_t dummy;
+    bool bEnabled = false;
     //
-    // Turn on OTP if all peripherals are all off
+    // Make sure all peripherals are off except OTP, and turn on OTP if it is off.
     //
-    if ((PWRCTRL->DEVPWRSTATUS == 0) &&
+    if (((PWRCTRL->DEVPWRSTATUS & ~PWRCTRL_DEVPWRSTATUS_PWRSTOTP_Msk) == 0) &&
         (PWRCTRL->AUDSSPWRSTATUS == 0 ))
     {
-        if (am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_OTP) != AM_HAL_STATUS_SUCCESS)
+        if (am_hal_pwrctrl_periph_enabled(AM_HAL_PWRCTRL_PERIPH_OTP, &bEnabled) == AM_HAL_STATUS_SUCCESS)
         {
+            if (!bEnabled)
+            {
+                if (am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_OTP) != AM_HAL_STATUS_SUCCESS)
+                {
+                    //
+                    // Failed to turn on OTP
+                    //
+                    return AM_HAL_STATUS_FAIL;
+                }
+            }
+        }
+        else
+        {
+            //
+            // Failed to get OTP power status
+            //
             return AM_HAL_STATUS_FAIL;
         }
     }
     else
     {
+        //
+        // Return error, users should turn off all peripherals
+        //
         return AM_HAL_STATUS_FAIL;
     }
-    //
-    // Report the room temperature to spotmgr
-    //
-    if (am_hal_pwrctrl_temp_update(25.0f, &dummy) != AM_HAL_STATUS_SUCCESS)
-    {
-        return AM_HAL_STATUS_FAIL;
-    }
-#ifdef AM_HAL_SPOTMGR_PROFILING
-    am_hal_spotmgr_changelog_t changeLog;
-    changeLog.u.s.pwrState = 7;
-    changeLog.u.s.tonState = 5;
-    changeLog.u.s.eStimulus = AM_HAL_SPOTMGR_PROFILING_ESTIM_INVALID;
-    changeLog.u.s.bOn = AM_HAL_SPOTMGR_PROFILING_BON_INVALID;
-    changeLog.args = 0xDEADBEEF;
-    am_hal_spotmgr_log_change(&changeLog);
-#endif
+
     return AM_HAL_STATUS_SUCCESS;
 }
 

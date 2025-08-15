@@ -4,10 +4,45 @@
 //!
 //! @brief Hardware abstraction for the Display Serial Interface
 //!
-//! @addtogroup dsi DSI - Display Serial Interface
+//! @addtogroup dsi_ap510L DSI - Display Serial Interface
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides hardware abstraction functions for the Display
+//!          Serial Interface (DSI) on Apollo5 devices. It supports DSI timing
+//!          configuration, lane management, power control, and ULPS (Ultra-Low
+//!          Power State) operations for display interface applications.
+//!
+//! @section hal_dsi_features Key Features
+//!
+//! 1. @b DSI @b Timing: Configurable DSI timing parameters and protocols.
+//! 2. @b Lane @b Management: Support for multiple DSI lanes and configurations.
+//! 3. @b ULPS @b Support: Ultra-Low Power State entry and exit operations.
+//! 4. @b Power @b Control: DSI power management and control.
+//! 5. @b Callback @b Support: External callback function registration.
+//!
+//! @section hal_dsi_functionality Functionality
+//!
+//! - Initialize and configure DSI interface
+//! - Handle DSI timing and parameter configuration
+//! - Manage DSI lanes and power states
+//! - Support ULPS entry and exit operations
+//! - Register external callback functions
+//!
+//! @section hal_dsi_usage Usage
+//!
+//! 1. Initialize DSI using am_hal_dsi_init()
+//! 2. Configure DSI parameters with am_hal_dsi_para_config()
+//! 3. Set up timing and lane configurations
+//! 4. Handle ULPS operations as needed
+//! 5. Register callback functions for external control
+//!
+//! @section hal_dsi_configuration Configuration
+//!
+//! - @b Timing @b Parameters: Configure DSI timing and protocol parameters
+//! - @b Lane @b Configuration: Set up DSI lane count and width
+//! - @b Power @b States: Configure DSI power management
+//! - @b Callbacks: Set up external callback functions
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -222,6 +257,17 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
         // Time that the transmitter drives the flipped differential state after last payload data bit of a HS transmission burst
         //
         double fDataTHSTrailMin;
+        double fDataTHSTrailMax;
+
+        //
+        // Time that the transmitter drives the HS-0 state after the last payload clock bit of a HS transmission burst.
+        //
+        double fCLKTHSTrailMax;
+
+        //
+        // Transmitted time interval from the start of THS-TRAIL or TCLK-TRAIL, to the start of the LP-11 state following a HS burst.
+        //
+        double fTEotMax = 105 + FORWARD_REVERSE * 12 * fUI;
 
         //
         // The minimum time of HS prepare is 40 + 4 * UI, the maximum is 85 + 6 * UI.
@@ -289,7 +335,9 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
         fDataTHSTrailMin = (FORWARD_REVERSE * 8 * fUI > 60 + FORWARD_REVERSE * 4 * fUI) ? FORWARD_REVERSE * 8 * fUI : 60 + FORWARD_REVERSE * 4 * fUI;
         fTemp = (fDataTHSTrailMin - 2 * 8 * fUI) / 8 / fUI;
         i8Temp = (int8_t)ceil(fTemp);
-        ui8DataHSTrail = i8Temp < 0 ? 0 : i8Temp;
+        i8Temp = i8Temp < 0 ? 0 : i8Temp;
+        fDataTHSTrailMax = (fTEotMax - 2 * 8 * fUI) / 8 / fUI;
+        ui8DataHSTrail = (i8Temp + (int8_t)floor(fDataTHSTrailMax)) / 2;
 
         fTemp = (fDataTHSExitMin - 8 * fUI) / 8 / fUI;
         ui8DataHSExit = (int8_t)ceil(fTemp);
@@ -314,7 +362,9 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
 
         fTemp = (fCLKTHSTrailMin - 8 * fUI + fUI) / 8 / fUI;
         i8Temp = (int8_t)ceil(fTemp);
-        ui8CLKHSTrail = i8Temp < 0 ? 0 : i8Temp;
+        i8Temp = i8Temp < 0 ? 0 : i8Temp;
+        fCLKTHSTrailMax = (fTEotMax - 8 * fUI + fUI) / 8 / fUI;
+        ui8CLKHSTrail = (i8Temp + (int8_t)floor(fCLKTHSTrailMax)) / 2;
 
         fTemp = (fCLKTHSExitMin - 8 * fUI) / 8 / fUI;
         ui8CLKHSExit = (int8_t)ceil(fTemp);

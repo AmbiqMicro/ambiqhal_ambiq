@@ -45,7 +45,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -63,6 +63,11 @@ extern "C"
 //
 //*****************************************************************************
 #define AM_PART_APOLLO330P_510L
+//*****************************************************************************
+//
+//! AM_PART_APOLLO5_API indicates that this device uses the Apollo5 API.
+//
+//*****************************************************************************
 #define AM_PART_APOLLO5_API     1
 
 //*****************************************************************************
@@ -173,10 +178,12 @@ extern "C"
 #include "hal/am_hal_usb.h"
 #include "hal/am_hal_usbcharger.h"
 #include "hal/am_hal_utils.h"
+#include "hal/am_hal_vcomp.h"
 #include "hal/am_hal_wdt.h"
 
 #include "hal/am_hal_clkmgr.h"
 #include "hal/am_hal_ipc_mbox.h"
+
 //
 // INFO includes
 //

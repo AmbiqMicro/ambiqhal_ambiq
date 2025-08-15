@@ -4,9 +4,45 @@
 //!
 //! @brief UART streaming mode Hardware abstraction
 //!
-//! @addtogroup uart_stream UART Functionality
+//! @addtogroup uart_stream_ap510L UART Stream Functionality
 //! @ingroup apollo510L_hal
 //! @{
+//!
+//! Purpose: This module provides UART streaming mode hardware abstraction for
+//!          Apollo5 devices, supporting high-speed data streaming, DMA transfers,
+//!          and interrupt-driven communication. It enables efficient UART data
+//!          transfer with minimal CPU overhead for continuous data streaming.
+//!
+//! @section hal_uart_stream_features Key Features
+//!
+//! 1. @b Streaming @b Mode: High-speed continuous data streaming support.
+//! 2. @b DMA @b Transfer: Efficient DMA-based data transfer operations.
+//! 3. @b Interrupt @b Driven: Interrupt-based data handling and processing.
+//! 4. @b FIFO @b Management: Advanced FIFO handling and buffer management.
+//! 5. @b Power @b Management: Power state control and retention capabilities.
+//!
+//! @section hal_uart_stream_functionality Functionality
+//!
+//! - Initialize and configure UART streaming mode
+//! - Handle DMA-based data transfer operations
+//! - Manage FIFO buffers and data flow
+//! - Support interrupt-driven data processing
+//! - Control power states and retention
+//!
+//! @section hal_uart_stream_usage Usage
+//!
+//! 1. Initialize UART streaming using am_hal_uart_stream_initialize()
+//! 2. Configure streaming parameters and DMA settings
+//! 3. Set up interrupt handlers for data processing
+//! 4. Handle streaming data transfer operations
+//! 5. Manage power states as needed
+//!
+//! @section hal_uart_stream_configuration Configuration
+//!
+//! - @b Streaming @b Parameters: Configure streaming mode settings
+//! - @b DMA @b Settings: Set up DMA transfer configurations
+//! - @b FIFO @b Management: Configure FIFO buffer parameters
+//! - @b Interrupts: Set up interrupt sources and handlers
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -2374,6 +2410,26 @@ am_hal_uart_clock_enable(uint32_t ui32Module, bool bEnable, am_hal_uart_clock_sr
 
     if ( bEnable )
     {
+        if (eUartRequestClk == AM_HAL_CLKMGR_CLK_ID_PLLPOSTDIV)
+        {
+            uint32_t ui32PLLPOSTDIVFreq = 0;
+
+            //
+            // Get the PLLPOSTDIV frequency.
+            //
+            ui32Status = am_hal_clkmgr_clock_config_get(AM_HAL_CLKMGR_CLK_ID_PLLPOSTDIV, &ui32PLLPOSTDIVFreq, NULL);
+            if (ui32Status != AM_HAL_STATUS_SUCCESS)
+            {
+                return ui32Status;
+            }
+            //
+            // Check if current PLLPOSTDIV frequency matches the expected frequency.
+            //
+            if (ui32PLLPOSTDIVFreq != AM_HAL_UART_PLLCLK_FREQ)
+            {
+                return AM_HAL_STATUS_FAIL;
+            }
+        }
         //
         // Request destination clock from clock manager
         //

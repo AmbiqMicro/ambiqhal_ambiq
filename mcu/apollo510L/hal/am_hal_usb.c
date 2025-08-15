@@ -4,10 +4,46 @@
 //!
 //! @brief Functions for USB module
 //!
-//! @addtogroup usb USB Functionality
+//! @addtogroup usb_ap510L USB Functionality
 //! @ingroup apollo510L_hal
 //! @{
-
+//!
+//! Purpose: This module provides comprehensive USB functionality for Apollo5
+//!          devices, supporting USB device operations, endpoint management, data
+//!          transfer, and PHY configuration. It enables USB communication for
+//!          applications requiring host connectivity and data exchange capabilities.
+//!
+//! @section hal_usb_features Key Features
+//!
+//! 1. @b Device @b Operations: USB device initialization and management.
+//! 2. @b Endpoint @b Management: Endpoint configuration and control.
+//! 3. @b Data @b Transfer: Support for DMA, ADMA, and PIO data transfers.
+//! 4. @b PHY @b Configuration: USB PHY tuning and clock source selection.
+//! 5. @b Interrupt @b Handling: USB interrupt service routines and callbacks.
+//!
+//! @section hal_usb_functionality Functionality
+//!
+//! - Initialize and deinitialize USB device
+//! - Configure endpoints and transfer modes
+//! - Manage USB power and PHY clock
+//! - Handle USB interrupts and callbacks
+//! - Support DMA and ADMA transfers
+//!
+//! @section hal_usb_usage Usage
+//!
+//! 1. Initialize USB using am_hal_usb_initialize()
+//! 2. Configure endpoints with am_hal_usb_ep_init()
+//! 3. Manage power and clock with am_hal_usb_power_control() and am_hal_usb_phy_clock_enable()
+//! 4. Handle data transfers using am_hal_usb_ep_xfer()
+//! 5. Register callbacks for USB events
+//!
+//! @section hal_usb_configuration Configuration
+//!
+//! - Configure endpoint attributes and buffer sizes
+//! - Set PHY tuning parameters and clock sources
+//! - Enable/disable double buffering for endpoints
+//! - Register event and transfer completion callbacks
+//
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -2310,7 +2346,6 @@ am_hal_usb_ep0_state_reset(am_hal_usb_state_t *pState)
     pState->eEP0State = AM_HAL_USB_EP0_STATE_IDLE;
     am_hal_usb_xfer_reset(&pState->ep0_xfer);
 }
-
 
 void am_hal_usb_ep_state_reset(void *pHandle, uint8_t ui8EpAddr)
 {

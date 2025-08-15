@@ -4,10 +4,45 @@
 //!
 //! @brief Hardware abstraction layer for the Reset Generator module.
 //!
-//! @addtogroup rstgen2 Reset - Reset Generator (RSTGEN)
+//! @addtogroup rstgen2_ap510L Reset - Reset Generator (RSTGEN)
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides hardware abstraction layer functions for the
+//!          Reset Generator (RSTGEN) module on Apollo5 devices. It supports
+//!          system reset control, brownout detection, watchdog reset management,
+//!          and interrupt handling for system reliability and recovery.
+//!
+//! @section hal_reset_features Key Features
+//!
+//! 1. @b System @b Reset: Control system reset operations and sources.
+//! 2. @b Brownout @b Detection: Monitor voltage levels and trigger resets.
+//! 3. @b Watchdog @b Reset: Manage watchdog timer reset functionality.
+//! 4. @b Interrupt @b Support: Interrupt handling for reset events.
+//! 5. @b Status @b Monitoring: Reset status and source identification.
+//!
+//! @section hal_reset_functionality Functionality
+//!
+//! - Configure reset generator parameters
+//! - Control system reset operations
+//! - Handle brownout detection and response
+//! - Manage watchdog reset functionality
+//! - Monitor reset status and sources
+//!
+//! @section hal_reset_usage Usage
+//!
+//! 1. Configure reset generator using am_hal_reset_configure()
+//! 2. Control reset operations as needed
+//! 3. Handle reset interrupts and events
+//! 4. Monitor reset status and sources
+//! 5. Manage system recovery operations
+//!
+//! @section hal_reset_configuration Configuration
+//!
+//! - @b Reset @b Sources: Configure reset source enable/disable
+//! - @b Brownout @b Levels: Set up voltage monitoring thresholds
+//! - @b Watchdog @b Reset: Configure watchdog reset parameters
+//! - @b Interrupts: Set up interrupt sources and handlers
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

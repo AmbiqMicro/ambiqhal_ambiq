@@ -4,10 +4,44 @@
 //!
 //! @brief Functions for on-chip security features
 //!
-//! @addtogroup security Security Functionality
+//! @addtogroup security_ap510L Security Functionality
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides comprehensive security functions for Apollo5
+//! devices, including device lifecycle management, secure boot operations,
+//! cryptographic key management, and hardware security features. It enables
+//! secure applications requiring device authentication, data protection, and
+//! tamper resistance capabilities.
+//!
+//! @section hal_security_features Key Features
+//!
+//! 1. @b Device @b Lifecycle: Query and manage device lifecycle state (LCS).
+//! 2. @b Key @b Management: Set and manage security keys for device protection.
+//! 3. @b Lock @b Status: Query and control lock status for secure memory regions.
+//! 4. @b Secure @b Bootloader: Support for secure bootloader exit and image validation.
+//! 5. @b CRC32: Hardware-accelerated CRC32 calculation for data integrity.
+//!
+//! @section hal_security_functionality Functionality
+//!
+//! - Retrieve device security information and lifecycle state
+//! - Set and manage security keys
+//! - Query and control lock status for secure regions
+//! - Support secure bootloader operations
+//! - Perform hardware CRC32 calculations
+//!
+//! @section hal_security_usage Usage
+//!
+//! 1. Retrieve security info using am_hal_security_get_info()
+//! 2. Set security keys with am_hal_security_set_key()
+//! 3. Query lock status and manage device security
+//! 4. Use CRC32 for data integrity checks
+//!
+//! @section hal_security_configuration Configuration
+//!
+//! - @b Key @b Types: Configure key types and storage
+//! - @b Lock @b Types: Set up lock status for secure regions
+//! - @b Bootloader: Configure secure bootloader options
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +75,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>

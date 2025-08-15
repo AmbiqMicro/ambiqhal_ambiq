@@ -4,10 +4,45 @@
 //!
 //! @brief HAL implementation for the I2S module.
 //!
-//! @addtogroup i2s4 I2S - Inter-IC Sound
+//! @addtogroup i2s4_ap510L I2S - Inter-IC Sound
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for configuring, controlling, and
+//! managing the Inter-IC Sound (I2S) peripheral on Apollo5 devices. It supports
+//! audio data transfer, clock configuration, DMA, and interrupt handling for
+//! digital audio applications.
+//!
+//! @section hal_i2s_features Key Features
+//!
+//! 1. @b Audio @b Data @b Transmission: Support for I2S audio data transfer.
+//! 2. @b DMA @b Support: High-speed DMA-based audio streaming.
+//! 3. @b Clock @b Configuration: Flexible clock source and divider settings.
+//! 4. @b Format @b Support: Multiple I2S data formats and word lengths.
+//! 5. @b Interrupt @b Handling: Comprehensive interrupt management for I2S events.
+//!
+//! @section hal_i2s_functionality Functionality
+//!
+//! - Initialize and configure the I2S peripheral
+//! - Set up audio data transmission and reception
+//! - Configure and manage DMA transfers for audio streaming
+//! - Handle I2S interrupts and status monitoring
+//! - Support for various I2S data formats and clocking options
+//!
+//! @section hal_i2s_usage Usage
+//!
+//! 1. Initialize I2S using am_hal_i2s_initialize()
+//! 2. Configure I2S parameters and clock settings
+//! 3. Set up DMA or interrupt-driven audio streaming
+//! 4. Start and stop audio data transfer as needed
+//! 5. Handle I2S events and monitor status
+//!
+//! @section hal_i2s_configuration Configuration
+//!
+//! - @b Clock @b Source: Select and configure I2S clock source
+//! - @b Data @b Format: Set up I2S data format and word length
+//! - @b DMA @b Settings: Configure DMA transfer parameters
+//! - @b Interrupts: Set up interrupt sources and handlers
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

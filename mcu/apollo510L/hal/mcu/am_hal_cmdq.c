@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for support command queue operations.
 //!
-//! @addtogroup cmdq CMDQ - Command Queue Functionality
+//! @addtogroup cmdq_ap510L CMDQ - Command Queue Functionality
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides support functions for command queue (CMDQ)
+//!          operations on Apollo5 devices. It supports command queue
+//!          initialization, block allocation, status monitoring, and error
+//!          handling for efficient hardware command sequencing.
+//!
+//! @section hal_cmdq_features Key Features
+//!
+//! 1. @b Command @b Queue: Hardware command queue management and sequencing.
+//! 2. @b Block @b Allocation: Dynamic block allocation and release.
+//! 3. @b Status @b Monitoring: Real-time command queue status tracking.
+//! 4. @b Error @b Handling: Robust error detection and recovery.
+//! 5. @b Multi-Module: Support for multiple hardware modules (IOM, MSPI, BLEIF).
+//!
+//! @section hal_cmdq_functionality Functionality
+//!
+//! - Initialize and configure command queue
+//! - Allocate and release command queue blocks
+//! - Monitor command queue status and indices
+//! - Handle command queue errors and recovery
+//! - Support multi-module command queue operations
+//!
+//! @section hal_cmdq_usage Usage
+//!
+//! 1. Initialize CMDQ using am_hal_cmdq_init()
+//! 2. Allocate blocks with am_hal_cmdq_alloc_block()
+//! 3. Post and release blocks as needed
+//! 4. Monitor status and handle errors
+//! 5. Terminate or reset command queue as required
+//!
+//! @section hal_cmdq_configuration Configuration
+//!
+//! - @b Block @b Size: Configure command queue block sizes
+//! - @b Module @b Selection: Set up for IOM, MSPI, or BLEIF modules
+//! - @b Error @b Handling: Configure error detection and recovery
+//! - @b Status @b Monitoring: Set up status tracking parameters
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

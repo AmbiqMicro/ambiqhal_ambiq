@@ -42,17 +42,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "am_mcu_apollo.h"
+//#if !defined(AM_PART_APOLLO330P_510L)
+
 #include "am_util.h"
-#include "am_util_pp.h"
 #include "am_bsp.h"
+#include "am_util_pp.h"
 
 #if USE_AMIC_AUDADC
 #define AM_HAL_MAGIC_AUDADC                0xAFAFAF
@@ -1038,4 +1039,4 @@ am_util_pp_snapshot(bool bSingleShot, uint32_t uNumber, bool bStreamNow)
        bCaptured[uNumber] = true;  //now the snapshot is in memory
     }
 } // am_util_pp_snapshot()
-
+//#endif

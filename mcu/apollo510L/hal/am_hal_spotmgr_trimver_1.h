@@ -2,9 +2,9 @@
 //
 //! @file am_hal_spotmgr_trimver_1.h
 //!
-//! @brief SPOT manager functions that manage power states for trimver1 parts.
+//! @brief SPOT Manager Trim Version 1 Implementation.
 //!
-//! @addtogroup spotmgr510l SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr_trim1_ap510L SPOT Manager Trim Version 1
 //! @ingroup apollo510L_hal
 //! @{
 //
@@ -29,9 +29,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -44,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-c53721a2d8 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SPOTMGR_TRIMVER_1_H
@@ -60,10 +57,6 @@ extern "C"
 //! Defines
 //
 //*****************************************************************************
-//
-// The CORELDOACTIVETRIM trim code reduced in simobuck init
-//
-#define CORELDOACTIVETRIM_REDUCE_IN_SIMOBUCK_INIT  7
 
 //*****************************************************************************
 //
@@ -123,6 +116,9 @@ extern uint32_t am_hal_spotmgr_trimver_1_power_state_update(am_hal_spotmgr_stimu
 //*****************************************************************************
 //
 //! @brief Reset power state to POR default
+//!        Do not report a fixed temperature here, user must report temperature
+//!        after transioning to a new image to make sure SIMOBUCK state is
+//!        correct in deep sleep or deeper sleep.
 //!
 //! @return SUCCESS or other Failures.
 //

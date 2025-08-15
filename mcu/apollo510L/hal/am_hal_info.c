@@ -4,10 +4,37 @@
 //!
 //! @brief INFO helper functions
 //!
-//! @addtogroup info5 INFO Functionality
+//! @addtogroup info5_ap510L INFO Functionality
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides helper functions for accessing and managing
+//! INFO memory regions on Apollo5 devices, including reading, programming, and
+//! validating INFO0 and INFO1 spaces for device configuration and security.
+//!
+//! @section hal_info_features Key Features
+//!
+//! 1. @b INFO0/INFO1 @b Access: Read and program device information in OTP and MRAM.
+//! 2. @b Offset @b Translation: Utilities for translating OTP offsets to MRAM offsets.
+//! 3. @b Validation: Functions to validate INFO0/INFO1 regions and signatures.
+//! 4. @b Compatibility: Handles Apollo5-specific INFO region behaviors.
+//!
+//! @section hal_info_functionality Functionality
+//!
+//! - Read and write INFO0/INFO1 memory regions
+//! - Translate between OTP and MRAM offsets
+//! - Validate INFO region signatures and status
+//! - Support for both current and legacy INFO region access
+//!
+//! @section hal_info_usage Usage
+//!
+//! 1. Use am_hal_info0_read() or am_hal_info1_read() to access INFO memory
+//! 2. Use translation helpers for offset conversions
+//! 3. Validate INFO regions as needed for device configuration
+//!
+//! @section hal_info_configuration Configuration
+//!
+//! - No special configuration required; functions adapt to Apollo5 INFO region layout
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +68,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

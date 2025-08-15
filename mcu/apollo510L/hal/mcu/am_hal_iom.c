@@ -4,10 +4,50 @@
 //!
 //! @brief Functions for interfacing with IO Master serial (SPI/I2C) modules.
 //!
-//! @addtogroup iom4 IOM - IO Master (SPI/I2C)
+//! @addtogroup iom4_ap510L IOM - IO Master (SPI/I2C)
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//! IO Master (IOM) modules on Apollo5 devices. It supports SPI and
+//! I2C master communication, DMA transfers, command queue operations,
+//! and interrupt handling for flexible serial master operations.
+//!
+//! @section iom_features Key Features
+//!
+//! 1. @b SPI @b Master: Full SPI master communication with configurable modes.
+//! 2. @b I2C @b Master: I2C master communication with multiple clock speeds.
+//! 3. @b DMA @b Transfers: High-speed DMA-based data transfer operations.
+//! 4. @b Command @b Queue: Advanced command queue for complex transaction sequences.
+//! 5. @b Interrupt @b Handling: Comprehensive interrupt management and status monitoring.
+//! 6. @b Power @b Management: Power state control and state retention capabilities.
+//!
+//! @section iom_functionality Functionality
+//!
+//! - Initialize and configure IOM modules for SPI and I2C communication
+//! - Perform blocking and non-blocking data transfers
+//! - Manage DMA transfers with callback support
+//! - Handle command queue operations and sequencing
+//! - Support high-priority transaction processing
+//! - Provide interrupt-driven operation with status monitoring
+//! - Enable power management and state retention
+//! - Support full-duplex SPI communication
+//!
+//! @section iom_usage Usage
+//!
+//! 1. Initialize IOM using am_hal_iom_initialize()
+//! 2. Configure interface settings with am_hal_iom_configure()
+//! 3. Enable IOM module with am_hal_iom_enable()
+//! 4. Perform transfers using blocking or non-blocking functions
+//! 5. Handle interrupts and manage power states as needed
+//!
+//! @section iom_configuration Configuration
+//!
+//! - @b Interface @b Modes: SPI and I2C master mode configurations
+//! - @b Clock @b Management: Configurable clock sources and frequencies
+//! - @b DMA @b Settings: Transfer control buffer and threshold configuration
+//! - @b Command @b Queue: Configurable queue depth and entry management
+//! - @b Interrupt @b Masking: Selective interrupt enable/disable control
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +81,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

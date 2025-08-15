@@ -2,11 +2,47 @@
 //
 //! @file am_hal_i3c.c
 //!
-//! @brief Functions for interfacing with the I3C.
+//! @brief Hardware abstraction for the Improved Inter-Integrated Circuit (I3C).
 //!
-//! @addtogroup I3C host controller
+//! @addtogroup i3c_ap510L I3C - Improved Inter-Integrated Circuit
 //! @ingroup apollo510L_hal
 //! @{
+//!
+//! Purpose: This module provides a high-level interface for the I3C (Improved
+//! Inter-Integrated Circuit) peripheral in Apollo5 devices. It supports advanced
+//! communication features beyond traditional I2C while maintaining backward
+//! compatibility.
+//!
+//! @section hal_i3c_features Key Features
+//!
+//! 1. @b High @b Speed: Support for higher data rates than I2C.
+//! 2. @b Hot-Join: Dynamic attachment of new devices.
+//! 3. @b In-Band @b Interrupts: Device-initiated communication.
+//! 4. @b Multi-Protocol: I3C and legacy I2C support.
+//! 5. @b Advanced @b Control: Enhanced command and data handling.
+//!
+//! @section hal_i3c_functionality Functionality
+//!
+//! - Initialize and configure I3C interface
+//! - Support multiple transfer modes
+//! - Handle dynamic addressing
+//! - Process in-band interrupts
+//! - Manage device discovery
+//!
+//! @section hal_i3c_usage Usage
+//!
+//! 1. Configure I3C controller parameters
+//! 2. Set up device addressing and discovery
+//! 3. Perform data transfers
+//! 4. Handle device events and interrupts
+//!
+//! @section hal_i3c_configuration Configuration
+//!
+//! - @b Speed @b Modes: Configure communication speeds
+//! - @b Address @b Settings: Set up device addressing
+//! - @b Transfer @b Options: Configure data transfer modes
+//! - @b Interrupt @b Handling: Set up event processing
+//!
 //
 //*****************************************************************************
 
@@ -14,7 +50,7 @@
 //
 // ${}
 //copyright
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -118,6 +154,7 @@ typedef struct
     uint32_t *pui32Buf;
     uint32_t ui32DataLen;
     uint32_t ui32DataLeft;
+    uint32_t ui32DelayUs;
     am_hal_i3c_dir_e eDir;
 
     //
@@ -404,7 +441,16 @@ static uint32_t am_hal_i3c_prepare_combo_i2c_cmd(am_hal_i3c_state_t *pI3CState, 
     cmd_desc0.ImmCmdDesc0.roc  = 1;
     cmd_desc0.ImmCmdDesc0.toc  = 0;
 
-    cmd_desc1.ImmCmdDesc1.byte1 = pCmdData1->ui16ComboOfs;
+    if ( pCmdData1->bCombo16bitOfs )
+    {
+        cmd_desc1.ImmCmdDesc1.byte1 = (uint8_t)(pCmdData1->ui16ComboOfs >> 8);
+        cmd_desc1.ImmCmdDesc1.byte2 = (uint8_t)pCmdData1->ui16ComboOfs;
+        cmd_desc0.ImmCmdDesc0.dtt  = 2;
+    }
+    else
+    {
+        cmd_desc1.ImmCmdDesc1.byte1 = (uint8_t)pCmdData1->ui16ComboOfs;
+    }
 
     pCmdData1->ui32CmdDesc0 = cmd_desc0.ui32CmdDesc0;
     pCmdData1->ui32CmdDesc1 = cmd_desc1.ui32CmdDesc1;
@@ -562,18 +608,17 @@ static uint32_t am_hal_i3c_prepare_xfer(am_hal_i3c_state_t *pI3CState, am_hal_i3
 
     if ( pCmdData->eSpeedMode == AM_HAL_I3C_HDR_DDR || pCmdData->eSpeedMode == AM_HAL_I3C_HDR_TS )
     {
-        if ( pCmdData->ui8Id > 0x80 )
+        if ( pCmdData->eDir == AM_HAL_I3C_DIR_READ )
         {
-            ui8CmdHdrCode = pCmdData->ui8Id;
+            if ( pCmdData->ui8Id > 0x80 )
+            {
+                ui8CmdHdrCode = pCmdData->ui8Id;
+            }
+            else
+            {
+                ui8CmdHdrCode = 0x80;
+            }
         }
-        else
-        {
-            ui8CmdHdrCode = 0x80;
-        }
-    }
-    else
-    {
-        ui8CmdHdrCode = 0;
     }
 
     pI3C->DAT0 = _VAL2FLD(I3C_DAT0_DEVICE, pI3CState->pDevice->eDeviceType)              |
@@ -606,6 +651,15 @@ static uint32_t am_hal_i3c_prepare_xfer(am_hal_i3c_state_t *pI3CState, am_hal_i3
     pI3CState->eDir = pCmdData->eDir;
     pI3CState->pHost->eSpeedMode = pCmdData->eSpeedMode;
     pI3CState->pHost->pCmdData = pCmdData;
+
+    if ( pI3CState->pDevice->eDeviceType == AM_HAL_I3C_DEVICE_I2C )
+    {
+        pI3CState->ui32DelayUs = 200;
+    }
+    else
+    {
+        pI3CState->ui32DelayUs = 20;
+    }
 
     return AM_HAL_STATUS_SUCCESS;
 }
@@ -679,7 +733,7 @@ static uint32_t am_hal_i3c_get_response(am_hal_i3c_state_t *pI3CState, am_hal_i3
     {
         if ( --ui32Timeout > 0 )
         {
-            am_hal_delay_us(10);
+            am_hal_delay_us(AM_HAL_I3C_DELAY_US);
         }
         else
         {
@@ -708,7 +762,7 @@ static uint32_t am_hal_i3c_pio_send_cmd(am_hal_i3c_state_t *pI3CState, am_hal_i3
     {
         if ( --ui32Timeout > 0 )
         {
-            am_hal_delay_us(10);
+            am_hal_delay_us(AM_HAL_I3C_DELAY_US);
         }
         else
         {
@@ -750,7 +804,7 @@ static uint32_t am_hal_i3c_pio_combo_i2c_xfer(am_hal_i3c_state_t *pI3CState, am_
     {
         if ( --ui32Timeout > 0 )
         {
-            am_hal_delay_us(100);
+            am_hal_delay_us(AM_HAL_I3C_DELAY_US);
         }
         else
         {
@@ -785,7 +839,7 @@ static uint32_t am_hal_i3c_pio_combo_i2c_xfer(am_hal_i3c_state_t *pI3CState, am_
         {
             if ( --ui32Timeout > 0 )
             {
-                    am_hal_delay_us(100);
+                    am_hal_delay_us(AM_HAL_I3C_DELAY_US);
             }
             else
             {
@@ -832,7 +886,7 @@ static uint32_t am_hal_i3c_pio_combo_i2c_xfer(am_hal_i3c_state_t *pI3CState, am_
                     {
                         if ( --ui32Timeout > 0 )
                         {
-                                am_hal_delay_us(100);
+                                am_hal_delay_us(AM_HAL_I3C_DELAY_US);
                         }
                         else
                         {
@@ -842,7 +896,7 @@ static uint32_t am_hal_i3c_pio_combo_i2c_xfer(am_hal_i3c_state_t *pI3CState, am_
                 }
                 else
                 {
-                    am_hal_delay_us(200 + 200 * pI3CState->ui32DataLeft);
+                    am_hal_delay_us(pI3CState->ui32DelayUs * pI3CState->ui32DataLeft);
                 }
 
             }
@@ -854,7 +908,7 @@ static uint32_t am_hal_i3c_pio_combo_i2c_xfer(am_hal_i3c_state_t *pI3CState, am_
             {
                 if ( --ui32Timeout > 0 )
                 {
-                        am_hal_delay_us(100);
+                        am_hal_delay_us(AM_HAL_I3C_DELAY_US);
                 }
                 else
                 {
@@ -904,7 +958,7 @@ static uint32_t am_hal_i3c_pio_xfer_data(am_hal_i3c_state_t *pI3CState)
                 {
                     if ( --ui32Timeout > 0 )
                     {
-                            am_hal_delay_us(100);
+                            am_hal_delay_us(pI3CState->ui32DelayUs);
                     }
                     else
                     {
@@ -916,7 +970,7 @@ static uint32_t am_hal_i3c_pio_xfer_data(am_hal_i3c_state_t *pI3CState)
                 ui32RegResp = pI3C->RESPONSEQUEUEPORT;
                 pI3CState->ui32Resp =  ui32RegResp;
                 AM_HAL_I3C_DEBUG("Command Response is 0x%x\n", ui32RegResp);
-                am_hal_delay_us(300 + 100 * pI3CState->ui32DataLeft);
+                am_hal_delay_us(pI3CState->ui32DelayUs * pI3CState->ui32DataLeft);
             }
             else if ( pI3CState->ui32DataLeft >= 8)
             {
@@ -926,7 +980,7 @@ static uint32_t am_hal_i3c_pio_xfer_data(am_hal_i3c_state_t *pI3CState)
                 {
                     if ( --ui32Timeout > 0 )
                     {
-                            am_hal_delay_us(100);
+                        am_hal_delay_us(pI3CState->ui32DelayUs);
                     }
                     else
                     {
@@ -940,7 +994,7 @@ static uint32_t am_hal_i3c_pio_xfer_data(am_hal_i3c_state_t *pI3CState)
                 ui32RegResp = pI3C->RESPONSEQUEUEPORT;
                 pI3CState->ui32Resp =  ui32RegResp;
                 AM_HAL_I3C_DEBUG("Command Response is 0x%x\n", ui32RegResp);
-                am_hal_delay_us(300 + 100 * pI3CState->ui32DataLeft);
+                am_hal_delay_us(pI3CState->ui32DelayUs * pI3CState->ui32DataLeft);
             }
 
             for (uint32_t i = 0; i < ui32XferLen; i += 4)
@@ -957,7 +1011,7 @@ static uint32_t am_hal_i3c_pio_xfer_data(am_hal_i3c_state_t *pI3CState)
             {
                 if ( --ui32Timeout > 0 )
                 {
-                    am_hal_delay_us(100);
+                    am_hal_delay_us(AM_HAL_I3C_DELAY_US);
                 }
                 else
                 {
@@ -1323,6 +1377,7 @@ static uint32_t am_hal_i3c_combo_i2c_blocking_transfer(void *pHandle, am_hal_i3c
     CmdData1.ui8Addr = psTransaction->Device.ui8DynamicAddr;
     CmdData1.eSpeedMode = psTransaction->eSpeedMode;
     CmdData1.ui16ComboOfs = psTransaction->ui16ComboOfs;
+    CmdData1.bCombo16bitOfs = psTransaction->bCombo16bitOfs;
 
 
     CmdData2.ui8Addr = psTransaction->Device.ui8DynamicAddr;
@@ -1406,6 +1461,7 @@ static uint32_t am_hal_i3c_combo_i2c_nonblocking_transfer(void *pHandle, am_hal_
     CmdData1.ui8Addr = psTransaction->Device.ui8DynamicAddr;
     CmdData1.eSpeedMode = psTransaction->eSpeedMode;
     CmdData1.ui16ComboOfs = psTransaction->ui16ComboOfs;
+    CmdData1.bCombo16bitOfs = psTransaction->bCombo16bitOfs;
 
 
     CmdData2.ui8Addr = psTransaction->Device.ui8DynamicAddr;
@@ -1922,6 +1978,11 @@ uint32_t am_hal_i3c_blocking_transfer(void *pHandle, am_hal_i3c_transfer_t *psTr
         return AM_HAL_STATUS_INVALID_OPERATION;
     }
 
+    if ( pI3CState->pHost->eXferMode != AM_HAL_I3C_XFER_PIO )
+    {
+        return AM_HAL_STATUS_INVALID_OPERATION;
+    }
+
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
     if ( psTransaction->Device.eDeviceType == AM_HAL_I3C_DEVICE_I2C && psTransaction->bComboXfer)
@@ -2046,6 +2107,10 @@ uint32_t am_hal_i3c_send_ccc_cmd(void *pHandle, am_hal_i3c_transfer_t *psTransac
 
     if ( pI3CState->pHost->eXferMode == AM_HAL_I3C_XFER_PIO)
     {
+        if ( am_hal_i3c_prepare_xfer(pI3CState, &CmdData) != AM_HAL_STATUS_SUCCESS )
+        {
+            return AM_HAL_STATUS_FAIL;
+        }
 
         if ( am_hal_i3c_pio_send_cmd(pI3CState, &CmdData) != AM_HAL_STATUS_SUCCESS )
         {
@@ -2172,9 +2237,12 @@ uint32_t am_hal_i3c_do_daa(void *pHandle, am_hal_i3c_transfer_t *psTransaction)
             return AM_HAL_STATUS_FAIL;
         }
 
-        if ( am_hal_i3c_get_dct(pI3CState) != AM_HAL_STATUS_SUCCESS )
+        if ( CmdData.ui8Id == AM_HAL_I3C_CCC_ENTDAA )
         {
-            return AM_HAL_STATUS_FAIL;
+            if ( am_hal_i3c_get_dct(pI3CState) != AM_HAL_STATUS_SUCCESS )
+            {
+                return AM_HAL_STATUS_FAIL;
+            }
         }
     }
     else
@@ -2199,9 +2267,12 @@ uint32_t am_hal_i3c_do_daa(void *pHandle, am_hal_i3c_transfer_t *psTransaction)
             return AM_HAL_STATUS_FAIL;
         }
 
-        if ( am_hal_i3c_get_dct(pI3CState) != AM_HAL_STATUS_SUCCESS )
+        if ( CmdData.ui8Id == AM_HAL_I3C_CCC_ENTDAA )
         {
-            return AM_HAL_STATUS_FAIL;
+            if ( am_hal_i3c_get_dct(pI3CState) != AM_HAL_STATUS_SUCCESS )
+            {
+                return AM_HAL_STATUS_FAIL;
+            }
         }
     }
 
@@ -2237,6 +2308,11 @@ uint32_t am_hal_i3c_nonblocking_transfer(void *pHandle, am_hal_i3c_transfer_t *p
     }
 
     if ( !pI3CState->prefix.s.bEnable )
+    {
+        return AM_HAL_STATUS_INVALID_OPERATION;
+    }
+
+    if ( pI3CState->pHost->eXferMode != AM_HAL_I3C_XFER_DMA )
     {
         return AM_HAL_STATUS_INVALID_OPERATION;
     }

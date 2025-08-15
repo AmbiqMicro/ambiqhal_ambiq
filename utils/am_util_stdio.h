@@ -2,18 +2,9 @@
 //
 //! @file am_util_stdio.h
 //!
-//! @brief A few printf-style functions for use with Ambiq products
+//! @brief Standard Input/Output Utility Functions
 //!
-//! Functions for performing printf-style operations without dynamic memory
-//! allocation.
-//!
-//! For further information about this module concerning its history, uses,
-//! and limitations, please see the Ambiq Micro KB article "Q&A: What does
-//! the AmbiqSuite SDK am_util_stdio_printf() function do?" at:
-//!
-//! https://support.ambiqmicro.com/hc/en-us/articles/360040441631
-//!
-//! @addtogroup stdio STDIO - Ambiq's Implementation
+//! @addtogroup stdio_utils STDIO Utility Functions
 //! @ingroup utils
 //! @{
 //
@@ -50,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_STDIO_H
@@ -76,6 +67,7 @@ extern "C"
 #endif
 
 typedef void (*am_util_stdio_print_char_t)(char *pcStr);
+typedef void (*am_util_stdio_get_char_t)(char *pcStr);
 
 //*****************************************************************************
 //
@@ -94,6 +86,19 @@ typedef void (*am_util_stdio_print_char_t)(char *pcStr);
 //
 //*****************************************************************************
 extern void am_util_stdio_printf_init(am_util_stdio_print_char_t pfnCharPrint);
+
+//*****************************************************************************
+//
+//! @brief Sets the interface for scanf calls.
+//!
+//! @param pfnCharGet - Function pointer to be used to get from interface
+//!
+//! This function initializes the global scanf function which is used for
+//! scanf. This allows users to define their own scanf interface and pass it
+//! in as a am_util_stdio_get_char_t type.
+//
+//*****************************************************************************
+extern void am_util_stdio_scanf_init(am_util_stdio_get_char_t pfnCharGet);
 
 //*****************************************************************************
 //
@@ -189,6 +194,17 @@ extern uint32_t am_util_stdio_sprintf(char *pcBuf, const char *pcFmt, ...);
 //
 // *****************************************************************************
 extern uint32_t am_util_stdio_printf(const char *pcFmt, ...);
+
+//*****************************************************************************
+//
+//! @brief A lite version of scanf()
+//!
+//! @param *fmt - Pointer to formatter string
+//!
+//! @return uint32_t representing the number of characters scanned.
+//
+// *****************************************************************************
+extern uint32_t am_util_stdio_scanf(const char *fmt, ...);
 
 //******************************************************************************
 //
@@ -286,4 +302,3 @@ extern void am_util_stdio_terminal_clear(void);
 //! @}
 //
 //*****************************************************************************
-

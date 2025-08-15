@@ -4,10 +4,10 @@
 //!
 //! @brief Functions for enabling and disabling power domains.
 //!
-//! @addtogroup pwrctrl4 PWRCTRL - Power Control
+//! @addtogroup pwrctrl4_ap510L PWRCTRL - Power Control
 //! @ingroup apollo510L_hal
 //! @{
-
+//
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -78,9 +78,9 @@ extern "C"
 //*****************************************************************************
 #define AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL    0  // Disabled for Apollo510L
 
-// #if (AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL == 0)
-// #error Apollo510L requires AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL.
-// #endif
+#if (AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL == 1)
+#error AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL must be set to 0 for Apollo510L.
+#endif
 
 //*****************************************************************************
 //
@@ -245,14 +245,13 @@ typedef enum
 //*****************************************************************************
 typedef enum
 {
-    AM_HAL_PWRCTRL_PERIPH_IOSFD0,
-    AM_HAL_PWRCTRL_PERIPH_IOSFD1,
     AM_HAL_PWRCTRL_PERIPH_IOM0,
     AM_HAL_PWRCTRL_PERIPH_IOM1,
     AM_HAL_PWRCTRL_PERIPH_IOM2,
     AM_HAL_PWRCTRL_PERIPH_IOM3,
     AM_HAL_PWRCTRL_PERIPH_IOM4,
     AM_HAL_PWRCTRL_PERIPH_IOM5,
+    AM_HAL_PWRCTRL_PERIPH_I3CPHY,
     AM_HAL_PWRCTRL_PERIPH_UART0,
     AM_HAL_PWRCTRL_PERIPH_UART1,
     AM_HAL_PWRCTRL_PERIPH_ADC,
@@ -269,11 +268,12 @@ typedef enum
     AM_HAL_PWRCTRL_PERIPH_USBPHY,
     AM_HAL_PWRCTRL_PERIPH_DEBUG,
     AM_HAL_PWRCTRL_PERIPH_OTP,
+    AM_HAL_PWRCTRL_PERIPH_IOSFD0,
+    AM_HAL_PWRCTRL_PERIPH_IOSFD1,
+    AM_HAL_PWRCTRL_PERIPH_I3C,
+    AM_HAL_PWRCTRL_PERIPH_NETAOL,
     AM_HAL_PWRCTRL_PERIPH_PDM0,
     AM_HAL_PWRCTRL_PERIPH_I2S0,
-    AM_HAL_PWRCTRL_PERIPH_I3C,
-    AM_HAL_PWRCTRL_PERIPH_I3CPHY,
-    AM_HAL_PWRCTRL_PERIPH_NETAOL,
     AM_HAL_PWRCTRL_PERIPH_MAX
 } am_hal_pwrctrl_periph_e;
 
@@ -780,6 +780,9 @@ extern uint32_t am_hal_pwrctrl_sram_config_get(am_hal_pwrctrl_sram_memcfg_t *psC
 //!
 //! This function enables power to the peripheral and waits for a
 //! confirmation from the hardware.
+//! This function does not support SYSPLL power control, please use
+//! am_hal_pwrctrl_syspll_enable and am_hal_pwrctrl_syspll_disable for
+//! SYSPLL power control.
 //!
 //! @return AM_HAL_STATUS_SUCCESS or applicable PWRCTRL errors
 //
@@ -794,6 +797,9 @@ extern uint32_t am_hal_pwrctrl_periph_enable(am_hal_pwrctrl_periph_e ePeripheral
 //!
 //! This function disables power to the peripheral and waits for a
 //! confirmation from the hardware.
+//! This function does not support SYSPLL power control, please use
+//! am_hal_pwrctrl_syspll_enable and am_hal_pwrctrl_syspll_disable for
+//! SYSPLL power control.
 //!
 //! @return AM_HAL_STATUS_SUCCESS or applicable PWRCTRL errors
 //
@@ -809,6 +815,8 @@ extern uint32_t am_hal_pwrctrl_periph_disable(am_hal_pwrctrl_periph_e ePeriphera
 //!
 //! This function determines to the caller whether a given peripheral is
 //! currently enabled or disabled.
+//! This function does not support SYSPLL power status check, please use
+//! am_hal_pwrctrl_syspll_enabled to check SYSPLL power status.
 //!
 //! @return AM_HAL_STATUS_SUCCESS or applicable PWRCTRL errors
 //
@@ -865,12 +873,22 @@ extern uint32_t am_hal_pwrctrl_control(am_hal_pwrctrl_control_e eControl, void *
 
 //*****************************************************************************
 //
-//! @brief Restore original Power settings
+//! @brief This function no longer restores MCU to its boot state; instead, it prepares
+//!        MCU for the next image to start in the correct state.
 //!
-//! This function restores default power trims reverting relative
-//! changes done as part of low_power_init and SIMOBUCK init.
-//! User needs to make sure device is running in Low Power mode before calling
-//! this function.
+//! Important:
+//!
+//! - This function must be called before
+//!   transition to a new application, such as the case of a secondary bootloader
+//!   transitioning to an application. Before calling this function, users
+//!   should switch CPU to LP if it is in HP mode, and turned off GPU and all other
+//!   peripherals if anyone was turned on, except OTP.
+//!   Before calling this function, in order to release all clocks when exiting
+//!   second boot loader, we suggest users to disable peripherals which are used
+//!   in second bootloader and already requested clocks through clkmgr. Users
+//!   should disable peripherals by calling the separated API for peripheral
+//!   disable/deinit/powerdown, but not by writing to the power enable registers
+//!   directly.
 //!
 //! @return AM_HAL_STATUS_SUCCESS or applicable PWRCTRL errors
 //

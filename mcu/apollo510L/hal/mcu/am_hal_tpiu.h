@@ -2,11 +2,9 @@
 //
 //! @file am_hal_tpiu.h
 //!
-//! @brief Support functions for the ARM TPIU module
+//! @brief Support functions for the Arm TPIU module
 //!
-//! Provides support functions for configuring the ARM TPIU module
-//!
-//! @addtogroup tpiu4 TPIU - Trace Port Interface Unit
+//! @addtogroup tpiu4_ap510L TPIU - Trace Port Interface Unit
 //! @ingroup apollo510L_hal
 //! @{
 //
@@ -43,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_TPIU_H

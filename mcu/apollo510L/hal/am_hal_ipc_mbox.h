@@ -2,12 +2,12 @@
 //
 //! @file am_hal_ipc_mbox.h
 //!
-//! @brief Functions for Interprocessor Communication Messaging Mailboxes
+//! @brief Functions for managing Inter-Processor Communication (IPC) Mailbox.
 //!
-//! @addtogroup ipc_mbox IPC_MBOX - Interprocessor Communication Messaging Mailboxes
+//! @addtogroup ipc_mbox_ap510L IPC Mailbox - Inter-Processor Communication
 //! @ingroup apollo510L_hal
 //! @{
-
+//
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

@@ -2,9 +2,9 @@
 //
 //! @file am_hal_i3c.h
 //!
-//! @brief Functions for interfacing with the I3C.
+//! @brief Hardware abstraction for the Improved Inter-Integrated Circuit (I3C).
 //!
-//! @addtogroup i3c I3C host controller
+//! @addtogroup i3c_ap510L I3C - Improved Inter-Integrated Circuit
 //! @ingroup apollo510L_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_I3C_H
@@ -133,7 +133,8 @@ extern "C"
 // Max Ring Size
 #define AM_HAL_I3C_MAX_RING_SIZE           255
 
-#define AM_HAL_I3C_TIMEOUT_CNT             1000
+#define AM_HAL_I3C_TIMEOUT_CNT             100000
+#define AM_HAL_I3C_DELAY_US                10
 
 //
 //! I3C Xfer Mode

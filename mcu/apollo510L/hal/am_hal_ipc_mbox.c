@@ -2,12 +2,45 @@
 //
 //! @file am_hal_ipc_mbox.c
 //!
-//! @brief Functions for Interprocessor Communication Messaging Mailboxes
+//! @brief Functions for managing Inter-Processor Communication (IPC) Mailbox.
 //!
-//! @addtogroup ipc_mbox IPC_MBOX - Interprocessor Communication Messaging Mailboxes
+//! @addtogroup ipc_mbox_ap510L IPC Mailbox - Inter-Processor Communication
 //! @ingroup apollo510L_hal
 //! @{
-
+//!
+//! Purpose: This module manages communication between different processors in Apollo5
+//! devices using a mailbox system. It provides reliable message passing and
+//! synchronization mechanisms between MCU, DSP0, and DSP1 cores.
+//!
+//! @section hal_ipc_mbox_features Key Features
+//!
+//! 1. @b Multi-Core @b Communication: Message passing between MCU and DSPs.
+//! 2. @b Message @b Queuing: Reliable message storage and retrieval.
+//! 3. @b Interrupt @b Support: Hardware interrupt-based notification system.
+//! 4. @b Synchronization: Mechanisms for coordinating between processors.
+//! 5. @b Error @b Handling: Robust error detection and recovery.
+//!
+//! @section hal_ipc_mbox_functionality Functionality
+//!
+//! - Initialize and configure IPC mailbox system
+//! - Send messages between processors
+//! - Receive and process incoming messages
+//! - Handle interrupt-based notifications
+//! - Manage mailbox status and errors
+//!
+//! @section hal_ipc_mbox_usage Usage
+//!
+//! 1. Initialize mailbox using initialization functions
+//! 2. Configure message handlers and callbacks
+//! 3. Send messages using provided APIs
+//! 4. Process received messages in callbacks
+//!
+//! @section hal_ipc_mbox_configuration Configuration
+//!
+//! - @b Mailbox @b Size: Configure message buffer sizes
+//! - @b Interrupt @b Settings: Set up notification mechanisms
+//! - @b Priority @b Levels: Configure message priorities
+//! - @b Error @b Handling: Set up error recovery options
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

@@ -4,10 +4,43 @@
 //!
 //! @brief Functions for DCU functions
 //!
-//! @addtogroup dcu DCU - Debug Control Unit
+//! @addtogroup dcu_ap510L DCU - Debug Control Unit
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for managing the Debug Control Unit
+//! (DCU) which controls debug access and security features on Apollo5 devices.
+//! It handles DCU locking, unlocking, status checking, and configuration for
+//! secure debug operations.
+//!
+//! @section hal_dcu_features Key Features
+//!
+//! 1. @b Debug @b Control: Manage debug access permissions and security.
+//! 2. @b Lock/Unlock: Control DCU locking mechanisms for security.
+//! 3. @b Status @b Monitoring: Check DCU status and configuration.
+//! 4. @b Security @b Management: Handle debug security features.
+//! 5. @b Raw @b Access: Direct access to DCU registers and masks.
+//!
+//! @section hal_dcu_functionality Functionality
+//!
+//! - Lock and unlock DCU for security control
+//! - Read DCU status and configuration
+//! - Manage debug access permissions
+//! - Handle raw DCU register access
+//! - Support for security override operations
+//!
+//! @section hal_dcu_usage Usage
+//!
+//! 1. Check DCU status using am_hal_dcu_get()
+//! 2. Lock/unlock DCU as needed for security
+//! 3. Monitor DCU configuration and status
+//! 4. Handle security overrides when required
+//!
+//! @section hal_dcu_configuration Configuration
+//!
+//! - @b Security @b Level: Configure debug access permissions
+//! - @b Lock @b Masks: Set up DCU locking patterns
+//! - @b Override @b Support: Enable security override features
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include "am_mcu_apollo.h"

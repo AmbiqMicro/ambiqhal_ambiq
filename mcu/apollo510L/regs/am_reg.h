@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_REG_H
@@ -217,6 +217,16 @@
 
 //*****************************************************************************
 //
+//! @brief MRAM
+//! Instance finder. (1 instance(s) available)
+//
+//*****************************************************************************
+#define AM_REG_MRAM_NUM_MODULES                      1
+#define AM_REG_MRAMn(n) \
+    (MRAM_BASE + 0x00001000 * n)
+
+//*****************************************************************************
+//
 //! @brief MSPI
 //! Instance finder. (3 instance(s) available)
 //
@@ -244,6 +254,16 @@
 #define AM_REG_PWRCTRL_NUM_MODULES                   1
 #define AM_REG_PWRCTRLn(n) \
     (PWRCTRL_BASE + 0x00000000 * n)
+
+//*****************************************************************************
+//
+//! @brief SCM
+//! Instance finder. (1 instance(s) available)
+//
+//*****************************************************************************
+#define AM_REG_SCM_NUM_MODULES                       1
+#define AM_REG_SCMn(n) \
+    (SCM_BASE + 0x00000000 * n)
 
 //*****************************************************************************
 //

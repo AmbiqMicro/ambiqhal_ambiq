@@ -2,12 +2,60 @@
 //
 //! @file am_hal_adc.c
 //!
-//! @brief Functions for interfacing with the Analog to Digital Converter.
+//! @brief Analog-to-Digital Converter (ADC) HAL implementation.
 //!
-//! @addtogroup adc4 ADC - Analog-to-Digital Converter
+//! @addtogroup adc4_ap510L ADC - Analog-to-Digital Converter
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides a comprehensive hardware abstraction layer
+//! for the Analog-to-Digital Converter (ADC) peripheral on Apollo5 devices.
+//! It enables configuration, control, and data acquisition from the ADC,
+//! supporting voltage and temperature measurements, DMA transfers, and
+//! multiple sampling modes for flexible and efficient analog signal capture.
+//!
+//! @section hal_adc_features Key Features
+//!
+//! 1. @b Flexible @b Configuration: Supports multiple ADC modes, slot
+//!    configurations, and trigger sources for a wide range of applications.
+//!
+//! 2. @b DMA @b Support: Enables high-speed, low-latency data transfers
+//!    from the ADC to memory using DMA.
+//!
+//! 3. @b Calibration @b and @b Trimming: Provides mechanisms for calibration
+//!    coefficients and temperature compensation to ensure accurate results.
+//!
+//! 4. @b Power @b Management: Includes functions for power control and
+//!    low-power operation of the ADC peripheral.
+//!
+//! 5. @b Interrupt @b Handling: Comprehensive interrupt support for
+//!    conversion completion, error conditions, and custom user events.
+//!
+//! @section hal_adc_functionality Functionality
+//!
+//! The module provides the following capabilities:
+//! - Initialization and deinitialization of the ADC peripheral
+//! - Configuration of ADC slots, triggers, and operational modes
+//! - Enabling/disabling the ADC and managing power states
+//! - Reading ADC samples (single, burst, or DMA-driven)
+//! - Handling ADC interrupts and status queries
+//! - Applying calibration and correction factors
+//!
+//! @section hal_adc_usage Usage
+//!
+//! 1. Initialize the ADC using am_hal_adc_initialize()
+//! 2. Configure the ADC with am_hal_adc_configure() and related functions
+//! 3. Enable the ADC and start conversions
+//! 4. Retrieve conversion results via polling, interrupt, or DMA
+//! 5. Deinitialize the ADC when no longer needed
+//!
+//! @section hal_adc_configuration Configuration
+//!
+//! - @b AM_HAL_ADC_CALIB_TEMP_DEFAULT: Default temperature calibration value
+//! - @b AM_HAL_ADC_CALIB_AMBIENT_DEFAULT: Default ambient voltage calibration
+//! - @b AM_HAL_ADC_CALIB_ADC_OFFSET_DEFAULT: Default ADC offset calibration
+//! - @b DMA: Enable/disable DMA for high-speed data transfer
+//! - @b Interrupts: Configure interrupt sources and handlers as needed
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +89,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -149,9 +197,14 @@ typedef struct
     uint32_t                    ui32BufferSizeBytes;
 
     //
-    //! ADC clock source.
+    //! ADC clock source being used.
     //
     am_hal_adc_clksel_e         eClockSel;
+
+    //
+    //! ADC clock source in retention mode.
+    //
+    am_hal_adc_clksel_e         eClockSelRetention;
 } am_hal_adc_state_t;
 
 //*****************************************************************************
@@ -334,6 +387,8 @@ adc_clock_switch(am_hal_adc_state_t *pADCState, am_hal_adc_clksel_e eClockFrom, 
                 am_hal_clkmgr_clock_release(eClockIdTo, AM_HAL_CLKMGR_USER_ID_ADC);
                 return ui32Status;
             }
+
+            am_hal_crm_control_ADC_CLOCK_SET(true);
         }
         else
         {
@@ -345,7 +400,7 @@ adc_clock_switch(am_hal_adc_state_t *pADCState, am_hal_adc_clksel_e eClockFrom, 
 
         if (eClockIdFrom != AM_HAL_CLKMGR_CLK_ID_MAX)
         {
-            if ((eClockIdFrom == AM_HAL_CLKMGR_CLK_ID_HFRC) && (pADCState->prefix.s.bEnable))
+            if ((eClockIdFrom == AM_HAL_CLKMGR_CLK_ID_HFRC) && (pADCState->prefix.s.bEnable) && (eClockTo != AM_HAL_ADC_CLKSEL_OFF))
             {
                 // Do nothing, HFRC is still needed by APBDMA.
             }
@@ -1814,7 +1869,7 @@ am_hal_adc_power_control(void *pHandle,
                 //
                 // Set ADC module clock first.
                 //
-                ui32Status = adc_clock_switch(pADCState, AM_HAL_ADC_CLKSEL_OFF, pADCState->eClockSel);
+                ui32Status = adc_clock_switch(pADCState, AM_HAL_ADC_CLKSEL_OFF, pADCState->eClockSelRetention);
                 if (AM_HAL_STATUS_SUCCESS != ui32Status)
                 {
                     return ui32Status;
@@ -1876,8 +1931,8 @@ am_hal_adc_power_control(void *pHandle,
                 pADCState->registerState.regWLLIM       = ADCn(ui32Module)->WLLIM;
                 pADCState->registerState.regINTEN       = ADCn(ui32Module)->INTEN;
                 pADCState->registerState.regCFG         = ADCn(ui32Module)->CFG;
-
-                pADCState->registerState.bValid     = true;
+                pADCState->eClockSelRetention           = pADCState->eClockSel;
+                pADCState->registerState.bValid         = true;
             }
 
             //

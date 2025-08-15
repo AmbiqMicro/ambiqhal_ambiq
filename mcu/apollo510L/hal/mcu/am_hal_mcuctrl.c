@@ -4,9 +4,45 @@
 //!
 //! @brief Functions for interfacing with the MCUCTRL.
 //!
-//! @addtogroup mcuctrl4 MCUCTRL - MCU Control
+//! @addtogroup mcuctrl4_ap510L MCUCTRL - MCU Control
 //! @ingroup apollo510L_hal
 //! @{
+//!
+//! Purpose: This module provides functions for interfacing with the MCU Control
+//!          (MCUCTRL) module on Apollo5 devices. It supports device information
+//!          retrieval, external clock control, status monitoring, and chip
+//!          configuration for system management and initialization.
+//!
+//! @section hal_mcuctrl_features Key Features
+//!
+//! 1. @b Device @b Information: Retrieve chip ID, revision, and vendor information.
+//! 2. @b Memory @b Configuration: Access memory size and configuration data.
+//! 3. @b External @b Clock: Manage external clock status and configuration.
+//! 4. @b System @b Control: Provide system control and status operations.
+//! 5. @b Feature @b Detection: Identify device features and capabilities.
+//!
+//! @section hal_mcuctrl_functionality Functionality
+//!
+//! - Retrieve device information and chip identification
+//! - Access memory configuration and size information
+//! - Manage external clock status and configuration
+//! - Provide system control and status operations
+//! - Support for device feature detection and configuration
+//!
+//! @section hal_mcuctrl_usage Usage
+//!
+//! 1. Get device information using am_hal_mcuctrl_info_get()
+//! 2. Retrieve memory configuration as needed
+//! 3. Check external clock status
+//! 4. Access system control functions
+//! 5. Query device features and capabilities
+//!
+//! @section hal_mcuctrl_configuration Configuration
+//!
+//! - @b Device @b Info: Access chip ID, revision, and vendor data
+//! - @b Memory @b Sizes: Retrieve ITCM, DTCM, and SSRAM configurations
+//! - @b External @b Clocks: Configure external clock sources
+//! - @b System @b Control: Set up system control operations
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -348,8 +384,8 @@ trim_version_get(am_hal_mcuctrl_feature_t *psFeature)
     {
         if (ui32TrimVer <= 254)
         {
-            psFeature->trimver_b.ui8TrimVerMaj = 1;
-            psFeature->trimver_b.ui8TrimVerMin = (uint8_t)ui32TrimVer;
+            psFeature->trimver_b.ui8TrimVerMaj = 2;
+            psFeature->trimver_b.ui8TrimVerMin = (uint8_t)ui32TrimVer + 1;
             psFeature->trimver_b.bTrimVerPCM   = 1;
             psFeature->trimver_b.bTrimVerValid = 1;
         }
@@ -422,7 +458,7 @@ am_hal_mcuctrl_info_get(am_hal_mcuctrl_infoget_e eInfoGet, void *pInfo)
             psFeature->bDISP            = (MCUCTRL->SKU_b.SKUDISP > 0);
             psFeature->bRadioDisable    = (MCUCTRL->SKU_b.SKURADIODISABLE > 0);
             psFeature->bRadioBTBLE      = (MCUCTRL->SKU_b.SKURADIOBTBLE > 0);
-            psFeature->bRadioBLE        = (MCUCTRL->SKU_b.SKURADIOBLE > 0);
+            psFeature->bRadioBLE        = (MCUCTRL->SKU_b.SKURADIOMM > 0);
             psFeature->bCM4DEBUG        = (MCUCTRL->SKU_b.SKUCM4DEBUG > 0);
 
             trim_version_get(psFeature);

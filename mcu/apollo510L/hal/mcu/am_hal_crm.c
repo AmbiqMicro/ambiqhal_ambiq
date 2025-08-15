@@ -1,16 +1,52 @@
-// ****************************************************************************
+//*****************************************************************************
 //
 //! @file am_hal_crm.c
 //!
-//! @brief Functions for interfacing with the CRM.
+//! @brief Clock and Reset Management (CRM) functionality implementation.
 //!
-//! @addtogroup CRM - Peripheral Clock and Reset Controls
+//! @addtogroup crm_ap510L Clock and Reset Management (CRM)
 //! @ingroup apollo510L_hal
 //! @{
+//!
+//! Purpose: This module handles clock management and system reset functionality
+//! for Apollo5 devices. It provides comprehensive control over system clocks,
+//! power domains, and reset mechanisms to ensure optimal operation and power
+//! efficiency.
+//!
+//! @section hal_crm_features Key Features
+//!
+//! 1. @b Clock @b Management: Flexible clock source and distribution control.
+//! 2. @b Reset @b Control: System and peripheral reset management.
+//! 3. @b Power @b Domains: Clock gating and power domain control.
+//! 4. @b Dynamic @b Scaling: Runtime clock frequency adjustment.
+//! 5. @b Status @b Monitoring: System clock and reset status tracking.
+//!
+//! @section hal_crm_functionality Functionality
+//!
+//! - Configure and manage system clocks
+//! - Control peripheral clock gates
+//! - Handle system and peripheral resets
+//! - Manage power domain states
+//! - Monitor clock and reset status
+//!
+//! @section hal_crm_usage Usage
+//!
+//! 1. Configure system clock sources and dividers
+//! 2. Manage peripheral clock enables
+//! 3. Control system and peripheral resets
+//! 4. Monitor system status and flags
+//!
+//! @section hal_crm_configuration Configuration
+//!
+//! - @b Clock @b Sources: Select and configure clock sources
+//! - @b Divider @b Settings: Configure clock dividers
+//! - @b Gate @b Control: Set up peripheral clock gating
+//! - @b Reset @b Options: Configure reset behavior
+//!
 //
-// ****************************************************************************
+//*****************************************************************************
 
-// ****************************************************************************
+//*****************************************************************************
 //
 // Copyright (c) 2025, Ambiq Micro, Inc.
 // All rights reserved.
@@ -41,9 +77,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
-// ****************************************************************************
+//*****************************************************************************
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -98,14 +134,8 @@ uint32_t am_hal_crm_initialize(void)
 
 uint32_t am_hal_crm_control_ADC_CLOCK_SET(bool bEnable)
 {
-    if (bEnable)
-    {
-        CRM->ADCCRM |= CRM_ADCCRM_ADCCLKEN_Msk;
-    }
-    else
-    {
-        CRM->ADCCRM &= ~(CRM_ADCCRM_ADCCLKEN_Msk);
-    }
+    CRM->ADCCRM_b.ADCCRMRSTN = 1;
+    CRM->ADCCRM_b.ADCCLKEN   = bEnable;
 
     am_hal_delay_us(1);
 
@@ -124,7 +154,7 @@ uint32_t am_hal_crm_clock_config_ADC(am_hal_crm_adc_clksel_e eClkSel, uint32_t u
     }
 
     ui32ADCCRM = CRM->ADCCRM;
-    if (ui32ADCCRM | CRM_ADCCRM_ADCCLKEN_Msk)
+    if (ui32ADCCRM & CRM_ADCCRM_ADCCLKEN_Msk)
     {
         bClockOn = true;
         am_hal_crm_control_ADC_CLOCK_SET(false);
@@ -388,7 +418,7 @@ uint32_t am_hal_crm_clock_config_I2S0(am_hal_crm_apbi2s_clksel_e eClkSel)
     bool     bClockOn = false;
 
     ui32APBI2SCRM = CRM->APBI2SCRM;
-    if (ui32APBI2SCRM | CRM_APBI2SCRM_APBI2SCLKEN_Msk)
+    if (ui32APBI2SCRM & CRM_APBI2SCRM_APBI2SCLKEN_Msk)
     {
         bClockOn = true;
         am_hal_crm_control_I2S0_CLOCK_SET(false);
@@ -418,16 +448,7 @@ uint32_t am_hal_crm_control_PDM0_CLOCK_SET(bool bEnable)
 {
     CRM->APBPDMCRM_b.APBPDMRSTN  = 1;
     CRM->APBPDMCRM_b.APBPDMCLKEN = bEnable;
-
-    uint32_t ui32Status = am_hal_delay_us_status_check(CHECK_CLK_ACTIVE_TIMEOUT,
-                                                       (uint32_t)&CRM->APBPDMCRM,
-                                                       CRM_APBPDMCRM_APBPDMCLKACTIVE_Msk,
-                                                       bEnable << CRM_APBPDMCRM_APBPDMCLKACTIVE_Pos,
-                                                       true);
-    if (ui32Status)
-    {
-        return ui32Status;
-    }
+    am_hal_delay_us(1);
 
     return AM_HAL_STATUS_SUCCESS;
 }
@@ -499,7 +520,7 @@ uint32_t am_hal_crm_clock_config_DISPCLK(am_hal_crm_dispclk_clksel_e eClkSel, ui
     }
 
     ui32DISPCLKCRM = CRM->DISPCLKCRM;
-    if (ui32DISPCLKCRM | CRM_DISPCLKCRM_DISPCLKCLKEN_Msk)
+    if (ui32DISPCLKCRM & CRM_DISPCLKCRM_DISPCLKCLKEN_Msk)
     {
         bClockOn = true;
         uint32_t ui32Status = am_hal_crm_control_DISPCLK_CLOCK_SET(false);
@@ -562,7 +583,7 @@ uint32_t am_hal_crm_clock_config_DSIPLLREFCLK(am_hal_crm_dsipllrefclk_clksel_e e
     }
 
     ui32DPHYPLLREFCRM = CRM->DPHYPLLREFCRM;
-    if (ui32DPHYPLLREFCRM | CRM_DPHYPLLREFCRM_DPHYPLLREFCLKEN_Msk)
+    if (ui32DPHYPLLREFCRM & CRM_DPHYPLLREFCRM_DPHYPLLREFCLKEN_Msk)
     {
         bClockOn = true;
         uint32_t ui32Status = am_hal_crm_control_DSIPLLREFCLK_CLOCK_SET(false);
@@ -625,7 +646,7 @@ uint32_t am_hal_crm_clock_config_PDM0CLK(am_hal_crm_pdmclk_clksel_e eClkSel, uin
     }
 
     ui32DSPPDM0CRM  = CRM->DSPPDM0CRM;
-    if (ui32DSPPDM0CRM | CRM_DSPPDM0CRM_DSPPDM0CLKEN_Msk)
+    if (ui32DSPPDM0CRM & CRM_DSPPDM0CRM_DSPPDM0CLKEN_Msk)
     {
         bClockOn = true;
         uint32_t ui32Status = am_hal_crm_control_PDM0CLK_CLOCK_SET(false);
@@ -688,7 +709,7 @@ uint32_t am_hal_crm_clock_config_I2S0MCLK(am_hal_crm_i2smclk_clksel_e eClkSel, u
     }
 
     ui32I2S0MCLKCRM = CRM->I2S0MCLKCRM;
-    if (ui32I2S0MCLKCRM | CRM_I2S0MCLKCRM_I2S0MCLKCLKEN_Msk)
+    if (ui32I2S0MCLKCRM & CRM_I2S0MCLKCRM_I2S0MCLKCLKEN_Msk)
     {
         bClockOn = true;
         uint32_t ui32Status = am_hal_crm_control_I2S0MCLK_CLOCK_SET(false);
@@ -751,7 +772,7 @@ uint32_t am_hal_crm_clock_config_I2S0MCLKOUT(am_hal_crm_i2smclkout_clksel_e eClk
     }
 
     ui32I2S0MCLKOUTCRM = CRM->I2S0MCLKOUTCRM;
-    if (ui32I2S0MCLKOUTCRM | CRM_I2S0MCLKOUTCRM_I2S0MCLKOUTCLKEN_Msk)
+    if (ui32I2S0MCLKOUTCRM & CRM_I2S0MCLKOUTCRM_I2S0MCLKOUTCLKEN_Msk)
     {
         bClockOn = true;
         uint32_t ui32Status = am_hal_crm_control_I2S0MCLKOUT_CLOCK_SET(false);
@@ -814,7 +835,7 @@ uint32_t am_hal_crm_clock_config_I2S0REFCLK(am_hal_crm_i2srefclk_clksel_e eClkSe
     }
 
     ui32I2S0REFCLKCRM  = CRM->I2S0REFCLKCRM;
-    if (ui32I2S0REFCLKCRM | CRM_I2S0REFCLKCRM_I2S0REFCLKCLKEN_Msk)
+    if (ui32I2S0REFCLKCRM & CRM_I2S0REFCLKCRM_I2S0REFCLKCLKEN_Msk)
     {
         bClockOn = true;
         uint32_t ui32Status = am_hal_crm_control_I2S0REFCLK_CLOCK_SET(false);
@@ -1003,7 +1024,7 @@ uint32_t am_hal_crm_clock_config_USBREFCLK(am_hal_crm_usbrefclk_clksel_e eClkSel
     }
 
     ui32USBREFCLKCRM  = CRM->USBREFCLKCRM;
-    if (ui32USBREFCLKCRM | CRM_USBREFCLKCRM_USBREFCLKCLKEN_Msk)
+    if (ui32USBREFCLKCRM & CRM_USBREFCLKCRM_USBREFCLKCLKEN_Msk)
     {
         bClockOn = true;
         uint32_t ui32Status = am_hal_crm_control_USBREFCLK_CLOCK_SET(false);

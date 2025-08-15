@@ -2,7 +2,12 @@
 //
 //! @file am_hal_clkmgr_private.h
 //!
-//! @brief Internal api definition for internal clock manager functions
+//! @brief Clock manager functions that manage system clocks and minimize
+//!        power consumption by powering down clocks when possible.
+//!
+//! @addtogroup clkmgr_ap510L CLKMGR - Clock Manager
+//! @ingroup apollo510L_hal
+//! @{
 //
 //*****************************************************************************
 
@@ -37,7 +42,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 //! @cond CLKMGR_PRIVATE_FUNC
@@ -122,3 +127,10 @@ extern uint32_t am_hal_clkmgr_private_rfxtal_config_send();
 
 #endif //AM_HAL_CLKMGR_PRIVATE_H
 //! @endcond CLKMGR_PRIVATE_FUNC
+
+//*****************************************************************************
+//
+// End Doxygen group.
+//! @}
+//
+//*****************************************************************************

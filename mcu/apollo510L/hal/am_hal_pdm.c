@@ -4,10 +4,45 @@
 //!
 //! @brief HAL implementation for the PDM module.
 //!
-//! @addtogroup pdm PDM - Pulse Density Modulation
+//! @addtogroup pdm_ap510L PDM - Pulse Density Modulation
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides an API for configuring, controlling, and
+//! managing the Pulse Density Modulation (PDM) peripheral on Apollo5 devices.
+//! It supports audio data acquisition, gain control, DMA, and interrupt
+//! handling for digital microphone and audio applications.
+//!
+//! @section hal_pdm_features Key Features
+//!
+//! 1. @b Digital @b Microphone @b Support: Interface with PDM microphones.
+//! 2. @b DMA @b Transfer: High-speed data transfer using DMA.
+//! 3. @b FIFO @b Management: Handle PDM FIFO operations and thresholds.
+//! 4. @b Clock @b Configuration: Flexible clock source selection and configuration.
+//! 5. @b Power @b Management: Low-power operation and power state control.
+//!
+//! @section hal_pdm_functionality Functionality
+//!
+//! - Initialize and configure the PDM peripheral
+//! - Set up DMA for PDM data transfer
+//! - Manage FIFO operations and data reading
+//! - Handle PDM interrupts and status monitoring
+//! - Support for power management and clock configuration
+//!
+//! @section hal_pdm_usage Usage
+//!
+//! 1. Initialize the PDM using am_hal_pdm_initialize()
+//! 2. Configure the PDM with am_hal_pdm_configure()
+//! 3. Set up DMA for data transfer
+//! 4. Enable the PDM and start data acquisition
+//! 5. Handle PDM data and interrupts
+//!
+//! @section hal_pdm_configuration Configuration
+//!
+//! - @b USE_PDM_TWO_STAGE_DMA: Enable/disable two-stage DMA pipeline
+//! - @b Clock @b Selection: Configure PDM clock sources and frequencies
+//! - @b FIFO @b Thresholds: Set up FIFO threshold levels
+//! - @b DMA: Configure DMA for PDM data transfer
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

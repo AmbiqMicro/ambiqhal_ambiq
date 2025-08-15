@@ -4,10 +4,47 @@
 //!
 //! @brief Functions for interfacing with the system timer (STIMER).
 //!
-//! @addtogroup stimer5 STIMER - System Timer
+//! @addtogroup stimer5_ap510L STIMER - System Timer
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides system timer functionality for Apollo5
+//! devices, supporting precise timing, compare operations, capture
+//! functionality, and interrupt generation. It enables accurate system
+//! timing and event synchronization for applications requiring
+//! deterministic timing behavior.
+//!
+//! @section hal_stimer_features Key Features
+//!
+//! 1. @b Flexible @b Clock @b Sources: Support for multiple clock sources and frequencies.
+//! 2. @b Compare @b Events: Multiple compare channels for precise timing control.
+//! 3. @b Capture @b Functionality: Input capture for measuring external signals.
+//! 4. @b Interrupt @b Support: Comprehensive interrupt handling for timer events.
+//! 5. @b NVRAM @b Storage: Non-volatile storage for timer configuration persistence.
+//!
+//! @section hal_stimer_functionality Functionality
+//!
+//! - Configure timer clock sources and operational modes
+//! - Start, stop, and restart timer operations
+//! - Read timer counter values and clear counters
+//! - Set up compare events and delta timing
+//! - Configure input capture for external signal measurement
+//! - Handle timer interrupts and status monitoring
+//!
+//! @section hal_stimer_usage Usage
+//!
+//! 1. Configure the timer using am_hal_stimer_config()
+//! 2. Start the timer with am_hal_stimer_start()
+//! 3. Set up compare events or capture functionality as needed
+//! 4. Handle timer interrupts and monitor status
+//! 5. Stop or restart the timer as required
+//!
+//! @section hal_stimer_configuration Configuration
+//!
+//! - @b Clock @b Sources: Select from HFRC, XTAL, or LFRC clock sources
+//! - @b Compare @b Channels: Configure up to 8 compare channels
+//! - @b Capture @b Channels: Set up input capture for external signals
+//! - @b Interrupts: Configure interrupt sources and handlers
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +78,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

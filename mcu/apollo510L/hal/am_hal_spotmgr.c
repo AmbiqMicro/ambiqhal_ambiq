@@ -1,16 +1,50 @@
-// ****************************************************************************
+//*****************************************************************************
 //
 //! @file am_hal_spotmgr.c
 //!
-//! @brief SPOT manager functions that manage power states.
+//! @brief Functions for managing System Power Optimization (SPOT).
 //!
-//! @addtogroup spotmgr510l SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr_ap510L SPOT Manager - System Power Optimization
 //! @ingroup apollo510L_hal
 //! @{
-//
-// ****************************************************************************
+//!
+//! Purpose: This module manages system power optimization features in Apollo5
+//! devices. It provides functionality to optimize power consumption while
+//! maintaining required system performance through dynamic voltage and
+//! frequency scaling.
+//!
+//! @section hal_spotmgr_features Key Features
+//!
+//! 1. @b Power @b Optimization: Dynamic power management strategies.
+//! 2. @b Performance @b Scaling: Voltage and frequency adjustment.
+//! 3. @b System @b Monitoring: Real-time performance and power tracking.
+//! 4. @b Profile @b Management: Power profile configuration and switching.
+//! 5. @b Temperature @b Control: Thermal management integration.
+//!
+//! @section hal_spotmgr_functionality Functionality
+//!
+//! - Initialize and configure SPOT management system
+//! - Adjust system voltage and frequency
+//! - Monitor system performance metrics
+//! - Manage power optimization profiles
+//! - Handle thermal constraints
+//!
+//! @section hal_spotmgr_usage Usage
+//!
+//! 1. Initialize SPOT manager using setup functions
+//! 2. Configure power profiles and thresholds
+//! 3. Monitor system metrics
+//! 4. Adjust power settings as needed
+//!
+//! @section hal_spotmgr_configuration Configuration
+//!
+//! - @b Voltage @b Levels: Configure operating voltage ranges
+//! - @b Frequency @b Settings: Set system frequency thresholds
+//! - @b Profile @b Options: Define power optimization profiles
+//! - @b Thermal @b Limits: Set temperature-based constraints
+//*****************************************************************************
 
-// ****************************************************************************
+//*****************************************************************************
 //
 // Copyright (c) 2025, Ambiq Micro, Inc.
 // All rights reserved.
@@ -41,9 +75,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
-// ****************************************************************************
+//*****************************************************************************
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -111,7 +145,13 @@ typedef struct
 //
 //*****************************************************************************
 //! Trim Version booleans for optimization of trim version eval
+bool g_bIsTrimver1;
 bool g_bIsTrimver1OrNewer;
+bool g_bIsTrimver2OrNewer;
+
+//! This table will be populated with SPOT manager related INFO1 values and
+//! will be used for easy lookup after OTP is powered down.
+am_hal_spotmgr_info1_regs_t g_sSpotMgrINFO1regs;
 
 //*****************************************************************************
 //
@@ -323,12 +363,21 @@ am_hal_spotmgr_init(void)
     //
     // Populate cached booleans for trim version eval optimization
     //
+    // A0 trimver1
+    //
+    g_bIsTrimver1 = APOLLO510L_A0_TRIMVER1;
+    //
     // A0 trimver1 and newer trim, and silicon newer than A0
+    //
     g_bIsTrimver1OrNewer = APOLLO510L_A0_GE_TRIMVER1 || APOLLO510L_GT_A0;
+    //
+    // A0 trimver2 and newer trim, and silicon newer than A0
+    //
+    g_bIsTrimver2OrNewer = APOLLO510L_A0_GE_TRIMVER2 || APOLLO510L_GT_A0;
     //
     // Populate SPOTmanager function pointer according to PCM version
     //
-    if (g_bIsTrimver1OrNewer)
+    if (g_bIsTrimver1)
     {
         #if !AM_HAL_SPOTMGR_TRIMVER_1_DISABLE
         g_sSpotMgr.pfnSpotmgrInit = am_hal_spotmgr_trimver_1_init;
@@ -339,7 +388,15 @@ am_hal_spotmgr_init(void)
         #endif
         #endif
     }
-
+    else if (g_bIsTrimver2OrNewer)
+    {
+        #if !AM_HAL_SPOTMGR_TRIMVER_2_DISABLE
+        g_sSpotMgr.pfnSpotmgrInit = am_hal_spotmgr_trimver_2_init;
+        g_sSpotMgr.pfnSpotmgrPSUpdate = am_hal_spotmgr_trimver_2_power_state_update;
+        g_sSpotMgr.pfnSpotMgrDefaultRst = am_hal_spotmgr_trimver_2_default_reset;
+        g_sSpotMgr.pfnSpotMgrSimobuckInitBfrEnable = am_hal_spotmgr_trimver_2_simobuck_init_bfr_enable;
+        #endif
+    }
     //
     // Execute SPOTmanager init
     //
@@ -350,6 +407,27 @@ am_hal_spotmgr_init(void)
 
     return ui32Status;
 }
+
+//*****************************************************************************
+//
+//! @brief Dummy Weak function for spotmgr log change event handler
+//!
+//! @param pChangeLog - Pointer of am_hal_spotmgr_changelog_t struct.
+//!
+//! @return None.
+//
+//*****************************************************************************
+#ifdef AM_HAL_SPOTMGR_PROFILING
+#if defined (__IAR_SYSTEMS_ICC__)
+__weak void
+#else
+void __attribute__((weak))
+#endif
+am_hal_spotmgr_log_change(am_hal_spotmgr_changelog_t *pChangeLog)
+{
+    // Dummy weak function - Do nothing
+}
+#endif
 
 //*****************************************************************************
 //

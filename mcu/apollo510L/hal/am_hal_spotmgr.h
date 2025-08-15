@@ -4,7 +4,7 @@
 //!
 //! @brief SPOT manager functions that manage power states.
 //!
-//! @addtogroup spotmgr510l SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr5b_ap510L SPOTMGR - SPOT Manager
 //! @ingroup apollo510L_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SPOTMGR_H
@@ -80,14 +80,144 @@ extern "C"
 //
 //*****************************************************************************
 
-//! Mask of all available peripherals for DEVPWRST
-#define DEVPWRST_ALL_PERIPH_MASK   0xFFFFE6FE
+//! Mask of all available peripherals for DEVPWRST, excluding SYSPLL
+#define DEVPWRST_ALL_PERIPH_MASK   0xFFFDE6FE
+//! Mask of peripherals which need to boost both VDDC and VDDF for DEVPWRST,
+//! including NETAOL, OTP, USBPHY/USB, SDIO, CRYPTO, DISP/DISPPHY, GFX, MSPI,
+//! I2S, PDM, I3C/I3CPHY, DBG, IOM4/5.
+#define DEVPWRST_BOOST_VDDCF_PERIPH_MASK   0xCFFDC0E0
+//! Mask of peripherals which need to boost VDDC only for DEVPWRST, including
+//! IOS, UART, IOM0/1/2/3.
+#define DEVPWRST_BOOST_VDDC_PERIPH_MASK   0x3000061E
 //! Mask of all available peripherals for AUDSSPWRST
 #define AUDSSPWRST_ALL_PERIPH_MASK 0x44
+//! Mask of DEV peripherals monitored for power state 1
+#define DEVPWRST_MONITOR_PERIPH_MASK_PS1   DEVPWRST_BOOST_VDDCF_PERIPH_MASK
+//! Mask of DEV peripherals monitored for power state 2
+#define DEVPWRST_MONITOR_PERIPH_MASK_PS2   DEVPWRST_BOOST_VDDC_PERIPH_MASK
 //! Mask of DEV peripherals monitored by SPOT manager
 #define DEVPWRST_MONITOR_PERIPH_MASK   DEVPWRST_ALL_PERIPH_MASK
+//! Mask of AUDSS peripherals monitored for power state 1
+#define AUDSSPWRST_MONITOR_PERIPH_MASK_PS1 AUDSSPWRST_ALL_PERIPH_MASK
 //! Mask of AUDSS peripherals monitored by SPOT manager
 #define AUDSSPWRST_MONITOR_PERIPH_MASK AUDSSPWRST_ALL_PERIPH_MASK
+
+//*****************************************************************************
+//
+//! Typedef
+//
+//*****************************************************************************
+
+//
+//! Struct for PWRSTATE 0 trims
+//
+typedef union
+{
+    uint32_t PWRSTATE0TRIM;
+    struct
+    {
+        uint32_t VDDCRXCOMPTRIMMINUS : 5;
+        uint32_t VDDFRXCOMPTRIMMINUS : 5;
+        uint32_t                     : 22;
+    } PWRSTATE0TRIM_b;
+} am_hal_spotmgr_trim_settings_t;
+
+//
+//! Struct for SCM CNTRCTRL2
+//
+typedef union
+{
+    uint32_t CNTRCTRL2;
+    struct
+    {
+        uint32_t FCNT1 : 16;
+        uint32_t FCNT2 : 16;
+    } CNTRCTRL2_b;
+} am_hal_spotmgr_scm_cntrctrl2_settings_t;
+
+//
+//! Struct for SCM LPTHRESHVDDS/F/C/CLV/RF
+//
+typedef union
+{
+    uint32_t LPTHRESH;
+    struct
+    {
+        uint32_t LPTHRESHVDD : 20;
+        uint32_t             : 12;
+    } LPTHRESH_b;
+} am_hal_spotmgr_scm_lpthresh_settings_t;
+
+//
+//! Struct for SCM LPHYSTCNT
+//
+typedef union
+{
+    uint32_t LPHYST;
+    struct
+    {
+        uint32_t LPHYSTCNT   : 20;
+        uint32_t             : 12;
+    } LPHYST_b;
+} am_hal_spotmgr_scm_lphyst_settings_t;
+
+//
+//! Struct for SCM ACTTHRESH1
+//
+typedef union
+{
+    uint32_t ACTTHRESH1;
+    struct
+    {
+        uint32_t ACTTHRESHVDDF   : 16;
+        uint32_t ACTTHRESHVDDS   : 16;
+    } ACTTHRESH1_b;
+} am_hal_spotmgr_scm_actthresh1_t;
+
+//
+//! Struct for SCM ACTTHRESH2
+//
+typedef union
+{
+    uint32_t ACTTHRESH2;
+    struct
+    {
+        uint32_t ACTTHRESHVDDCLV : 16;
+        uint32_t ACTTHRESHVDDC   : 16;
+    } ACTTHRESH2_b;
+} am_hal_spotmgr_scm_actthresh2_t;
+
+//
+//! Struct for SCM ACTTHRESH3
+//
+typedef union
+{
+    uint32_t ACTTHRESH3;
+    struct
+    {
+        uint32_t ACTTHRESHVDDRF  : 16;
+        uint32_t                 : 16;
+    } ACTTHRESH3_b;
+} am_hal_spotmgr_scm_actthresh3_t;
+
+//
+//! SPOT manager INFO1 register structure
+//
+typedef struct
+{
+    uint32_t ui32SpotMgrINFO1GlobalValid;
+    am_hal_spotmgr_trim_settings_t                 sPowerState0Trims; // 0x1440
+    am_hal_spotmgr_scm_cntrctrl2_settings_t            sScmCntrCtrl2; // 0x1444
+    am_hal_spotmgr_scm_lpthresh_settings_t          sScmLpThreshVdds; // 0x1448
+    am_hal_spotmgr_scm_lpthresh_settings_t          sScmLpThreshVddf; // 0x144C
+    am_hal_spotmgr_scm_lpthresh_settings_t          sScmLpThreshVddc; // 0x1450
+    am_hal_spotmgr_scm_lpthresh_settings_t        sScmLpThreshVddclv; // 0x1454
+    am_hal_spotmgr_scm_lpthresh_settings_t         sScmLpThreshVddrf; // 0x1458
+    am_hal_spotmgr_scm_lphyst_settings_t               sScmLpHystCnt; // 0x145C
+    am_hal_spotmgr_scm_actthresh1_t            sScmActThresh1; // 0x1460
+    am_hal_spotmgr_scm_actthresh2_t            sScmActThresh2; // 0x1464
+    am_hal_spotmgr_scm_actthresh3_t            sScmActThresh3; // 0x1468
+} am_hal_spotmgr_info1_regs_t;
 
 //*****************************************************************************
 //
@@ -177,6 +307,8 @@ typedef enum
     AM_HAL_SPOTMGR_STIM_MEMPWR, // Place holder - may be used in the future
     //! SSRAM power state included in SSRAMPWRST regs.
     AM_HAL_SPOTMGR_STIM_SSRAMPWR, // Place holder - may be used in the future
+    //! Initialise MCU power state after SPOTMGR and SIMOBUCK are both initialised
+    AM_HAL_SPOTMGR_STIM_INIT_STATE,
 } am_hal_spotmgr_stimulus_e;
 
 
@@ -184,6 +316,7 @@ typedef enum
 // Include addtional header file for each PCM
 //
 #include "am_hal_spotmgr_trimver_1.h"
+#include "am_hal_spotmgr_trimver_2.h"
 
 //
 // Define macro AM_HAL_SPOTMGR_PROFILING to enable SPOTMGR profiling functionality.
@@ -226,7 +359,13 @@ typedef struct
 //
 //*****************************************************************************
 //! Trim Version booleans for optimization of trim version eval
+extern bool g_bIsTrimver1;
 extern bool g_bIsTrimver1OrNewer;
+extern bool g_bIsTrimver2OrNewer;
+
+//! This table will be populated with SPOT manager related INFO1 values and
+//! will be used for easy lookup after OTP is powered down.
+extern am_hal_spotmgr_info1_regs_t g_sSpotMgrINFO1regs;
 
 //*****************************************************************************
 //
@@ -362,6 +501,19 @@ extern uint32_t am_hal_spotmgr_simobuck_lp_autosw_disable(void);
 //
 //*****************************************************************************
 extern uint32_t am_hal_spotmgr_init(void);
+
+//*****************************************************************************
+//
+//! @brief Dummy Weak function for spotmgr log change event handler
+//!
+//! @param pChangeLog - Pointer of am_hal_spotmgr_changelog_t struct.
+//!
+//! @return None.
+//
+//*****************************************************************************
+#ifdef AM_HAL_SPOTMGR_PROFILING
+extern void am_hal_spotmgr_log_change(am_hal_spotmgr_changelog_t *pChangeLog);
+#endif
 
 #ifdef __cplusplus
 }

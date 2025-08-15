@@ -4,15 +4,45 @@
 //!
 //! @brief Locate global variables here.
 //!
-//! This module contains global variables that are used throughout the HAL.
+//! @addtogroup globals_ap510L Globals - HAL globals
+//! @ingroup apollo510L_hal
+//! @{
+//!
+//! Purpose: This module contains global variables that are used throughout the
+//! HAL, but not necessarily those designated as const (which typically end up
+//! in flash). Consolidating globals here will make it easier to manage them.
 //!
 //! One use in particular is that it uses a global HAL flags variable that
 //! contains flags used in various parts of the HAL.
 //!
-//! @addtogroup globals Globals - HAL globals
-//! @ingroup apollo510L_hal
-//! @{
-//
+//! @section hal_global_features Key Features
+//!
+//! 1. @b Version @b Information: HAL version tracking and compiler identification.
+//! 2. @b FPGA @b Support: Runtime FPGA frequency configuration and management.
+//! 3. @b System @b Utilities: Fundamental system functions and utilities.
+//! 4. @b Global @b State: Centralized global variable management.
+//! 5. @b Compatibility: Support for various compiler and platform configurations.
+//!
+//! @section hal_global_functionality Functionality
+//!
+//! - Provide HAL version and compiler information
+//! - Manage FPGA frequency settings and configurations
+//! - Supply system-wide utility functions
+//! - Handle global state and configuration
+//! - Support for development and debugging tools
+//!
+//! @section hal_global_usage Usage
+//!
+//! 1. Access version information via global variables
+//! 2. Configure FPGA settings as needed
+//! 3. Use utility functions for system operations
+//! 4. Access global state throughout the HAL
+//!
+//! @section hal_global_configuration Configuration
+//!
+//! - @b APOLLO5_FPGA: Enable/disable FPGA-specific features
+//! - @b Compiler @b Support: Automatic detection of compiler features
+//! - @b Version @b Macros: HAL version and revision tracking
 //*****************************************************************************
 
 //*****************************************************************************
@@ -46,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

@@ -4,10 +4,45 @@
 //!
 //! @brief HAL Utility Functions
 //!
-//! @addtogroup utils4 Utils - HAL Utility Functions
+//! @addtogroup utils4_ap510L Utils - HAL Utility Functions
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides utility functions for the HAL on Apollo5 devices,
+//!          including delay functions, status checking, and memory operations.
+//!          It supports precise timing control, status monitoring, and efficient
+//!          memory access for system-level operations and debugging.
+//!
+//! @section hal_utils_features Key Features
+//!
+//! 1. @b Delay @b Functions: Precise microsecond and cycle-based delay operations.
+//! 2. @b Status @b Monitoring: Check register status with timeout capabilities.
+//! 3. @b Memory @b Operations: Efficient word-based memory read operations.
+//! 4. @b Burst @b Mode: Support for burst mode status checking.
+//! 5. @b BootROM @b Integration: Integration with bootrom helper functions.
+//!
+//! @section hal_utils_functionality Functionality
+//!
+//! - Provide precise delay functions in microseconds and cycles
+//! - Monitor register status with timeout and equality checking
+//! - Support efficient memory read operations
+//! - Handle burst mode status and configuration
+//! - Integrate with bootrom helper functionality
+//!
+//! @section hal_utils_usage Usage
+//!
+//! 1. Use delay functions for precise timing control
+//! 2. Monitor register status with timeout capabilities
+//! 3. Perform efficient memory read operations
+//! 4. Check burst mode status as needed
+//! 5. Integrate with bootrom helper functions
+//!
+//! @section hal_utils_configuration Configuration
+//!
+//! - @b Delay @b Timing: Configure delay parameters and cycle counts
+//! - @b Status @b Monitoring: Set up timeout values and status checking
+//! - @b Memory @b Access: Configure memory read operations
+//! - @b Burst @b Mode: Set up burst mode operations
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

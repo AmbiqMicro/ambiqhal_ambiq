@@ -4,10 +4,51 @@
 //!
 //! @brief Functions for interfacing with the MSPI.
 //!
-//! @addtogroup mspi4 MSPI - Multi-bit SPI
+//! @addtogroup mspi4_ap510L MSPI - Multi-bit SPI
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//! the Multi-bit SPI (MSPI) modules on Apollo5 devices. It supports
+//! PI communication, DMA transfers, command queue operations, device
+//! configuration, and interrupt handling for high-speed serial memory
+//! and peripheral access.
+//!
+//! @section mspi_features Key Features
+//!
+//! 1. @b Multi-bit @b SPI: Support for 1-bit, 2-bit, 4-bit, and 8-bit SPI modes.
+//! 2. @b DMA @b Transfers: High-speed DMA-based data transfer operations.
+//! 3. @b Command @b Queue: Advanced command queue for complex transaction sequences.
+//! 4. @b Device @b Configuration: Flexible device configuration and initialization.
+//! 5. @b Interrupt @b Handling: Comprehensive interrupt management and status monitoring.
+//! 6. @b Power @b Management: Power state control and state retention capabilities.
+//!
+//! @section mspi_functionality Functionality
+//!
+//! - Initialize and configure MSPI modules for various devices
+//! - Perform blocking and non-blocking data transfers
+//! - Manage DMA transfers with callback support
+//! - Handle command queue operations and sequencing
+//! - Support high-priority transaction processing
+//! - Provide interrupt-driven operation with status monitoring
+//! - Enable power management and state retention
+//! - Support XIP (Execute-In-Place) configurations
+//!
+//! @section mspi_usage Usage
+//!
+//! 1. Initialize MSPI using am_hal_mspi_initialize()
+//! 2. Configure device settings with am_hal_mspi_device_configure()
+//! 3. Enable MSPI module with am_hal_mspi_enable()
+//! 4. Perform transfers using blocking or non-blocking functions
+//! 5. Handle interrupts and manage power states as needed
+//!
+//! @section mspi_configuration Configuration
+//!
+//! - @b Device @b Support: Multiple flash and memory device configurations
+//! - @b Clock @b Management: Configurable clock sources and frequencies
+//! - @b DMA @b Settings: Transfer control buffer and threshold configuration
+//! - @b Command @b Queue: Configurable queue depth and entry management
+//! - @b Interrupt @b Masking: Selective interrupt enable/disable control
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +82,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -1056,13 +1097,13 @@ mspi_device_configure(am_hal_mspi_state_t *pMSPIState)
         MSPIn(ui32Module)->DEV0CFG_b.DEVCFG0      = MSPI0_DEV0CFG_DEVCFG0_QUAD0;
         MSPIn(ui32Module)->DEV0CFG_b.SEPIO0       = 0;
         MSPIn(ui32Module)->DEV0XIP_b.XIPMIXED0    = MSPI0_CTRL1_PIOMIXED_NORMAL;
-        MSPIn(ui32Module)->PADOUTEN = pMSPIState->bClkonD4 ? 0x8000021F : 0x30F;
+        MSPIn(ui32Module)->PADOUTEN = pMSPIState->bClkonD4 ? 0x8000021F : MSPI0_PADOUTEN_OUTEN_QUADDDR;
         break;
       case AM_HAL_MSPI_FLASH_QUAD_DDR_CE1:
         MSPIn(ui32Module)->DEV0CFG_b.DEVCFG0      = MSPI0_DEV0CFG_DEVCFG0_QUAD1;
         MSPIn(ui32Module)->DEV0CFG_b.SEPIO0       = 0;
         MSPIn(ui32Module)->DEV0XIP_b.XIPMIXED0    = MSPI0_CTRL1_PIOMIXED_NORMAL;
-        MSPIn(ui32Module)->PADOUTEN = pMSPIState->bClkonD4 ? 0x8000021F : 0x30F;
+        MSPIn(ui32Module)->PADOUTEN = pMSPIState->bClkonD4 ? 0x8000021F : MSPI0_PADOUTEN_OUTEN_QUADDDR;
         break;
       case AM_HAL_MSPI_FLASH_OCTAL_CE0:
         MSPIn(ui32Module)->DEV0CFG_b.DEVCFG0      = MSPI0_DEV0CFG_DEVCFG0_OCTAL0;

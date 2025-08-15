@@ -2,9 +2,9 @@
 //
 //! @file am_hal_usb.h
 //!
-//! @brief
+//! @brief Functions for USB module
 //!
-//! @addtogroup usb USB Functionality
+//! @addtogroup usb_ap510L USB Functionality
 //! @ingroup apollo510L_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for interfacing with the Real-Time Clock (RTC).
 //!
-//! @addtogroup rtc4 RTC - Real-Time Clock
+//! @addtogroup rtc4_ap510L RTC - Real-Time Clock
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//!          the Real-Time Clock (RTC) peripheral on Apollo5 devices. It supports
+//!          time keeping, alarm functionality, date/time validation, and interrupt
+//!          handling for precise real-time clock operations and scheduling.
+//!
+//! @section hal_rtc_features Key Features
+//!
+//! 1. @b Time @b Keeping: Accurate real-time clock functionality.
+//! 2. @b Alarm @b Support: Configurable alarm and interval functionality.
+//! 3. @b Date/Time @b Validation: Comprehensive date and time validation.
+//! 4. @b Interrupt @b Handling: Interrupt support for time and alarm events.
+//! 5. @b Oscillator @b Control: Flexible oscillator selection and control.
+//!
+//! @section hal_rtc_functionality Functionality
+//!
+//! - Initialize and configure RTC peripheral
+//! - Set and get current time and date
+//! - Configure alarm functionality and intervals
+//! - Handle RTC interrupts and status monitoring
+//! - Support oscillator selection and control
+//!
+//! @section hal_rtc_usage Usage
+//!
+//! 1. Configure RTC using am_hal_rtc_config()
+//! 2. Set current time with am_hal_rtc_time_set()
+//! 3. Configure alarms and intervals as needed
+//! 4. Handle RTC interrupts and time events
+//! 5. Monitor RTC status and time updates
+//!
+//! @section hal_rtc_configuration Configuration
+//!
+//! - @b Time @b Format: Configure time format and validation
+//! - @b Alarm @b Settings: Set up alarm intervals and repeat modes
+//! - @b Oscillator: Select RTC oscillator source
+//! - @b Interrupts: Configure interrupt sources and handlers
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

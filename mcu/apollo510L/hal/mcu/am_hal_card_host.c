@@ -2,12 +2,47 @@
 //
 //! @file am_hal_card_host.c
 //!
-//! @brief Functions for interfacing with the SDHC or SPI SD/MMC/SDIO card host.
+//! @brief Functions for interfacing with the SDHC or SPI SD/MMC/eMMC/SDIO card host.
 //!
-//! @addtogroup card_host Card Host for SD/MMC/eMMC/SDIO
+//! @addtogroup card_host_ap510L Card Host for SD/MMC/eMMC/SDIO
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for interfacing with the SDHC or SPI
+//!          SD/MMC/SDIO card host on Apollo5 devices. It supports card host
+//!          initialization, power management, command execution, and host
+//!          configuration for SD/MMC/eMMC/SDIO card operations.
+//!
+//! @section hal_card_host_features Key Features
+//!
+//! 1. @b SDHC @b Host: SD Host Controller interface support.
+//! 2. @b SPI @b Host: SPI-based card host interface.
+//! 3. @b Power @b Management: Card host power control and management.
+//! 4. @b Command @b Execution: Host command execution and response handling.
+//! 5. @b Multi-Card: Support for SD, MMC, eMMC, and SDIO card types.
+//!
+//! @section hal_card_host_functionality Functionality
+//!
+//! - Initialize and configure card host interfaces
+//! - Handle card host power management
+//! - Execute host commands and handle responses
+//! - Support multiple card host types (SDHC/SPI)
+//! - Manage card host capabilities and configuration
+//!
+//! @section hal_card_host_usage Usage
+//!
+//! 1. Initialize card host using am_hal_get_card_host()
+//! 2. Configure host parameters and capabilities
+//! 3. Execute host commands as needed
+//! 4. Manage host power states
+//! 5. Handle host events and responses
+//!
+//! @section hal_card_host_configuration Configuration
+//!
+//! - @b Host @b Type: Configure SDHC or SPI host interface
+//! - @b Power @b Management: Set up host power control parameters
+//! - @b Command @b Interface: Configure command execution interface
+//! - @b Multi-Card: Set up support for different card types
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

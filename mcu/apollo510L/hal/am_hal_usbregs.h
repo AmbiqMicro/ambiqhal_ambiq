@@ -4,7 +4,16 @@
 //!
 //! @brief CMSIS-style register definitions for the USB registers.
 //!
-//
+//! @addtogroup usb_regs_ap510L USBRREGS - USB Register Functionality
+//! @ingroup apollo510L_hal
+//! @{
+//!
+//! Purpose: This module provides comprehensive CMSIS-compliant register
+//!          definitions for the USB controller on Apollo5 devices. It
+//!          implements structured, bit-level access to all USB hardware
+//!          registers with proper handling of read/write side effects
+//!          and cross-compiler compatibility support.
+//!
 //! The Ambiq USB implementation is 8-bit oriented, yet multiple USB registers
 //! are packed into 32-bit registers. Also, many of the USB aregisters have
 //! read or write side-effects. Therefore many of the registers must be byte
@@ -31,9 +40,38 @@
 //!
 //!  USBHAL->INTRUSBen_b.SOF = 1;
 //!
-//! @addtogroup usb_regs USBRREGS - USB Register Functionality
-//! @ingroup apollo510L_hal
-//! @{
+//! @section hal_usbregs_features Key Features
+//!
+//! 1. @b Register @b Access: Structured access to all USB controller registers
+//! 2. @b Bit-field @b Control: Individual bit and field manipulation
+//! 3. @b Cross-compiler @b Support: Compatible with major ARM compilers
+//! 4. @b Side-effect @b Handling: Safe access to special function registers
+//! 5. @b Memory @b Layout: Complete USB controller memory map definition
+//!
+//! @section hal_usbregs_functionality Functionality
+//!
+//! - Complete USB register structure definitions
+//! - Endpoint configuration registers
+//! - FIFO control and status registers
+//! - Interrupt management registers
+//! - USB PHY and clock control registers
+//! - Hardware version and information registers
+//!
+//! @section hal_usbregs_usage Usage
+//!
+//! 1. Include am_hal_usbregs.h in USB-related code
+//! 2. Access registers via USBHAL structure
+//! 3. Use bit-field structs for register manipulation
+//! 4. Handle compiler-specific union access
+//! 5. Manage register side-effects properly
+//!
+//! @section hal_usbregs_registers Register Groups
+//!
+//! - Configuration (CFG0-CFG3): Basic USB setup
+//! - Index-specific (IDX0-IDX2): Endpoint control
+//! - FIFO: Data transfer buffers
+//! - Control: Clock, SRAM, and PHY settings
+//! - Status: Hardware version and capabilities
 //
 //*****************************************************************************
 
@@ -68,7 +106,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

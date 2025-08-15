@@ -4,9 +4,45 @@
 //!
 //! @brief Functions for interfacing with the ambiq card host.
 //!
-//! @addtogroup card Card Functionality for SD/MMC/eMMC/SDIO
+//! @addtogroup card_ap510L Card Functionality for SD/MMC/eMMC/SDIO
 //! @ingroup apollo510L_hal
 //! @{
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//!          SD/MMC/eMMC/SDIO cards on Apollo5 devices. It supports card
+//!          initialization, block read/write operations, power management,
+//!          and card-specific functionality for various memory card types.
+//!
+//! @section hal_card_features Key Features
+//!
+//! 1. @b Multi-Card @b Support: SD, MMC, eMMC, and SDIO card support.
+//! 2. @b Block @b Operations: Synchronous and asynchronous block read/write.
+//! 3. @b Power @b Management: Card power control and sleep/wakeup.
+//! 4. @b Card @b Detection: Automatic card detection and initialization.
+//! 5. @b Calibration: Card interface calibration for optimal performance.
+//!
+//! @section hal_card_functionality Functionality
+//!
+//! - Initialize and configure various card types
+//! - Handle block read/write operations
+//! - Manage card power states and sleep/wakeup
+//! - Support card detection and initialization
+//! - Provide card-specific functionality and calibration
+//!
+//! @section hal_card_usage Usage
+//!
+//! 1. Initialize card using am_hal_card_init()
+//! 2. Configure card parameters and capabilities
+//! 3. Perform block read/write operations
+//! 4. Manage card power states as needed
+//! 5. Handle card events and status monitoring
+//!
+//! @section hal_card_configuration Configuration
+//!
+//! - @b Card @b Type: Configure for SD, MMC, eMMC, or SDIO cards
+//! - @b Block @b Operations: Set up block read/write parameters
+//! - @b Power @b Management: Configure card power control
+//! - @b Calibration: Set up card interface calibration parameters
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

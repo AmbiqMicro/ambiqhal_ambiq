@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for interfacing with the CACHE controller.
 //!
-//! @addtogroup cachectrl4 CACHE - Cache Control
+//! @addtogroup cachectrl4_ap510L CACHE - Cache Control
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for interfacing with the Cache
+//!          Controller on Apollo5 devices. It supports instruction and data
+//!          cache control, cache invalidation, power management, and
+//!          prefetch configuration for optimal memory performance.
+//!
+//! @section hal_cachectrl_features Key Features
+//!
+//! 1. @b Instruction @b Cache: Control instruction cache enable/disable.
+//! 2. @b Data @b Cache: Control data cache enable/disable and cleaning.
+//! 3. @b Cache @b Invalidation: Invalidate cache ranges and regions.
+//! 4. @b Power @b Management: Cache power control and management.
+//! 5. @b Prefetch @b Configuration: Configure cache prefetch parameters.
+//!
+//! @section hal_cachectrl_functionality Functionality
+//!
+//! - Enable and disable instruction and data caches
+//! - Invalidate cache ranges and regions
+//! - Clean data cache for memory consistency
+//! - Manage cache power states
+//! - Configure cache prefetch parameters
+//!
+//! @section hal_cachectrl_usage Usage
+//!
+//! 1. Enable caches using am_hal_cachectrl_icache_enable() and am_hal_cachectrl_dcache_enable()
+//! 2. Invalidate caches as needed with am_hal_cachectrl_icache_invalidate()
+//! 3. Clean data cache with am_hal_cachectrl_dcache_clean()
+//! 4. Manage cache power states
+//! 5. Configure prefetch parameters as required
+//!
+//! @section hal_cachectrl_configuration Configuration
+//!
+//! - @b Cache @b Enable: Configure instruction and data cache enable/disable
+//! - @b Invalidation: Set up cache invalidation ranges and parameters
+//! - @b Power @b States: Configure cache power management
+//! - @b Prefetch: Set up cache prefetch configuration
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

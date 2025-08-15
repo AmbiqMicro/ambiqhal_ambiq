@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for secure over-the-air.
 //!
-//! @addtogroup secure_ota Secure OTA Functionality
+//! @addtogroup secure_ota_ap510L Secure OTA Functionality
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for secure over-the-air (OTA) update
+//!          functionality on Apollo5 devices. It supports secure firmware updates,
+//!          OTA descriptor management, and image validation for secure remote
+//!          firmware updates and system maintenance.
+//!
+//! @section hal_secure_ota_features Key Features
+//!
+//! 1. @b Secure @b Updates: Secure over-the-air firmware update support.
+//! 2. @b OTA @b Descriptor: Management of OTA descriptor structures.
+//! 3. @b Image @b Validation: Secure image validation and verification.
+//! 4. @b Flash @b Programming: Secure flash programming for updates.
+//! 5. @b Status @b Monitoring: OTA status and progress monitoring.
+//!
+//! @section hal_secure_ota_functionality Functionality
+//!
+//! - Initialize OTA functionality and descriptor management
+//! - Add new firmware images to OTA descriptor
+//! - Validate and verify firmware images
+//! - Handle secure flash programming operations
+//! - Monitor OTA status and progress
+//!
+//! @section hal_secure_ota_usage Usage
+//!
+//! 1. Initialize OTA using am_hal_ota_init()
+//! 2. Add firmware images with am_hal_ota_add()
+//! 3. Monitor OTA status and progress
+//! 4. Handle secure flash programming
+//! 5. Validate firmware images as needed
+//!
+//! @section hal_secure_ota_configuration Configuration
+//!
+//! - @b Flash @b Keys: Configure secure flash programming keys
+//! - @b OTA @b Descriptor: Set up OTA descriptor structures
+//! - @b Image @b Validation: Configure image validation parameters
+//! - @b Security: Set up secure update parameters
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>

@@ -4,7 +4,7 @@
 //!
 //! @brief HAL Utility Functions
 //!
-//! @addtogroup utils4 Utils - HAL Utility Functions
+//! @addtogroup utils4_ap510L Utils - HAL Utility Functions
 //! @ingroup apollo510L_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_UTILS_H

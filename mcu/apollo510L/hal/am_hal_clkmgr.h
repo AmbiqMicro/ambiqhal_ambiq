@@ -5,7 +5,7 @@
 //! @brief Clock manager functions that manage system clocks and minimize
 //!        power consumption by powering down clocks when possible.
 //!
-//! @addtogroup clkmgr5b CLKMGR - Clock Manager
+//! @addtogroup clkmgr_ap510L CLKMGR - Clock Manager
 //! @ingroup apollo510L_hal
 //! @{
 //
@@ -42,7 +42,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CLKMGR_H
@@ -145,6 +145,7 @@ typedef enum
     AM_HAL_CLKMGR_USER_ID_SYSPLL,
     AM_HAL_CLKMGR_USER_ID_SYSPLL_REL,
     AM_HAL_CLKMGR_USER_ID_CPU,
+    AM_HAL_CLKMGR_USER_ID_PRESTART,
     AM_HAL_CLKMGR_USER_ID_RESV0,
     AM_HAL_CLKMGR_USER_ID_MAX
 } am_hal_clkmgr_user_id_e;
@@ -215,6 +216,12 @@ typedef enum
 
     // Set SYPLL's FREF priority
     AM_HAL_CLKMGR_SYPLL_FREF_PRIORITY_SET,
+
+    // Release/resume the clocks that are pre-started.
+    // Note: This is typically used for deep sleep enter/exit, to
+    //       disable/re-enable pre-started clock that is not used.
+    AM_HAL_CLKMGR_RELEASE_PRESTART_CLK,
+    AM_HAL_CLKMGR_RESUME_PRESTART_CLK,
 
     AM_HAL_CLKMGR_CONTROL_MAX,
 } am_hal_clkmgr_control_e;

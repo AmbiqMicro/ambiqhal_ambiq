@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for interfacing with the IO Slave module
 //!
-//! @addtogroup ios4 IOS - IO Slave (SPI/I2C)
+//! @addtogroup ios4_ap510L IOS - IO Slave (SPI/I2C)
 //! @ingroup apollo510L_hal
 //! @{
-//
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//!          the IO Slave (IOS) module on Apollo5 devices. It supports SPI and
+//!          I2C slave communication, DMA transfers, FIFO management, and
+//!          interrupt handling for flexible serial slave operations.
+//!
+//! @section hal_ios_features Key Features
+//!
+//! 1. @b SPI/I2C @b Slave: Support for SPI and I2C slave modes.
+//! 2. @b DMA @b Transfer: High-speed DMA-based data transfer operations.
+//! 3. @b FIFO @b Management: Advanced FIFO buffer management.
+//! 4. @b Interrupt @b Handling: Comprehensive interrupt management for IOS events.
+//! 5. @b Power @b Management: Power control and save/restore functionality.
+//!
+//! @section hal_ios_functionality Functionality
+//!
+//! - Initialize and configure IOS peripheral
+//! - Handle SPI and I2C slave data transfer operations
+//! - Support DMA-based high-speed transfers
+//! - Manage FIFO buffers and data flow
+//! - Handle IOS interrupts and status monitoring
+//!
+//! @section hal_ios_usage Usage
+//!
+//! 1. Initialize IOS using am_hal_ios_initialize()
+//! 2. Configure IOS parameters and device settings
+//! 3. Set up DMA or FIFO operations
+//! 4. Perform data transfer operations
+//! 5. Handle IOS interrupts and status monitoring
+//!
+//! @section hal_ios_configuration Configuration
+//!
+//! - @b Interface @b Mode: Configure SPI or I2C slave mode
+//! - @b FIFO @b Settings: Set up FIFO buffer parameters
+//! - @b DMA @b Parameters: Configure DMA transfer settings
+//! - @b Interrupts: Set up interrupt sources and handlers
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_0-438c93f352 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
