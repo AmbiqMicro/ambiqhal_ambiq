@@ -35,7 +35,7 @@ if(CONFIG_AMBIQ_HAL_USE_STIMER)
     zephyr_library_sources(hal/am_hal_stimer.c)
 endif()
 
-if(CONFIG_AMBIQ_HAL_USE_TIMER)
+if(CONFIG_AMBIQ_HAL_USE_TIMER OR CONFIG_AMBIQ_HAL_USE_CTIMER)
     zephyr_library_sources(hal/am_hal_ctimer.c)
 endif()
 

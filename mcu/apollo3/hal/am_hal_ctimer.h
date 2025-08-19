@@ -1068,12 +1068,25 @@ extern void am_hal_ctimer_int_register(uint32_t ui32Interrupt,
 extern void am_hal_ctimer_int_service(uint32_t ui32Status);
 
 //*****************************************************************************
+//
 //! @brief General function to do triple back-to-back reads.
 //!
 //! @param ui32TimerAddr
 //! @param ui32Data
+//
 //*****************************************************************************
 extern void am_hal_triple_read(uint32_t ui32TimerAddr, uint32_t ui32Data[]);
+
+//*****************************************************************************
+//
+//! @brief Returns the current 32-bit value of the selected timer.
+//!
+//! This function returns the current free-running value of the selected timer.
+//!
+//! @return Current 32-bit timer value.
+//
+//*****************************************************************************
+extern uint32_t am_hal_ctimer_read_both(void);
 
 #ifdef __cplusplus
 }

@@ -1022,6 +1022,40 @@ am_hal_ctimer_clear(uint32_t ui32TimerNumber, uint32_t ui32TimerSegment)
 
 //*****************************************************************************
 //
+// This allows the user to read when in 32-bit timer mode
+//
+//*****************************************************************************
+uint32_t
+am_hal_ctimer_read_both(void)
+{
+    uint32_t ui32Values[3];
+
+    //
+    // Read the register into ui32Values[].
+    //
+    am_hal_triple_read(AM_REGADDR(CTIMER,TMR0), ui32Values);
+
+        //
+    // Now determine which of the three values is the correct value.
+    // If the first 2 match, then the values are both correct and we're done.
+    // Otherwise, the third value is taken to be the correct value.
+    //
+    if ( ui32Values[0] == ui32Values[1] )
+    {
+        //
+        // If the first two values match, then neither one was a bad read.
+        // We'll take this as the current time.
+        //
+        return ui32Values[1];
+    }
+    else
+    {
+        return ui32Values[2];
+    }
+}
+
+//*****************************************************************************
+//
 // @brief Returns the current free-running value of the selected timer.
 //
 // @param ui32TimerNumber is the number of the timer to read.
