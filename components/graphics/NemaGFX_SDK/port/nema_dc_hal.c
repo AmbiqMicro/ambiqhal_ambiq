@@ -395,6 +395,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
         //
         // Program NemaDC MIPI interface
         //
+#ifdef CONFIG_MIPI_DSI_AMBIQ
         if (psDCConfig->eInterface == DISP_INTERFACE_DBIDSI)
         {
             if(CLKGEN->DISPCLKCTRL_b.DISPCLKSEL == CLKGEN_DISPCLKCTRL_DISPCLKSEL_HFRC192)
@@ -420,6 +421,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
             nemadc_reg_write(NEMADC_REG_FORMAT_CTRL2, 0x2U << 30);
         }
         else
+#endif
         {
             int i32PreDivider;
             float fPLLCLKFreq;
@@ -454,24 +456,23 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
              (psDCConfig->eInterface == DISP_INTERFACE_DSPI) ||
              (psDCConfig->eInterface == DISP_INTERFACE_SPI4))
     {
+        int i32PreDivider;
+        float fPLLCLKFreq;
+        fPLLCLKFreq = 3 * (2 << CLKGEN->DISPCLKCTRL_b.DISPCLKSEL);
         //
-        // Bypass primary divider and predivider
+        // SDR frequency
         //
-        nemadc_clkdiv(1, 1, 4, 0);
-        cfg = MIPICFG_SPI_CSX_V | MIPICFG_DBI_EN | MIPICFG_RESX | MIPICFG_SPI4 | psDCConfig->ui32PixelFormat;
-        if (psDCConfig->eInterface == DISP_INTERFACE_QSPI)
+        i32PreDivider = nema_ceil(fPLLCLKFreq / 2 / psDCConfig->fCLKMaxFreq);
+        //
+        // The value of the primary divider should be less than 128 on Apollo510.
+        //
+        if(i32PreDivider > 127)
         {
-#ifndef AM_DISP_CPOL_CPHA_SETTING_OUTSIDE
-            cfg |= MIPICFG_QSPI | MIPICFG_SPI_CPOL | MIPICFG_SPI_CPHA;
-#else
-            cfg |= MIPICFG_QSPI;
-#endif
+            return;
         }
-        else if (psDCConfig->eInterface == DISP_INTERFACE_DSPI)
-        {
-            cfg |= MIPICFG_DSPI;
-        }
+        nemadc_clkdiv(1, i32PreDivider, 4, 0);
 
+        cfg = psDCConfig->ui32PixelFormat;
         if(psDCConfig->bTEEnable)
         {
             cfg |= MIPICFG_DIS_TE;
@@ -627,6 +628,7 @@ dc_transfer_frame(bool bAutoLaunch, bool bContinue)
         //
         // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
         //
+#ifdef CONFIG_MIPI_DSI_AMBIQ
         if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
         {
 #if defined(AM_PART_APOLLO510)
@@ -657,6 +659,7 @@ dc_transfer_frame(bool bAutoLaunch, bool bContinue)
             wait_dbi_idle(DC_STATUS_dbi_busy, 0x0U);
         }
         else
+#endif
         {
             nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_FRC_CSX_0);
             nemadc_MIPI_out(MIPI_DBIB_CMD | NemaDC_wcmd24 | (ui32MemWrCmd << 8));
@@ -825,6 +828,7 @@ nemadc_transfer_frame_end(void)
         //
         // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
         //
+#ifdef CONFIG_MIPI_DSI_AMBIQ
         if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
         {
             nemadc_MIPI_CFG_out(ui32Cfg & (~MIPICFG_SPI_HOLD));
@@ -832,6 +836,7 @@ nemadc_transfer_frame_end(void)
             nemadc_reg_write(NEMADC_REG_GPIO, nemadc_reg_read(NEMADC_REG_GPIO) | 0x1); // LP
         }
         else
+#endif
         {
             nemadc_MIPI_CFG_out(ui32Cfg & (~MIPICFG_FRC_CSX_0));
         }
@@ -972,6 +977,7 @@ dbi_read(uint8_t ui8Cmd, uint8_t ui8ParaLen, uint32_t *ui32Received)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+#ifdef CONFIG_MIPI_DSI_AMBIQ
 //*****************************************************************************
 //
 //! @brief  Send DSI DCS(Display Command Set) write commands
@@ -1145,6 +1151,7 @@ dsi_generic_write(uint8_t* pui8Para, uint8_t ui8ParaLen, bool bHS)
 
     return AM_HAL_STATUS_SUCCESS;
 }
+#endif
 
 //*****************************************************************************
 //
@@ -1179,6 +1186,7 @@ nemadc_mipi_cmd_write(uint8_t ui8Command,
         //
         // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
         //
+#ifdef CONFIG_MIPI_DSI_AMBIQ
         if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
         {
 #if defined(AM_PART_APOLLO510)
@@ -1205,6 +1213,7 @@ nemadc_mipi_cmd_write(uint8_t ui8Command,
             }
         }
         else
+#endif
         {
             ui32Status = dbi_write(ui8Command, p_ui8Para, ui8ParaLen);
         }
@@ -1330,6 +1339,7 @@ mask_valid(uint8_t ui8DataLen)
     return mask;
 }
 
+#ifdef CONFIG_MIPI_DSI_AMBIQ
 //*****************************************************************************
 //
 //! @brief  Send DSI DCS(Display Command Set) read commands
@@ -1574,6 +1584,7 @@ dsi_generic_read(uint8_t *p_ui8Para, uint8_t ui8ParaLen, uint8_t ui8DataLen, uin
     *ui32Received = nemadc_reg_read(NEMADC_REG_DBIB_RDAT) & mask_valid(ui8DataLen);
     return AM_HAL_STATUS_SUCCESS;
 }
+#endif
 
 //*****************************************************************************
 //
@@ -1612,6 +1623,7 @@ nemadc_mipi_cmd_read(uint8_t ui8Command,
         //
         // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
         //
+#ifdef CONFIG_MIPI_DSI_AMBIQ
         if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
         {
             //
@@ -1639,6 +1651,7 @@ nemadc_mipi_cmd_read(uint8_t ui8Command,
 
         }
         else
+#endif
         {
             ui32Status = dbi_read(ui8Command, ui8DataLen, p_ui32Data);
         }
