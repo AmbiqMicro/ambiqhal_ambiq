@@ -47,7 +47,7 @@
 #ifndef AM_HAL_CLKGEN_H
 #define AM_HAL_CLKGEN_H
 
-#include "am_hal_mcuctrl.h"
+#include "am_mcu_apollo.h"
 
 #ifdef __cplusplus
 extern "C"
