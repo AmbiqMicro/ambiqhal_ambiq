@@ -865,6 +865,7 @@ static void am_hal_usb_out_ep_dma0_handling(am_hal_usb_state_t *pState, USB_Type
 static void am_hal_usb_out_ep_dma1_adma_handling(am_hal_usb_state_t *pState, USB_Type *pUSB, uint8_t ui8EpNum);
 static inline uint32_t am_hal_usb_intr_out_status_clear(am_hal_usb_state_t *pState, uint8_t ui8EpNum);
 static void am_hal_usb_out_ep_handling(am_hal_usb_state_t *pState, USB_Type *pUSB, uint8_t ui8EpNum);
+static inline void am_hal_usb_auto_gen_clk_source(void *pHandle, am_hal_usb_dev_speed_e eSpeed, am_hal_usb_phyclksrc_e *eClkSrc, am_hal_usb_phyclksrc_div_e *eClkDiv);
 
 //
 // Endpoint address and attribute operation functions
@@ -1363,13 +1364,46 @@ am_hal_usb_phy_clock_enable(void *pHandle, bool bEnable, am_hal_usb_dev_speed_e 
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
+    uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
+
     am_hal_usb_state_t *pState = (am_hal_usb_state_t *) pHandle;
-    am_hal_usb_phyclksrc_e eUsbRefClkSel;
-    am_hal_usb_phyclksrc_div_e eUsbRefClkDiv;
+    am_hal_usb_phyclksrc_e eUsbRefClkSel = AM_HAL_USB_PHYCLKSRC_DEFAULT;
+    am_hal_usb_phyclksrc_div_e eUsbRefClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_1;
     am_hal_clkmgr_clock_id_e eUSBRequestClk = AM_HAL_CLKMGR_CLK_ID_MAX;
+
     if (bEnable)
     {
         if (pState->eUsbPhyRefClkSel == AM_HAL_USB_PHYCLKSRC_DEFAULT)
+        {
+            am_hal_usb_auto_gen_clk_source(pHandle, eSpeed, &eUsbRefClkSel, &eUsbRefClkDiv);
+        }
+        else
+        {
+            eUsbRefClkSel = pState->eUsbPhyRefClkSel;
+            eUsbRefClkDiv = pState->eUsbPhyRefClkDiv;
+        }
+
+        //
+        // If PLL is selected as clock source, Configure SYSPLL clock to clkmgr
+        //
+        if (eUsbRefClkSel == AM_HAL_USB_PHYCLKSRC_PLLPOSTDIV)
+        {
+            ui32Status = am_hal_clkmgr_clock_config(AM_HAL_CLKMGR_CLK_ID_PLLPOSTDIV, 24000000 * ((uint8_t)eUsbRefClkDiv + 1), NULL);
+            if (ui32Status != AM_HAL_STATUS_SUCCESS)
+            {
+                return ui32Status;
+            }
+        }
+        else if (eUsbRefClkSel == AM_HAL_USB_PHYCLKSRC_PLLFOUT2)
+        {
+            ui32Status = am_hal_clkmgr_clock_config(AM_HAL_CLKMGR_CLK_ID_PLLPOSTDIV, 24000000 * 4 * ((uint8_t)eUsbRefClkDiv + 1), NULL);
+            if (ui32Status != AM_HAL_STATUS_SUCCESS)
+            {
+                return ui32Status;
+            }
+        }
+
+        if (eUsbRefClkSel == AM_HAL_USB_PHYCLKSRC_DEFAULT)
         {
             if (eSpeed == AM_HAL_USB_SPEED_HIGH)
             {
@@ -1382,11 +1416,7 @@ am_hal_usb_phy_clock_enable(void *pHandle, bool bEnable, am_hal_usb_dev_speed_e 
                 eUsbRefClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_2;
             }
         }
-        else
-        {
-            eUsbRefClkSel = pState->eUsbPhyRefClkSel;
-            eUsbRefClkDiv = pState->eUsbPhyRefClkDiv;
-        }
+
         switch(eUsbRefClkSel)
         {
             case AM_HAL_USB_PHYCLKSRC_HFRC_48M:
@@ -4224,6 +4254,53 @@ am_hal_usb_out_ep_dma1_adma_handling(am_hal_usb_state_t *pState, USB_Type *pUSB,
 
         }
         return;
+    }
+}
+
+//*****************************************************************************
+//
+// Auto configure clock source and divide ratio if it is not defined by user.
+//
+//*****************************************************************************
+static inline void
+am_hal_usb_auto_gen_clk_source(void *pHandle, am_hal_usb_dev_speed_e eSpeed, am_hal_usb_phyclksrc_e *eClkSrc, am_hal_usb_phyclksrc_div_e *eClkDiv)
+{
+    am_hal_usb_state_t *pState = (am_hal_usb_state_t *) pHandle;
+
+    if (eSpeed == AM_HAL_USB_SPEED_FULL)
+    {
+        *eClkSrc = AM_HAL_USB_PHYCLKSRC_HFRC_48M;
+        *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_2;
+    }
+    else
+    {
+        am_hal_clkmgr_board_info_t board;
+        am_hal_clkmgr_board_info_get(&board);
+        if (board.sXtalHs.ui32XtalHsFreq == 48000000)
+        {
+            *eClkSrc = AM_HAL_USB_PHYCLKSRC_RF_XTAL_48M;
+            *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_2;
+        }
+        else if (board.sXtalHs.ui32XtalHsFreq == 24000000)
+        {
+            *eClkSrc = AM_HAL_USB_PHYCLKSRC_RF_XTAL_48M;
+            *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_1;
+        }
+        else if(board.ui32ExtRefClkFreq == 48000000)
+        {
+            *eClkSrc = AM_HAL_USB_PHYCLKSRC_EXTREF_CLK;
+            *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_2;
+        }
+        else if(board.ui32ExtRefClkFreq == 24000000)
+        {
+            *eClkSrc = AM_HAL_USB_PHYCLKSRC_EXTREF_CLK;
+            *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_1;
+        }
+        else
+        {
+            *eClkSrc = AM_HAL_USB_PHYCLKSRC_PLLPOSTDIV;
+            *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_1;
+        }
     }
 }
 
