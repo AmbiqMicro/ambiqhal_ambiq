@@ -80,7 +80,7 @@
 #define NEMA_MULTI_MEM_POOLS_CNT	1
 #endif
 
-//Alias for the memory pool. 
+//Alias for the memory pool.
 #define NEMA_MEM_POOL_CL            0
 #define NEMA_MEM_POOL_FB            1
 #define NEMA_MEM_POOL_ASSETS        2
@@ -126,7 +126,7 @@
 typedef void (*nema_dc_interrupt_callback)(void*, uint32_t);
 typedef void (*nema_gfx_interrupt_callback)(int);
 
-typedef enum 
+typedef enum
 {
     DISP_INTERFACE_DBIDSI,
     DISP_INTERFACE_QSPI,
@@ -137,7 +137,7 @@ typedef enum
     DISP_INTERFACE_DBI
 } display_interface_t;
 
-typedef struct 
+typedef struct
 {
     display_interface_t eInterface;
     uint16_t ui16ResX;
@@ -147,7 +147,7 @@ typedef struct
         //
         // Anonymous structure for interfaces DSI,QSPI,DSPI,SPI4,DPI and DBI.
         //
-        struct 
+        struct
         {
             uint32_t ui32FrontPorchX;
             uint32_t ui32FrontPorchY;
@@ -163,7 +163,7 @@ typedef struct
         //
         // Anonymous structure for the JDI interface only.
         //
-        struct 
+        struct
         {
             uint32_t ui32XRSTINTBDelay;           // Delay inserted prior of XRST or INTB in multiples of format_clk
             uint32_t ui32XRSTINTBWidth;           // Width of High state of XRST or INTB in multiples of format_clk
@@ -209,6 +209,18 @@ bool nemadc_restore_registers(void);
 
 //*****************************************************************************
 //
+//! @brief reset JDI used parameters
+//!
+//! Please confirm the transmission has completed before executing functions
+//! nemadc_set_mode() and nemadc_set_mip_panel_parameters().
+//!
+//! @return AM_HAL_STATUS_SUCCESS.
+//
+//*****************************************************************************
+uint32_t nemadc_reset_mip_parameters(void);
+
+//*****************************************************************************
+//
 //! @brief Declaration of the GFX interrupt callback initialize function
 //!
 //! @param  fnGFXCallback                - GFX interrupt callback function
@@ -227,7 +239,7 @@ void nemagfx_set_interrupt_callback(nema_gfx_interrupt_callback fnGFXCallback);
 //*****************************************************************************
 //
 //! @brief Reset last_cl_id variable.
-//! 
+//!
 //! Note: This API should only be called after the nema_reinit API, if it is called
 //!       anywhere else, the GPU internal status will be broken.
 //!
@@ -239,8 +251,8 @@ void nema_reset_last_cl_id (void);
 //*****************************************************************************
 //
 //! @brief Read last_cl_id variable.
-//! 
-//! last_cl_id indicates the last complete command list id, it is updated in the 
+//!
+//! last_cl_id indicates the last complete command list id, it is updated in the
 //! command list completion interrupt.
 //!
 //! @return None.
@@ -251,7 +263,7 @@ int nema_get_last_cl_id(void);
 //*****************************************************************************
 //
 //! @brief Read last_submission_id variable.
-//! 
+//!
 //! last_submission_id indicates the last submitted command list id, it is accumulated
 //! each time a command list is submitted. Generally speaking. the GPU will enter idle state when
 //! last_submission_id==last_cl_id.
@@ -297,7 +309,7 @@ nemadc_set_vsync_interrupt_callback(nema_dc_interrupt_callback fnVsyncCallback,
 //
 //! @brief Check wether the core ring buffer is full or not
 //!
-//! @return True, the core ring buffer is full, we need wait for GPU before 
+//! @return True, the core ring buffer is full, we need wait for GPU before
 //!         submit the next CL.
 //!         False, the core ring buffer is not full, we can submit the next CL.
 //*****************************************************************************
@@ -354,7 +366,7 @@ extern void nemadc_transfer_frame_prepare(bool bAutoLaunch);
 //! @param  bAutoLaunch    - true:launch transfer in interrupt implicitly.(Not recommended)
 //!                        - false: please launch the transfer explicitly.(recommended)
 //!
-//! Setting the parameter(bAutoLaunch) to true is not recommended because this 
+//! Setting the parameter(bAutoLaunch) to true is not recommended because this
 //! could spot a severe tear effect on the display.
 //! @return None.
 //
@@ -424,9 +436,9 @@ nemadc_mipi_cmd_read(uint8_t ui8Command,
 //
 //! @brief Controls the power state of the GPU peripheral.
 //!
-//! @param ePowerState - The desired power state (e.g., wake, normal sleep, 
+//! @param ePowerState - The desired power state (e.g., wake, normal sleep,
 //!                      deep sleep).
-//! @param bRetainState - Indicates whether to reinitialize the NemaSDK and 
+//! @param bRetainState - Indicates whether to reinitialize the NemaSDK and
 //!                       NemaVG when waking up the GPU peripheral.
 //!
 //! This function manages the power state of the GPU peripheral based on
@@ -452,7 +464,7 @@ nemadc_mipi_cmd_read(uint8_t ui8Command,
 //!
 //! @return Returns the status of the operation. Possible return values are:
 //! - AM_HAL_STATUS_SUCCESS: Operation was successful.
-//! - AM_HAL_STATUS_IN_USE: Peripheral is currently in use and cannot be powered 
+//! - AM_HAL_STATUS_IN_USE: Peripheral is currently in use and cannot be powered
 //!                         down.
 //! - AM_HAL_STATUS_INVALID_OPERATION: Invalid power state requested.
 //! - AM_HAL_STATUS_FAIL: Reinitialization of NemaSDK or NemaVG failed.
