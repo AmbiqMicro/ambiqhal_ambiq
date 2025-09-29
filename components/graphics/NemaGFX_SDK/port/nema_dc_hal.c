@@ -398,7 +398,11 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
 #ifdef CONFIG_MIPI_DSI_AMBIQ
         if (psDCConfig->eInterface == DISP_INTERFACE_DBIDSI)
         {
+        #if defined(AM_PART_APOLLO5_API)
             if(CLKGEN->DISPCLKCTRL_b.DISPCLKSEL == CLKGEN_DISPCLKCTRL_DISPCLKSEL_HFRC192)
+        #elif defined(AM_PART_APOLLO4_API)
+            if(CLKGEN->DISPCLKCTRL_b.DISPCLKSEL == CLKGEN_DISPCLKCTRL_DISPCLKSEL_HFRC96)
+        #endif
             {
                 //
                 // Set the primary divider ratio to 2 to make sure the pixel clock isn't greater than 96MHz and bypass predivider
@@ -1203,7 +1207,7 @@ nemadc_mipi_cmd_write(uint8_t ui8Command,
             {
                 ui32Status = dsi_generic_write(p_ui8Para, ui8ParaLen, bHS);
             }
-
+        #if defined(AM_PART_APOLLO5_API)
             if (ui32Status == AM_HAL_STATUS_SUCCESS)
             {
                 //
@@ -1211,6 +1215,7 @@ nemadc_mipi_cmd_write(uint8_t ui8Command,
                 //
                 ui32Status = am_hal_dsi_wait_stop_state(0);
             }
+        #endif
         }
         else
 #endif
