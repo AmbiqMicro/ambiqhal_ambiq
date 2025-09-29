@@ -55,9 +55,15 @@
  *  in an action of contract, tort or otherwise, arising from, out of or in
  *  connection with the software or the use or other dealings in the software.
  ******************************************************************************/
-#include <zephyr/logging/log.h>
+
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/linker/devicetree_regions.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include "nema_hal.h"
 #include "nema_regs.h"
@@ -65,385 +71,382 @@
 #include "nema_ringbuffer.h"
 #include "nema_error.h"
 #include "nema_vg_context.h"
-#include "am_mcu_apollo.h"
 
-/* ambiq-sdk includes */
-#include <soc.h>
-
+// nema_hal.c serves as the hardware interface layer for the NemaSDK.
+// It calls low-level APIs provided in gpu.c to operate hardware registers
+// and retrieve hardware operational status.
+#include "gpu.h"
 
 LOG_MODULE_REGISTER(nemagfx, CONFIG_NEMAGFX_LOG_LEVEL);
 
-// Register base address
-#define NEMA_BASEADDR       GPU_BASE
+// Get the device pointer for the GPU using its devicetree node label
+#define GPU_NODE DT_CHOSEN(ambiq_gpu)
+static const struct device *gpu_dev = DEVICE_DT_GET(GPU_NODE);
 
-// IRQ number
-#define NEMA_IRQ            ((IRQn_Type)28U)
+// Define memory sections for different heap types based on Kconfig
+#if CONFIG_NEMAGFX_ASSETS_HEAP_IN_PSRAM
+#define ASSETS_HEAP_ATTR                                                                           \
+	Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME_TOKEN(DT_CHOSEN(ambiq_external_ram_region)))
+#else
+#define ASSETS_HEAP_ATTR
+#endif
 
+#if CONFIG_NEMAGFX_RENDER_HEAP_IN_NONCACHE_SRAM
+#define RENDER_HEAP_ATTR Z_GENERIC_SECTION(SRAM_NO_CACHE)
+#else
+#define RENDER_HEAP_ATTR
+#endif
 
-static K_SEM_DEFINE(nemagfx_sem, 0, 1);
-static K_HEAP_DEFINE(nemagfx_heap, CONFIG_GRAPHICS_HEAP_SIZE*1024UL);
+#if CONFIG_NEMAGFX_CPU_ONLY_HEAP_IN_DTCM
+#define CPU_ONLY_HEAP_ATTR Z_GENERIC_SECTION(DTCM)
+#else
+#define CPU_ONLY_HEAP_ATTR
+#endif
 
+// Define heap buffers and structures
+static uint8_t assets_buffer[CONFIG_NEMAGFX_HEAP_SIZE_ASSETS * 1024] __aligned(8) ASSETS_HEAP_ATTR;
+static struct k_heap assets_heap;
 
+static uint8_t render_buffer[CONFIG_NEMAGFX_HEAP_SIZE_RENDER * 1024] __aligned(8) RENDER_HEAP_ATTR;
+static struct k_heap render_heap;
 
-static nema_gfx_interrupt_callback nemagfx_cb = NULL;
-static const uintptr_t nema_regs = (uintptr_t) NEMA_BASEADDR;
+static uint8_t cpu_only_buffer[CONFIG_NEMAGFX_HEAP_SIZE_CPU_ONLY * 1024]
+	__aligned(8) CPU_ONLY_HEAP_ATTR;
+static struct k_heap cpu_only_heap;
 
-static volatile int last_cl_id = -1;
-static nema_ringbuffer_t ring_buffer_str = {{0}};
+// Define the ring buffer for GPU command lists
+#define RING_BUFFER_LENGTH ((CONFIG_MAX_PENDING_COMMAND_LIST * 12 + 16) * 4)
+static uint8_t ring_buffer[RING_BUFFER_LENGTH] __aligned(8) Z_GENERIC_SECTION(SRAM_NO_CACHE);
 
-static void prvNemaInterruptHandler( void *pvUnused )
+static nema_ringbuffer_t ring_buffer_str = {
+	.bo.base_phys = (uintptr_t)ring_buffer,
+	.bo.base_virt = (void *)ring_buffer,
+	.bo.size = RING_BUFFER_LENGTH,
+	.bo.fd = -1,
+	.last_submission_id = -1,
+	.offset = 0,
+};
+
+int32_t nema_sys_init(void)
 {
+	// Initialize the various memory heaps used by the graphics SDK
+	k_heap_init(&cpu_only_heap, cpu_only_buffer, sizeof(cpu_only_buffer));
+	cpu_only_heap.heap.init_mem = cpu_only_buffer;
+	cpu_only_heap.heap.init_bytes = sizeof(cpu_only_buffer);
 
-    int current_cl_id = (int)nema_reg_read(NEMA_CLID);
-    int previous_cl_id;
+	k_heap_init(&render_heap, render_buffer, sizeof(render_buffer));
+	render_heap.heap.init_mem = render_buffer;
+	render_heap.heap.init_bytes = sizeof(render_buffer);
 
-    do
-    {
-        /* Clear the interrupt */
-        nema_reg_write(NEMA_INTERRUPT, 0);
+#if CONFIG_NEMAGFX_ASSETS_HEAP_IN_PSRAM
+	pm_device_runtime_get(DEVICE_DT_GET(DT_CHOSEN(ambiq_psram)));
+#endif
 
-        /* Clear pending register*/
-        NVIC_ClearPendingIRQ(NEMA_IRQ);
+	k_heap_init(&assets_heap, assets_buffer, sizeof(assets_buffer));
+	assets_heap.heap.init_mem = assets_buffer;
+	assets_heap.heap.init_bytes = sizeof(assets_buffer);
 
-        previous_cl_id = current_cl_id;
+	// Initialize the GPU command list ring buffer
+	nema_rb_init(&ring_buffer_str, 1);
 
-        /* Read again and compare with the previous one to prevent 
-         * a corner case where a new gpu_irq is triggered after reading the NEMA_CLID register 
-         * and before cleaning the NEMA_INTERRUPT register. */
-        current_cl_id = (int)nema_reg_read(NEMA_CLID);
-    }while(current_cl_id != previous_cl_id);
-
-    /* Public the last_cl_id */
-    last_cl_id = current_cl_id;
-
-    k_sem_give(&nemagfx_sem);
-
-    if (nemagfx_cb != NULL)
-    {
-        nemagfx_cb(last_cl_id);
-    }
+	return 0;
 }
 
-//*****************************************************************************
-//
-//! @brief GFX interrupt callback initialize function
-//!
-//! @param  fnGFXCallback                - GFX interrupt callback function
-//!
-//! this function hooks the Nema GFX GPU interrupt with a callback function.
-//!
-//! The fisrt paramter to the callback is a volatile int containing the ID of
-//! the last serviced command list. This is useful for quickly responding
-//! to the completion of an issued CL.
-//!
-//! @return None.
-//
-//*****************************************************************************
-void
-nemagfx_set_interrupt_callback(nema_gfx_interrupt_callback fnGFXCallback)
+bool nema_sdk_initialized(void)
 {
-    nemagfx_cb = fnGFXCallback;
+	return (ring_buffer_str.last_submission_id != -1);
 }
 
-int32_t nema_sys_init (void)
+int nema_wait_irq_cl(int cl_id)
 {
-    nema_reg_write(NEMA_INTERRUPT, 0);
+	int ret;
+	// Set a generous retry counter to prevent infinite loops.
+	int max_retries = CONFIG_GPU_WAIT_IRQ_TIMEOUT_MS * 2;
 
-    /* Install Interrupt Handler */
-    NVIC_ClearPendingIRQ(NEMA_IRQ);
-    IRQ_CONNECT(NEMA_IRQ, 0, prvNemaInterruptHandler, 0, 0);
-    irq_enable(NEMA_IRQ);
+	while (gpu_ambiq_get_last_cl_id(gpu_dev) < cl_id) {
+		ret = nema_wait_irq();
+		if (ret != 0) {
+			// If waiting for the interrupt itself timed out, return the error.
+			LOG_ERR("nema_wait_irq timed out while waiting for CL ID %d", cl_id);
+			return ret;
+		}
 
-    //ring_buffer_str.bo may be already allocated
-    if ( ring_buffer_str.bo.base_phys == 0U )
-    {
-        //allocate ring_buffer memory
-        ring_buffer_str.bo = nema_buffer_create_pool(NEMA_MEM_POOL_CL, (CONFIG_MAX_PENDING_COMMAND_LIST*12 + 16)*4);
-        (void)nema_buffer_map(&ring_buffer_str.bo);
-
-        if(ring_buffer_str.bo.base_virt == NULL)
-        {
-            LOG_ERR("ring buffer malloc failed!");
-			return -1;
-        }
-    }
-
-    //Initialize Ring BUffer
-    int ret = nema_rb_init(&ring_buffer_str, 1);
-    if (ret) {
-		nema_buffer_destroy(&ring_buffer_str.bo);
-		LOG_ERR("nema_rb_init failed!");
-        return ret;
-    }
-
-    last_cl_id = -1;
-
-    return 0;
-}
-
-bool nema_sdk_initialized (void)
-{
-    //
-    // Check if the GPU has been initialized by examining the internal ring buffer state.
-    // If the ring buffer has already been initialized, the gpu is considered initialized.
-    //
-    return (ring_buffer_str.bo.base_phys != 0U);
-}
-
-int nema_wait_irq_cl (int cl_id)
-{
-    while ( last_cl_id < cl_id) {
-        int ret = nema_wait_irq();
-        (void)ret;
-    }
-
-    return 0;
-}
-
-int nema_wait_irq (void)
-{
-    /* Wait for the interrupt */
-    if (k_sem_take(&nemagfx_sem, K_MSEC(CONFIG_GPU_WAIT_IRQ_TIMEOUT_MS)) != 0) {
-        LOG_ERR("GPU wait timeout!");
-    }
-
-    return 0;
-}
-
-
-uint32_t nema_reg_read (uint32_t reg)
-{
-    volatile uint32_t *ptr = (volatile uint32_t *)(nema_regs + reg);
-    return *ptr;
-}
-
-void nema_reg_write (uint32_t reg,uint32_t value)
-{
-    volatile uint32_t *ptr = (volatile uint32_t *)(nema_regs + reg);
-    *ptr = value;
-}
-
-nema_buffer_t nema_buffer_create (int size)
-{
-    return nema_buffer_create_pool(NEMA_MEM_POOL_CL, size);
-}
-
-nema_buffer_t nema_buffer_create_pool (int pool, int size)
-{
-    nema_buffer_t bo;
-    bo.base_virt = NULL;
-    bo.base_phys = 0;
-    bo.size      = 0;
-    bo.fd        = -1;
-
-    if(size <= 0)
-        return bo;
-
-    uint32_t size_ui32 = (uint32_t)size;
-
-    switch(pool)
-    {
-        case NEMA_MEM_POOL_FB:
-            size_ui32 = (size_ui32 + 31) & (~31);
-            bo.base_virt = k_heap_aligned_alloc(&nemagfx_heap, 32, size, K_NO_WAIT);
-            bo.fd  = NEMA_MEM_POOL_FB; 
-            bo.size =  size_ui32;        
-            break;
-        case NEMA_MEM_POOL_CL:
-            size_ui32 = (size_ui32 + 31) & (~31);
-            bo.base_virt = k_heap_aligned_alloc(&nemagfx_heap, 32, size, K_NO_WAIT);
-            bo.fd  = NEMA_MEM_POOL_CL;
-            bo.size = size_ui32;
-            break;  
-		case NEMA_MEM_POOL_ASSETS:
-            size_ui32 = (size_ui32 + 31) & (~31);
-            bo.base_virt = k_heap_aligned_alloc(&nemagfx_heap, 32, size, K_NO_WAIT);
-            bo.fd  = NEMA_MEM_POOL_ASSETS; 
-            bo.size = size_ui32;
-            break; 			 
-        case NEMA_MEM_POOL_CLIPPED_PATH:
-            bo.base_virt = k_heap_alloc(&nemagfx_heap, size, K_NO_WAIT);
-            bo.fd  = NEMA_MEM_POOL_CLIPPED_PATH;
-            bo.size = size; 
-            break;
-		default:
-			LOG_ERR("Unsupported memory Pool! Invalid pool ID: %d", pool);
-    }
-
-    bo.base_phys = (uintptr_t)bo.base_virt; 
-
-    return bo;
-}
-
-void *nema_buffer_map (nema_buffer_t * bo)
-{
-    return bo->base_virt;
-}
-
-void nema_buffer_unmap (nema_buffer_t * bo)
-{
-
-}
-
-void nema_buffer_destroy (nema_buffer_t * bo)
-{
-
-	switch(bo->fd)
-	{
-        case NEMA_MEM_POOL_FB:
-        case NEMA_MEM_POOL_CL:  
-		case NEMA_MEM_POOL_ASSETS: 			 
-        case NEMA_MEM_POOL_CLIPPED_PATH:
-            k_heap_free(&nemagfx_heap, bo->base_virt);
-            break;
-		default:
-			LOG_ERR("Unsupported memory Pool! Invalid pool ID: %d", bo->fd);
+		if (--max_retries == 0) {
+			LOG_ERR("Timeout waiting for command list ID %d to complete. Last "
+				"completed ID was %d.",
+				cl_id, gpu_ambiq_get_last_cl_id(gpu_dev));
+			return -ETIMEDOUT;
+		}
 	}
 
-
-    bo->base_virt = (void *)NULL;
-    bo->base_phys = 0;
-    bo->size      = 0;
-    bo->fd        = -1;
+	return 0;
 }
 
-uintptr_t nema_buffer_phys (nema_buffer_t * bo)
+int nema_wait_irq(void)
 {
-    return bo->base_phys;
+	return gpu_ambiq_wait_interrupt(gpu_dev, CONFIG_GPU_WAIT_IRQ_TIMEOUT_MS);
 }
 
-void nema_buffer_flush(nema_buffer_t * bo)
+uint32_t nema_reg_read(uint32_t reg)
 {
-	switch(bo->fd)
-	{
-        case NEMA_MEM_POOL_FB:
-        case NEMA_MEM_POOL_CL:  
-		case NEMA_MEM_POOL_ASSETS:
-            if (!buf_in_nocache(bo->base_phys, bo->size)) 
-            {
-                sys_cache_data_flush_range(bo->base_virt, bo->size);
-            }
-            __DSB();
-            break;      			 
-        case NEMA_MEM_POOL_CLIPPED_PATH:
-            LOG_WRN("Should never come here!");
-            break;
-		default:
-			LOG_ERR("Unsupported memory Pool! Invalid pool ID: %d", bo->fd);
+	return gpu_ambiq_reg_read(gpu_dev, reg);
+}
+
+void nema_reg_write(uint32_t reg, uint32_t value)
+{
+	gpu_ambiq_reg_write(gpu_dev, reg, value);
+}
+
+nema_buffer_t nema_buffer_create(int size)
+{
+	return nema_buffer_create_pool(NEMA_MEM_POOL_CL, size);
+}
+
+nema_buffer_t nema_buffer_create_pool(int pool, int size)
+{
+	nema_buffer_t bo;
+	bo.base_virt = NULL;
+	bo.base_phys = 0;
+	bo.size = 0;
+	bo.fd = -1;
+
+	if (size <= 0) {
+		return bo;
 	}
+
+	uint32_t alloc_size;
+	struct k_heap *target_heap;
+	bool align;
+
+	switch (pool) {
+	case NEMA_MEM_POOL_FB:
+	case NEMA_MEM_POOL_CL:
+		alloc_size = (size + 31) & (~31);
+		target_heap = &render_heap;
+		align = true;
+		break;
+	case NEMA_MEM_POOL_ASSETS:
+		alloc_size = (size + 31) & (~31);
+		target_heap = &assets_heap;
+		align = true;
+		break;
+	case NEMA_MEM_POOL_CLIPPED_PATH:
+		alloc_size = size;
+		target_heap = &cpu_only_heap;
+		align = false;
+		break;
+	default:
+		LOG_ERR("Unsupported memory pool ID: %d", pool);
+		return bo;
+	}
+
+	if (target_heap == NULL) {
+		LOG_ERR("Target heap for pool ID %d is not initialized.", pool);
+		return bo;
+	}
+
+	if (align) {
+		bo.base_virt = k_heap_aligned_alloc(target_heap, 32, alloc_size, K_NO_WAIT);
+	} else {
+		bo.base_virt = k_heap_alloc(target_heap, alloc_size, K_NO_WAIT);
+	}
+
+	if (bo.base_virt == NULL) {
+		LOG_ERR("Failed to allocate %u bytes from pool %d", alloc_size, pool);
+		// Reset structure to a clean state on failure
+		return bo;
+	}
+
+	bo.base_phys = (uintptr_t)bo.base_virt;
+	bo.fd = pool;
+	bo.size = alloc_size;
+
+	return bo;
 }
 
-void nema_buffer_invalidate(nema_buffer_t * bo)
+void *nema_buffer_map(nema_buffer_t *bo)
 {
-	switch(bo->fd)
-	{
-        case NEMA_MEM_POOL_FB:
-        case NEMA_MEM_POOL_CL:  
-		case NEMA_MEM_POOL_ASSETS:
-            if (!buf_in_nocache(bo->base_phys, bo->size)) 
-            {
-                sys_cache_data_invd_range(bo->base_virt, bo->size);
-            }
-            __DSB();
-            break;      			 
-        case NEMA_MEM_POOL_CLIPPED_PATH:
-            LOG_WRN("Should never come here!");
-            break;
-		default:
-			LOG_ERR("Unsupported memory Pool! Invalid pool ID: %d", bo->fd);
+	return bo->base_virt;
+}
+
+void nema_buffer_unmap(nema_buffer_t *bo)
+{
+	// This is a no-op in this HAL implementation as memory is always mapped.
+}
+
+void nema_buffer_destroy(nema_buffer_t *bo)
+{
+	struct k_heap *target_heap = NULL;
+
+	if (bo == NULL || bo->base_virt == NULL) {
+		return;
 	}
+
+	switch (bo->fd) {
+	case NEMA_MEM_POOL_FB:
+	case NEMA_MEM_POOL_CL:
+		target_heap = &render_heap;
+		break;
+	case NEMA_MEM_POOL_ASSETS:
+		target_heap = &assets_heap;
+		break;
+	case NEMA_MEM_POOL_CLIPPED_PATH:
+		target_heap = &cpu_only_heap;
+		break;
+	default:
+		LOG_ERR("Cannot destroy buffer: Invalid pool ID %d", bo->fd);
+		return;
+	}
+
+	if (target_heap == NULL) {
+		LOG_ERR("Cannot destroy buffer: Pool %d is not initialized.", bo->fd);
+		return;
+	}
+
+	k_heap_free(target_heap, bo->base_virt);
+
+	// Reset buffer structure to prevent dangling pointers
+	bo->base_virt = NULL;
+	bo->base_phys = 0;
+	bo->size = 0;
+	bo->fd = -1;
+}
+
+uintptr_t nema_buffer_phys(nema_buffer_t *bo)
+{
+	return bo->base_phys;
+}
+
+void nema_buffer_flush(nema_buffer_t *bo)
+{
+	if (!buf_in_nocache(bo->base_phys, bo->size)) {
+		sys_cache_data_flush_range(bo->base_virt, bo->size);
+	}
+	__DSB();
+}
+
+void nema_buffer_invalidate(nema_buffer_t *bo)
+{
+	if (!buf_in_nocache(bo->base_phys, bo->size)) {
+		sys_cache_data_invd_range(bo->base_virt, bo->size);
+	}
+	__DSB();
 }
 
 bool nema_buffer_is_within_pool(int pool, uint32_t buf_start, uint32_t buf_length)
 {
-    return true;
+	struct k_heap *target_heap;
+	switch (pool) {
+	case NEMA_MEM_POOL_FB:
+	case NEMA_MEM_POOL_CL:
+		target_heap = &render_heap;
+		break;
+	case NEMA_MEM_POOL_ASSETS:
+		target_heap = &assets_heap;
+		break;
+	case NEMA_MEM_POOL_CLIPPED_PATH:
+		target_heap = &cpu_only_heap;
+		break;
+	default:
+		return false;
+	}
+
+	if (!target_heap) {
+		return false;
+	}
+
+	uintptr_t heap_start = (uintptr_t)target_heap->heap.init_mem;
+	uintptr_t heap_end = heap_start + target_heap->heap.init_bytes;
+
+	if ((buf_start >= heap_start) && ((buf_start + buf_length) <= heap_end)) {
+		return true;
+	}
+
+	return false;
 }
 
-void * nema_host_malloc (size_t size)
+void *nema_host_malloc(size_t size)
 {
-    return k_heap_alloc(&nemagfx_heap, size, K_NO_WAIT);
+	return k_heap_alloc(&cpu_only_heap, size, K_NO_WAIT);
 }
 
-void nema_host_free (void * ptr)
+void nema_host_free(void *ptr)
 {
-    k_heap_free(&nemagfx_heap, ptr);
+	k_heap_free(&cpu_only_heap, ptr);
 }
 
-int nema_mutex_lock (int mutex_id)
+int nema_mutex_lock(int mutex_id)
 {
-	// Lock all the nema_xxx functions in the application level.
+	// This HAL implementation assumes single-threaded access to the NemaGFX API.
+	// If multi-threaded access is required, a k_mutex should be implemented here.
 	return 0;
 }
 
-int nema_mutex_unlock (int mutex_id)
+int nema_mutex_unlock(int mutex_id)
 {
-	// Lock all the nema_xxx functions in the application level.
+	// This HAL implementation assumes single-threaded access to the NemaGFX API.
 	return 0;
 }
 
-am_hal_status_e nema_get_cl_status (int32_t cl_id)
+am_hal_status_e nema_get_cl_status(int32_t cl_id)
 {
-    // CL_id is negative
-    if ( cl_id < 0) {
-        return AM_HAL_STATUS_SUCCESS;
-    }
+	// A negative command list ID is always considered completed.
+	if (cl_id < 0) {
+		return AM_HAL_STATUS_SUCCESS;
+	}
 
-    // NemaP is IDLE, so CL has to be finished
-    if ( nema_reg_read(NEMA_STATUS) == 0 ) {
-        return AM_HAL_STATUS_SUCCESS;
-    }
+	// If the GPU is idle, all submitted command lists are completed.
+	if (nema_reg_read(NEMA_STATUS) == 0) {
+		return AM_HAL_STATUS_SUCCESS;
+	}
 
-    int _last_cl_id = (int)nema_reg_read(NEMA_CLID);
-    if ( _last_cl_id >= cl_id) {
-        return AM_HAL_STATUS_SUCCESS;
-    }
-    return AM_HAL_STATUS_IN_USE;
+	// Check if the last completed ID is greater than or equal to the requested ID.
+	int last_completed_cl_id = (int)nema_reg_read(NEMA_CLID);
+	if (last_completed_cl_id >= cl_id) {
+		return AM_HAL_STATUS_SUCCESS;
+	}
+
+	return AM_HAL_STATUS_IN_USE;
 }
 
-//*****************************************************************************
-//
-//! @brief Check wether the core ring buffer is full or not
-//!
-//! @return True, the core ring buffer is full, we need wait for GPU before 
-//!         submit the next CL.
-//!         False, the core ring buffer is not full, we can submit the next CL.
-//*****************************************************************************
 bool nema_rb_check_full(void)
 {
-    uint32_t total_pending_cl = 0;
-    if(ring_buffer_str.last_submission_id > last_cl_id)
-    {
-        total_pending_cl = ring_buffer_str.last_submission_id - last_cl_id;
-    }
-    else if(ring_buffer_str.last_submission_id < last_cl_id)
-    {
-        if(last_cl_id == 0xFFFFFF)
-        {
-            total_pending_cl = ring_buffer_str.last_submission_id + 1;
-        }
-        else
-        {
-            //should never got here.
-        }
-    }
+	uint32_t total_pending_cl = 0;
+	int last_executed_cl_id = gpu_ambiq_get_last_cl_id(gpu_dev);
 
-    return (total_pending_cl >= CONFIG_MAX_PENDING_COMMAND_LIST);
+	if (ring_buffer_str.last_submission_id > last_executed_cl_id) {
+		total_pending_cl = ring_buffer_str.last_submission_id - last_executed_cl_id;
+	} else if (ring_buffer_str.last_submission_id < last_executed_cl_id) {
+		// This handles the wrap-around case for the command list IDs.
+		if (last_executed_cl_id == 0xFFFFFF) {
+			total_pending_cl = ring_buffer_str.last_submission_id + 1;
+		} else {
+			// This case should ideally not be reached if CL IDs wrap around correctly.
+			LOG_WRN("Unexpected CL ID wrap-around state.");
+		}
+	}
+
+	return (total_pending_cl >= CONFIG_MAX_PENDING_COMMAND_LIST);
 }
 
-void nema_reset_last_cl_id (void)
-{
-    last_cl_id = -1;
-}
 int nema_get_last_cl_id(void)
 {
-    return last_cl_id;
+	return gpu_ambiq_get_last_cl_id(gpu_dev);
 }
 
 int nema_get_last_submission_id(void)
 {
-    return ring_buffer_str.last_submission_id;
+	return ring_buffer_str.last_submission_id;
 }
 
+//
+// Currently, GPU power management code exists in both nema_hal.c and gpu.c.
+// This is a temporary compromise to maintain compatibility with LVGL.
+// In the future, we plan to upgrade the power management code within LVGL.
+// LVGL calls power operations in nema_hal.c, which then calls get/put and 
+// triggers pm action in gpu.c. Additionally, nema_hal.c is responsible 
+// for software-level NemaSDK reinitialization.
+//
 //*****************************************************************************
 //
 //! @brief Controls the power state of the GPU peripheral.
@@ -481,121 +484,103 @@ int nema_get_last_submission_id(void)
 //! - AM_HAL_STATUS_FAIL: Reinitialization of NemaSDK or NemaVG failed.
 //
 //*****************************************************************************
-uint32_t
-nemagfx_power_control(am_hal_sysctrl_power_state_e ePowerState,
-                   bool bRetainState)
+uint32_t nemagfx_power_control(am_hal_sysctrl_power_state_e ePowerState, bool bRetainState)
 {
-    uint32_t ui32Status;
-    bool bEnabled;
-    uint32_t ui32ErrorCode;
+	uint32_t ui32Status;
+	bool bEnabled;
+	uint32_t ui32ErrorCode;
 
-    //
-    // Check the current GPU power state
-    //
-    ui32Status = am_hal_pwrctrl_periph_enabled(AM_HAL_PWRCTRL_PERIPH_GFX, &bEnabled);
-    if (ui32Status == AM_HAL_STATUS_SUCCESS)
-    {
-        //
-        // Decode the requested power state and take action
-        //
-        switch (ePowerState)
-        {
-            case AM_HAL_SYSCTRL_WAKE:
-            {
-                if (bEnabled)
-                {
-                    //
-                    // GPU is already powered up
-                    //
-                    ui32Status = AM_HAL_STATUS_SUCCESS;
-                }
-                else
-                {
-                    //
-                    // Enable power control
-                    //
-                    ui32Status = am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_GFX);
+	//
+	// Check the current GPU power state
+	//
+	ui32Status = am_hal_pwrctrl_periph_enabled(AM_HAL_PWRCTRL_PERIPH_GFX, &bEnabled);
+	if (ui32Status == AM_HAL_STATUS_SUCCESS) {
+		//
+		// Decode the requested power state and take action
+		//
+		switch (ePowerState) {
+		case AM_HAL_SYSCTRL_WAKE: {
+			if (bEnabled) {
+				//
+				// GPU is already powered up
+				//
+				ui32Status = AM_HAL_STATUS_SUCCESS;
+			} else {
+				//
+				// Enable power control
+				//
+				ui32Status =
+					am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_GFX);
 
-                    //
-                    // Reinitialize NemaSDK and NemaVG
-                    //
-                    if (ui32Status == AM_HAL_STATUS_SUCCESS && bRetainState)
-                    {
+				//
+				// Reinitialize NemaSDK and NemaVG
+				//
+				if (ui32Status == AM_HAL_STATUS_SUCCESS && bRetainState) {
 
-                        nema_get_error(); // clear raster graphics error
+					nema_get_error(); // clear raster graphics error
 
-                        nema_reset_last_cl_id();
-                        nema_reinit();
-                        ui32ErrorCode = nema_get_error();
-                        if (ui32ErrorCode != NEMA_ERR_NO_ERROR)
-                        {
-                            ui32Status = AM_HAL_STATUS_FAIL;
-                            break;
-                        }
-
+					gpu_ambiq_reset_last_cl_id(gpu_dev);
+					nema_reinit();
+					ui32ErrorCode = nema_get_error();
+					if (ui32ErrorCode != NEMA_ERR_NO_ERROR) {
+						ui32Status = AM_HAL_STATUS_FAIL;
+						break;
+					}
 
 #ifndef NEMA_MULTI_THREAD
-                        // If NEMA_MULTI_THREAD is not defined, the nemavg_context is defined as global variable,
-                        // and if nema_vg_init is not called, nemavg_context will be initialized as NULL, so we should prevent to write to the NULL pointer.
-                        struct nema_vg_context_t_;
-                        extern struct nema_vg_context_t_* nemavg_context;
+					// If NEMA_MULTI_THREAD is not defined, the nemavg_context
+					// is defined as global variable, and if nema_vg_init is not
+					// called, nemavg_context will be initialized as NULL, so we
+					// should prevent to write to the NULL pointer.
+					struct nema_vg_context_t_;
+					extern struct nema_vg_context_t_ *nemavg_context;
 
-                        if(nemavg_context != NULL)
-                        {
+					if (nemavg_context != NULL) {
 #endif
-                            nema_vg_get_error(); // clear vector graphics error
+						nema_vg_get_error(); // clear vector graphics error
 
-                            nema_vg_reinit();
-                            ui32ErrorCode = nema_vg_get_error();
-                            if (ui32ErrorCode != NEMA_VG_ERR_NO_ERROR)
-                            {
-                                ui32Status = AM_HAL_STATUS_FAIL;
-                                break;
-                            }
+						nema_vg_reinit();
+						ui32ErrorCode = nema_vg_get_error();
+						if (ui32ErrorCode != NEMA_VG_ERR_NO_ERROR) {
+							ui32Status = AM_HAL_STATUS_FAIL;
+							break;
+						}
 #ifndef NEMA_MULTI_THREAD
-                        }
+					}
 #endif
-                    }
-                }
-                break;
-            }
-            case AM_HAL_SYSCTRL_NORMALSLEEP:
-            case AM_HAL_SYSCTRL_DEEPSLEEP:
-            {
-                if (!bEnabled)
-                {
-                    //
-                    // GPU is already powered down
-                    //
-                    ui32Status = AM_HAL_STATUS_SUCCESS;
-                }
-                else
-                {
-                    //
-                    // Ensure GPU is currently inactive
-                    //
-                    if (nema_reg_read(NEMA_STATUS) != 0)
-                    {
-                        ui32Status = AM_HAL_STATUS_IN_USE;
-                    }
-                    else
-                    {
-                        //
-                        // Power down the GPU
-                        //
-                        ui32Status = am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_GFX);
-                    }
-                }
-                break;
-            }
-            default:
-            {
-                ui32Status = AM_HAL_STATUS_INVALID_OPERATION;
-                break;
-            }
-        }
+				}
+			}
+			break;
+		}
+		case AM_HAL_SYSCTRL_NORMALSLEEP:
+		case AM_HAL_SYSCTRL_DEEPSLEEP: {
+			if (!bEnabled) {
+				//
+				// GPU is already powered down
+				//
+				ui32Status = AM_HAL_STATUS_SUCCESS;
+			} else {
+				//
+				// Ensure GPU is currently inactive
+				//
+				if (nema_reg_read(NEMA_STATUS) != 0) {
+					ui32Status = AM_HAL_STATUS_IN_USE;
+				} else {
+					//
+					// Power down the GPU
+					//
+					ui32Status = am_hal_pwrctrl_periph_disable(
+						AM_HAL_PWRCTRL_PERIPH_GFX);
+				}
+			}
+			break;
+		}
+		default: {
+			ui32Status = AM_HAL_STATUS_INVALID_OPERATION;
+			break;
+		}
+		}
+	}
 
-    }
-
-    return ui32Status;
+	return ui32Status;
 }
