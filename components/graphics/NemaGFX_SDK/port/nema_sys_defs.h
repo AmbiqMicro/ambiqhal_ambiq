@@ -219,37 +219,6 @@ bool nemadc_restore_registers(void);
 //*****************************************************************************
 uint32_t nemadc_reset_mip_parameters(void);
 
-//*****************************************************************************
-//
-//! @brief Declaration of the GFX interrupt callback initialize function
-//!
-//! @param  fnGFXCallback                - GFX interrupt callback function
-//!
-//! this function hooks the Nema GFX GPU interrupt with a callback function.
-//!
-//! The fisrt paramter to the callback is a volatile int containing the ID of
-//! the last serviced command list. This is useful for quickly responding
-//! to the completion of an issued CL.
-//!
-//! @return None.
-//
-//*****************************************************************************
-void nemagfx_set_interrupt_callback(nema_gfx_interrupt_callback fnGFXCallback);
-
-//*****************************************************************************
-//
-//! @brief Reset last_cl_id variable.
-//!
-//! Note: This API should only be called after the nema_reinit API, if it is called
-//!       anywhere else, the GPU internal status will be broken.
-//!
-//! @return None.
-//
-//*****************************************************************************
-void nema_reset_last_cl_id (void);
-
-//*****************************************************************************
-//
 //! @brief Read last_cl_id variable.
 //!
 //! last_cl_id indicates the last complete command list id, it is updated in the
