@@ -16,7 +16,6 @@ zephyr_include_directories(headers/NemaGFX/Nema)
 
 # Include all used C sources.
 zephyr_library_sources(
-    port/nema_hal.c
     port/nema_dc_hal.c
     )
 

@@ -78,4 +78,8 @@ if(CONFIG_AMBIQ_HAL_USE_USB)
 	add_compile_definitions(AM_HAL_USB_CTRL_XFR_WAIT_STATUS_ACK_ZLP_FROM_STACK)
 endif()
 
+if(CONFIG_AMBIQ_HAL_USE_DSI)
+    zephyr_library_sources(hal/mcu/am_hal_dsi.c)
+endif()
+
 zephyr_include_directories(hal)
