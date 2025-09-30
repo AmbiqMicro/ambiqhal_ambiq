@@ -420,11 +420,12 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
             cfg = MIPICFG_DBI_EN | MIPICFG_RESX | MIPICFG_EXT_CTRL | MIPICFG_EN_STALL | MIPICFG_PIXCLK_OUT_EN | psDCConfig->ui32PixelFormat;
 #else
             cfg = MIPICFG_DBI_EN | MIPICFG_RESX | MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN | MIPICFG_EN_STALL | psDCConfig->ui32PixelFormat;
-#endif
+
             //
             // Setting the DBIB_CLK clock frequency is the half of the format clock, that is 96MHz.(This is the limitation of the DSI host)
             //
             nemadc_reg_write(NEMADC_REG_FORMAT_CTRL2, 0x2U << 30);
+#endif
         }
         else
 #endif
