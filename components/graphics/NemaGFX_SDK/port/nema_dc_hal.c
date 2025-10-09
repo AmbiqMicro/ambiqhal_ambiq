@@ -400,6 +400,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
 #ifdef CONFIG_MIPI_DSI_AMBIQ
         if (psDCConfig->eInterface == DISP_INTERFACE_DBIDSI)
         {
+#if !defined(AM_PART_APOLLO4_API)
             if(CLKGEN->DISPCLKCTRL_b.DISPCLKSEL == CLKGEN_DISPCLKCTRL_DISPCLKSEL_HFRC192)
             {
                 //
@@ -408,6 +409,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
                 nemadc_clkdiv(2, 1, 4, 0);
             }
             else
+#endif
             {
                 //
                 // Set the primary divider ratio to 0 or 1,it's bypass the primary divider.the swap feature is invalid in this situation.
@@ -1117,7 +1119,7 @@ dsi_generic_write(uint8_t* pui8Para, uint8_t ui8ParaLen, bool bHS)
     ui32Cfg = nemadc_reg_read(NEMADC_REG_DBIB_CFG);
 
 #if defined(AM_PART_APOLLO4_API)
-    nemadc_MIPI_CFG_out(ui32Mode | MIPICFG_SPI_HOLD);
+    nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_SPI_HOLD);
 #else
     if ( ui8ParaLen < 9 )
     {
@@ -1559,7 +1561,7 @@ dsi_generic_read(uint8_t *p_ui8Para, uint8_t ui8ParaLen, uint8_t ui8DataLen, uin
     }
 
 #if defined(AM_PART_APOLLO4_API)
-    nemadc_MIPI_CFG_out(ui32Mode | MIPICFG_EN_DVALID);
+    nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_EN_DVALID);
 #else
     if (ui8DataLen == 1)
     {
