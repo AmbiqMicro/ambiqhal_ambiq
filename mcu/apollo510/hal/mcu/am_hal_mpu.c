@@ -4,10 +4,45 @@
 //!
 //! @brief Hardware abstraction for the MPU.
 //!
-//! @addtogroup mpu MPU - Memory Protection Unit
+//! @addtogroup mpu_ap510 MPU - Memory Protection Unit
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides hardware abstraction layer functions for the
+//!          Memory Protection Unit (MPU) on Apollo5 devices. It supports
+//!          memory region configuration, access control, attribute management,
+//!          and protection settings for secure memory management.
+//!
+//! @section hal_mpu_features Key Features
+//!
+//! 1. @b Memory @b Protection: Configure memory regions with access control.
+//! 2. @b Region @b Management: Support for multiple memory protection regions.
+//! 3. @b Access @b Control: Define read/write/execute permissions for regions.
+//! 4. @b Fault @b Protection: NMI and fault protection mechanisms.
+//! 5. @b Privilege @b Control: Privileged and unprivileged access control.
+//!
+//! @section hal_mpu_functionality Functionality
+//!
+//! - Enable and disable MPU functionality
+//! - Configure memory protection regions
+//! - Set up access permissions and attributes
+//! - Handle privilege and fault protection
+//! - Manage memory region enable/disable
+//!
+//! @section hal_mpu_usage Usage
+//!
+//! 1. Enable MPU using am_hal_mpu_enable()
+//! 2. Configure memory regions with am_hal_mpu_region_configure()
+//! 3. Set up access attributes as needed
+//! 4. Enable/disable specific regions
+//! 5. Handle MPU faults and protection violations
+//!
+//! @section hal_mpu_configuration Configuration
+//!
+//! - @b Memory @b Regions: Configure memory region boundaries and sizes
+//! - @b Access @b Permissions: Set up read/write/execute permissions
+//! - @b Protection @b Levels: Configure privilege and fault protection
+//! - @b Attributes: Set up memory attributes and caching behavior
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

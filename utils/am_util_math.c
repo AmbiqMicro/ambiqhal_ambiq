@@ -2,13 +2,47 @@
 //
 //! @file am_util_math.c
 //!
-//! @brief A few useful math functions.
+//! @brief Mathematical Utility Functions
 //!
-//! Functions for performing some number manipulation.
-//!
-//! @addtogroup math Math Functions
+//! @addtogroup math_utils Math Utility Functions
 //! @ingroup utils
 //! @{
+//!
+//! Purpose: This module provides mathematical utility functions for
+//!          embedded applications on Ambiq Micro devices. It enables
+//!          efficient mathematical operations, data manipulation, and
+//!          computational support for system operations. The utilities
+//!          support optimized implementations of common math functions.
+//!
+//! @section utils_math_features Key Features
+//!
+//! 1. @b Fast @b Math: Optimized mathematical operations.
+//! 2. @b Data @b Manipulation: Efficient data handling functions.
+//! 3. @b Fixed-point: Fixed-point arithmetic support.
+//! 4. @b Precision @b Control: Configurable computation accuracy.
+//! 5. @b Performance: Optimized for embedded systems.
+//!
+//! @section utils_math_functionality Functionality
+//!
+//! - Perform mathematical calculations
+//! - Handle data conversions
+//! - Support fixed-point operations
+//! - Optimize computational tasks
+//! - Manage precision requirements
+//!
+//! @section utils_math_usage Usage
+//!
+//! 1. Use math functions as needed
+//! 2. Select appropriate precision
+//! 3. Handle data conversions
+//! 4. Monitor performance impact
+//!
+//! @section utils_math_configuration Configuration
+//!
+//! - Set precision requirements
+//! - Configure optimization levels
+//! - Define data formats
+//! - Set performance targets
 //
 //*****************************************************************************
 
@@ -43,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>

@@ -25,7 +25,7 @@
                             <img alt="Logo" src="../resources/am_logo.png" />
                         </td>
                         <td style="padding-left: 0.5em;">
-                            <div id="projectname">Apollo510  Register Documentation &#160;<span id="projectnumber">release_sdk5p0p0-5f68a8286b</span></div>
+                            <div id="projectname">Apollo510  Register Documentation &#160;<span id="projectnumber">release_sdk5p1p0-7063330c5e</span></div>
                         </td>
                     </tr>
                 </tbody>
@@ -772,7 +772,8 @@
                             <td>TXBUSY</td>
                             <td>RO</td>
                             <td>This bit holds the transmit BUSY indicator.<br><br>
-                                </td>
+                                 XMT_BUSY             = 0x1 - Indicates that a transmit operation is in progress. That is, the transmit FIFO is not empty or the last character has not yet been shifted out. TXBUSY is only cleared when the transmit buffer is empty and the final character has been fully sent.<br>
+                             XMT_AVAILABLE        = 0x0 - Indicates that no transmit operation is in progress. That is, the transmit FIFO is empty and the last bit of the last character, including the stop bit, has been transmitted. Clearing of TXBUSY will trigger a TXCMP (transmit complete) interrupt when enabled.</td>
                         </tr>
 
                         <tr>
@@ -1735,7 +1736,7 @@
                             <td>1</td>
                             <td>SIREN</td>
                             <td>RW</td>
-                            <td>This bit is the SIR ENDEC enable. If this bit is set to 1, the IrDA SIR ENDEC is enabled. This bit has no effect if the UART is not enabled by bit 0 being set to 1. When the IrDA SIR ENDEC is enabled, data is transmitted and received on nSIROUT and SIRIN. UARTTXD remains in the marking state (set to 1). Signal transitions on UARTRXD or modem status inputs have no effect. When the IrDA SIR ENDEC is disabled, nSIROUT remains cleared to 0 (no light pulse generated), and signal transitions on SIRIN have no effect.<br><br>
+                            <td>This bit is the SIR ENDEC enable. If this bit is set to 1, the IrDA SIR ENDEC is enabled. This bit has no effect if the UART is not enabled by bit 0 being set to 1. When the IrDA SIR ENDEC is enabled, data is transmitted and received on nSIROUT and SIRIN. UARTTXD remains in the marking state (set to 1). Signal transitions on UARTRXD or modem status inputs have no effect. When the IrDA SIR ENDEC is disabled, nSIROUT remains cleared to 0 (no light pulse generated), and signal transitions on SIRIN have no effect. NOTE: The SIR input (SIRIN) is mapped to the UARTRX pin (selected via GPIO configuration) and the SIR output (nSIROUT) is mapped to the UARTTX pin when SIREN is enabled.<br><br>
                                 </td>
                         </tr>
 

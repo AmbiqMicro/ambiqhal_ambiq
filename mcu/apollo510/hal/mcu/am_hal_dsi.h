@@ -4,7 +4,7 @@
 //!
 //! @brief Hardware abstraction for the Display Serial Interface
 //!
-//! @addtogroup dsi DSI - Display Serial Interface
+//! @addtogroup dsi_ap510 DSI - Display Serial Interface
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -191,6 +191,16 @@ typedef void (*am_hal_dsi_external_vdd18_callback)(bool bEnable);
 
 //*****************************************************************************
 //
+//! @brief DSI exit ULPS pattern delay callback function pointer type
+//!
+//! The Application can provide a callback functions otherwise executing the default
+//! 1010us delay.
+//!
+//
+//*****************************************************************************
+typedef void (*am_hal_dsi_delay_function_callback)(uint32_t ui32PeriodInMilliSec);
+//*****************************************************************************
+//
 // External functions.
 //
 //*****************************************************************************
@@ -206,6 +216,19 @@ typedef void (*am_hal_dsi_external_vdd18_callback)(bool bEnable);
 //
 //*****************************************************************************
 extern uint32_t am_hal_dsi_register_external_vdd18_callback(const am_hal_dsi_external_vdd18_callback cb);
+
+//*****************************************************************************
+//
+//! @brief Register exit ULPS callback function
+//!
+//! @param cb is pointer of delay function.
+//!
+//! This function should be called before function am_hal_dsi_ulps_exit().
+//!
+//! @return AM_HAL_STATUS_SUCCESS
+//
+//*****************************************************************************
+extern uint32_t am_hal_dsi_register_ulps_exit_delay_callback(const am_hal_dsi_delay_function_callback cb);
 
 //*****************************************************************************
 //
@@ -370,6 +393,28 @@ extern uint32_t am_hal_dsi_pre_rw_cmd(bool bHS);
 //
 //*****************************************************************************
 extern uint32_t am_hal_dsi_power_control(am_hal_sysctrl_power_state_e ePowerState, bool bRetainState);
+
+//*****************************************************************************
+//
+//! @brief Enable DSI clock continuous mode
+//!
+//! This function should be called after am_hal_dsi_para_config()
+//!
+//! @return AM_HAL_STATUS_SUCCESS
+//
+//*****************************************************************************
+extern uint32_t am_hal_dsi_enable_clock_continuous_mode(void);
+
+//*****************************************************************************
+//
+//! @brief Disable DSI clock continuous mode
+//!
+//! This function disable the DSI clock continuous and back to normal mode
+//!
+//! @return AM_HAL_STATUS_SUCCESS
+//
+//*****************************************************************************
+extern uint32_t am_hal_dsi_disable_clock_continuous_mode(void);
 
 #ifdef __cplusplus
 }

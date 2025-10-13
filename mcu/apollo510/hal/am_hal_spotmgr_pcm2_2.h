@@ -2,9 +2,9 @@
 //
 //! @file am_hal_spotmgr_pcm2_2.h
 //!
-//! @brief SPOT manager functions that manage power states for PCM2.2 parts.
+//! @brief SPOT manager functions that manage power states for PCM2.2 parts
 //!
-//! @addtogroup spotmgr5b SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr_22_ap510 SPOTMGR - SPOT Manager PCM2.2
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SPOTMGR_PCM2_2_H
@@ -51,6 +51,16 @@
 extern "C"
 {
 #endif
+
+//*****************************************************************************
+//
+//! Configurations
+//
+//*****************************************************************************
+//! Control whether SPOTMGR delay uses TIMER (true) or blocking delay (false)
+#define AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_2 AM_HAL_SPOTMANAGER_USE_TIMER_OR_BLOCKING_DELAY
+//! Control whether SPOTMGR uses double boost mode for transitions using timer delay
+#define AM_HAL_SPOTMGR_DOUBLE_BOOST_FOR_SEQ_USING_TIMER_PCM2_2 AM_HAL_SPOTMANAGER_TIMER_DOUBLEBOOST
 
 //*****************************************************************************
 //

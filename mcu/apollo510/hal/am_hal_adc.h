@@ -2,9 +2,9 @@
 //
 //! @file am_hal_adc.h
 //!
-//! @brief Functions for interfacing with the Analog to Digital Converter
+//! @brief Analog-to-Digital Converter (ADC) HAL implementation.
 //!
-//! @addtogroup adc4 ADC - Analog-to-Digital Converter
+//! @addtogroup adc4_ap510 ADC - Analog-to-Digital Converter
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_ADC_H
@@ -589,15 +589,14 @@ extern "C"
 
 //*****************************************************************************
 //
-//! @brief ADC initialization function
+//! @brief Initialize the ADC peripheral.
 //!
-//! @param ui32Module - module instance.
-//! @param ppHandle   - returns the handle for the module instance.
+//! @param ui32Module - ADC module number.
+//! @param ppHandle - Pointer to receive the ADC handle.
 //!
-//! This function accepts a module instance, allocates the interface and then
-//! returns a handle to be used by the remaining interface functions.
+//! This function initializes the ADC peripheral for operation.
 //!
-//! @return status    - generic or interface specific status.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
 //! @note A return of AM_HAL_STATUS_SUCCESS does not infer that the
 //! temperature calibrations are valid. The caller must check the bMeasured
@@ -613,15 +612,12 @@ extern uint32_t am_hal_adc_initialize(uint32_t ui32Module, void **ppHandle);
 
 //*****************************************************************************
 //
-//! @brief ADC deinitialization function
+//! @brief Deinitialize the ADC peripheral.
 //!
-//! @param pHandle       - returns the handle for the module instance.
+//! @param pHandle - ADC handle.
 //!
-//! This function accepts a handle to an instance and de-initializes the
-//! interface.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//! @return status      - generic or interface specific status.
-//
 //*****************************************************************************
 extern uint32_t am_hal_adc_deinitialize(void *pHandle);
 

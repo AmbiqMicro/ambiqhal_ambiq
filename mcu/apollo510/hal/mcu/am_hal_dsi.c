@@ -4,10 +4,45 @@
 //!
 //! @brief Hardware abstraction for the Display Serial Interface
 //!
-//! @addtogroup dsi DSI - Display Serial Interface
+//! @addtogroup dsi_ap510 DSI - Display Serial Interface
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides hardware abstraction functions for the Display
+//!          Serial Interface (DSI) on Apollo5 devices. It supports DSI timing
+//!          configuration, lane management, power control, and ULPS (Ultra-Low
+//!          Power State) operations for display interface applications.
+//!
+//! @section hal_dsi_features Key Features
+//!
+//! 1. @b DSI @b Timing: Configurable DSI timing parameters and protocols.
+//! 2. @b Lane @b Management: Support for multiple DSI lanes and configurations.
+//! 3. @b ULPS @b Support: Ultra-Low Power State entry and exit operations.
+//! 4. @b Power @b Control: DSI power management and control.
+//! 5. @b Callback @b Support: External callback function registration.
+//!
+//! @section hal_dsi_functionality Functionality
+//!
+//! - Initialize and configure DSI interface
+//! - Handle DSI timing and parameter configuration
+//! - Manage DSI lanes and power states
+//! - Support ULPS entry and exit operations
+//! - Register external callback functions
+//!
+//! @section hal_dsi_usage Usage
+//!
+//! 1. Initialize DSI using am_hal_dsi_init()
+//! 2. Configure DSI parameters with am_hal_dsi_para_config()
+//! 3. Set up timing and lane configurations
+//! 4. Handle ULPS operations as needed
+//! 5. Register callback functions for external control
+//!
+//! @section hal_dsi_configuration Configuration
+//!
+//! - @b Timing @b Parameters: Configure DSI timing and protocol parameters
+//! - @b Lane @b Configuration: Set up DSI lane count and width
+//! - @b Power @b States: Configure DSI power management
+//! - @b Callbacks: Set up external callback functions
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -89,11 +124,11 @@ static const double fCLKTHSExitMin = 100;
 static const uint32_t ui32RefFreq = 12;
 //*****************************************************************************
 //
-//! VDD18 control callback function
+//!DSI callback functions
 //
 //*****************************************************************************
 am_hal_dsi_external_vdd18_callback external_vdd18_callback;
-
+am_hal_dsi_delay_function_callback delay_function_callback;
 //*****************************************************************************
 //
 //! DSI state structure
@@ -133,6 +168,26 @@ am_hal_dsi_register_external_vdd18_callback(const am_hal_dsi_external_vdd18_call
     if (cb != NULL)
     {
         external_vdd18_callback = cb;
+    }
+    else
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+// Register ulps exit delay callback function
+//
+//*****************************************************************************
+uint32_t
+am_hal_dsi_register_ulps_exit_delay_callback(const am_hal_dsi_delay_function_callback cb)
+{
+    if (cb != NULL)
+    {
+        delay_function_callback = cb;
     }
     else
     {
@@ -200,6 +255,17 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
         // Time that the transmitter drives the flipped differential state after last payload data bit of a HS transmission burst
         //
         double fDataTHSTrailMin;
+        double fDataTHSTrailMax;
+
+        //
+        // Time that the transmitter drives the HS-0 state after the last payload clock bit of a HS transmission burst.
+        //
+        double fCLKTHSTrailMax;
+
+        //
+        // Transmitted time interval from the start of THS-TRAIL or TCLK-TRAIL, to the start of the LP-11 state following a HS burst.
+        //
+        double fTEotMax = 105 + FORWARD_REVERSE * 12 * fUI;
 
         //
         // The minimum time of HS prepare is 40 + 4 * UI, the maximum is 85 + 6 * UI.
@@ -267,7 +333,9 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
         fDataTHSTrailMin = (FORWARD_REVERSE * 8 * fUI > 60 + FORWARD_REVERSE * 4 * fUI) ? FORWARD_REVERSE * 8 * fUI : 60 + FORWARD_REVERSE * 4 * fUI;
         fTemp = (fDataTHSTrailMin - 2 * 8 * fUI) / 8 / fUI;
         i8Temp = (int8_t)ceil(fTemp);
-        ui8DataHSTrail = i8Temp < 0 ? 0 : i8Temp;
+        i8Temp = i8Temp < 0 ? 0 : i8Temp;
+        fDataTHSTrailMax = (fTEotMax - 2 * 8 * fUI) / 8 / fUI;
+        ui8DataHSTrail = (i8Temp + (int8_t)floor(fDataTHSTrailMax)) / 2;
 
         fTemp = (fDataTHSExitMin - 8 * fUI) / 8 / fUI;
         ui8DataHSExit = (int8_t)ceil(fTemp);
@@ -292,7 +360,9 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
 
         fTemp = (fCLKTHSTrailMin - 8 * fUI + fUI) / 8 / fUI;
         i8Temp = (int8_t)ceil(fTemp);
-        ui8CLKHSTrail = i8Temp < 0 ? 0 : i8Temp;
+        i8Temp = i8Temp < 0 ? 0 : i8Temp;
+        fCLKTHSTrailMax = (fTEotMax - 8 * fUI + fUI) / 8 / fUI;
+        ui8CLKHSTrail = (i8Temp + (int8_t)floor(fCLKTHSTrailMax)) / 2;
 
         fTemp = (fCLKTHSExitMin - 8 * fUI) / 8 / fUI;
         ui8CLKHSExit = (int8_t)ceil(fTemp);
@@ -390,7 +460,6 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
             //
             // There are two options for 16 bit interface of DBI-Type B output formats. We use option 1 as the default.
             //
-            //ui32DSIFuncPrg |= _VAL2FLD(DSI_DSIFUNCPRG_REGNAME, DSI_DSIFUNCPRG_REGNAME_16BIT0);
             ui32DSIFuncPrg |= _VAL2FLD(DSI_DSIFUNCPRG_REGNAME, DSI_DSIFUNCPRG_REGNAME_16BIT1);
 
         break;
@@ -458,6 +527,12 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
     {
         DSI->AFETRIM0 |= _VAL2FLD(DSI_AFETRIM0_AFETRIM0, 0x00020000); // trim_0<17> needs to be set for B1 and later version.
     }
+#ifdef DISABLE_ERROR_AUTORECOVERY
+    //
+    // Disable error auto recovery.
+    //
+    DSI->ERRORAUTORCOV = 0;
+#endif
     //
     // enable DSI TX and DPHY
     //
@@ -488,12 +563,7 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
         //
         // ULPS Exit sequence
         //
-        DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_LOW_POWER;
-        am_hal_delay_us(10);
-        DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_EXIT;
-        DSI->AFETRIM3 &= _VAL2FLD(DSI_AFETRIM3_AFETRIM3, ~0x00030000);
-        am_hal_delay_us(1010);
-        DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_This;
+        am_hal_dsi_ulps_exit();
     }
     //
     // Return the status.
@@ -509,10 +579,8 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
 uint32_t
 am_hal_dsi_init(void)
 {
-    //CLKGEN->CLKCTRL_b.DISPCTRLCLKEN = CLKGEN_CLKCTRL_DISPCTRLCLKEN_ENABLE;
     am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_DISPPHY);
     DSI->RSTENBDFE = _VAL2FLD(DSI_RSTENBDFE_ENABLE, 0);
-    //DSI->DEVICEREADY = _VAL2FLD(DSI_DEVICEREADY_READY, 0);
 
     //
     // vdd18 enable
@@ -572,7 +640,7 @@ am_hal_dsi_deinit(bool bCheckStopState)
     }
 
     am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_DISPPHY);
-    //CLKGEN->CLKCTRL_b.DISPCTRLCLKEN = CLKGEN_CLKCTRL_DISPCTRLCLKEN_DISABLE;
+
     return am_hal_clkmgr_clock_release(AM_HAL_CLKMGR_CLK_ID_HFRC, AM_HAL_CLKMGR_USER_ID_DSI);
 }
 
@@ -602,11 +670,23 @@ am_hal_dsi_ulps_entry(void)
 uint32_t
 am_hal_dsi_ulps_exit(void)
 {
+    DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_LOW_POWER;
+    am_hal_delay_us(10);
     DSI->AFETRIM3 &= _VAL2FLD(DSI_AFETRIM3_AFETRIM3, ~0x00038000); //  trim_3<15>, trim_3<16>, and trim_3<17> need to be cleared
     DSI->AFETRIM2 &= _VAL2FLD(DSI_AFETRIM2_AFETRIM2, ~0x0000001C); //  trim_2<2>, trim_2<3> & trim_2<4> need to be cleared
     DSI->AFETRIM1 &= _VAL2FLD(DSI_AFETRIM1_AFETRIM1, ~0x00000200); //  trim_1<9> needs to be cleared
     DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_EXIT;
-    am_hal_delay_us(1010);
+    //
+    // Twakeup time should not be less than 1ms.
+    //
+    if (delay_function_callback == NULL)
+    {
+        am_hal_delay_us(1010);
+    }
+    else
+    {
+        delay_function_callback(1);
+    }
     DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_This;
     DSI->AFETRIM0 &= _VAL2FLD(DSI_AFETRIM0_AFETRIM0, ~0x00000800); //  trim_0<11> needs to be cleared - contention detector enable
 
@@ -880,6 +960,55 @@ am_hal_dsi_power_control(am_hal_sysctrl_power_state_e ePowerState,
 
 } // am_hal_dsi_power_control()
 
+//*****************************************************************************
+//
+// DSI enable clock_continuous_mode
+//
+//*****************************************************************************
+uint32_t
+am_hal_dsi_enable_clock_continuous_mode(void)
+{
+    DSI->DEVICEREADY_b.READY = DSI_DEVICEREADY_READY_READY;
+
+    am_hal_delay_us(1000);
+
+    DSI->CLKEOT_b.CLOCK = 0;
+    DSI->CLKEOT_b.EOT = 1;
+
+    DSI->DEVICEREADY_b.READY = DSI_DEVICEREADY_READY_PROGRAMMED;
+
+    if (AM_HAL_STATUS_SUCCESS != am_hal_delay_us_status_change(1000, (uint32_t)&DSI->INTRSTAT, DSI_INTRSTAT_INITDONE_Msk, DSI_INTRSTAT_INITDONE_Msk))
+    {
+       return AM_HAL_STATUS_TIMEOUT;
+    }
+
+    return AM_HAL_STATUS_SUCCESS;
+} // am_hal_dsi_enable_clock_continuous_mode()
+
+//*****************************************************************************
+//
+// DSI disable clock_continuous_mode
+//
+//*****************************************************************************
+uint32_t
+am_hal_dsi_disable_clock_continuous_mode(void)
+{
+    DSI->DEVICEREADY_b.READY = DSI_DEVICEREADY_READY_READY;
+
+    am_hal_delay_us(1000);
+
+    DSI->CLKEOT_b.CLOCK = 1;
+    DSI->CLKEOT_b.EOT = 1;
+
+    DSI->DEVICEREADY_b.READY = DSI_DEVICEREADY_READY_PROGRAMMED;
+
+    if (AM_HAL_STATUS_SUCCESS != am_hal_delay_us_status_change(1000, (uint32_t)&DSI->INTRSTAT, DSI_INTRSTAT_INITDONE_Msk, DSI_INTRSTAT_INITDONE_Msk))
+    {
+       return AM_HAL_STATUS_TIMEOUT;
+    }
+
+    return AM_HAL_STATUS_SUCCESS;
+} // am_hal_dsi_enable_clock_continuous_mode()
 //*****************************************************************************
 //
 // End Doxygen group.

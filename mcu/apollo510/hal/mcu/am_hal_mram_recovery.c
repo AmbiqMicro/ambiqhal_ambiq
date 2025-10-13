@@ -4,9 +4,45 @@
 //!
 //! @brief MRAM Recovery API.
 //!
-//! @addtogroup mramr MRAM Recovery Functionality
+//! @addtogroup mramr_ap510 MRAM Recovery Functionality
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides MRAM (Magnetic Random Access Memory) recovery
+//!          functionality for Apollo5 devices. It supports application-initiated
+//!          MRAM recovery operations, status monitoring, and system reset
+//!          capabilities for memory recovery and system maintenance.
+//!
+//! @section hal_mram_recovery_features Key Features
+//!
+//! 1. @b MRAM @b Recovery: Application-initiated MRAM recovery operations.
+//! 2. @b Status @b Monitoring: Real-time MRAM recovery status tracking.
+//! 3. @b System @b Reset: Controlled system reset for recovery operations.
+//! 4. @b Key @b Validation: Secure key-based recovery authorization.
+//! 5. @b Chip @b Compatibility: Support for specific chip revisions.
+//!
+//! @section hal_mram_recovery_functionality Functionality
+//!
+//! - Initialize MRAM recovery operations
+//! - Monitor MRAM recovery status
+//! - Handle system reset for recovery
+//! - Validate recovery keys and authorization
+//! - Support chip-specific recovery operations
+//!
+//! @section hal_mram_recovery_usage Usage
+//!
+//! 1. Initialize recovery using am_hal_mram_recovery_init_app_recovery()
+//! 2. Monitor recovery status with am_hal_mram_recovery_read_status()
+//! 3. Handle recovery operations and system reset
+//! 4. Validate recovery keys and authorization
+//! 5. Monitor recovery progress and completion
+//!
+//! @section hal_mram_recovery_configuration Configuration
+//!
+//! - @b Recovery @b Keys: Configure secure recovery authorization keys
+//! - @b System @b Reset: Set up system reset parameters for recovery
+//! - @b Chip @b Support: Configure chip-specific recovery parameters
+//! - @b Status @b Monitoring: Set up recovery status tracking
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -51,7 +87,8 @@
 //
 // Application Initiated MRAM Recovery
 //
-uint32_t am_hal_mram_recovery_init_app_recovery(uint32_t ui32Key, bool bReset)
+uint32_t
+am_hal_mram_recovery_init_app_recovery(uint32_t ui32Key, bool bReset)
 {
     //
     // Check Chip Revision
@@ -88,7 +125,8 @@ uint32_t am_hal_mram_recovery_init_app_recovery(uint32_t ui32Key, bool bReset)
 //
 // Read the MRAM Recovery Status
 //
-uint32_t am_hal_mram_recovery_read_status(am_hal_mram_recovery_status_t *psStatus)
+uint32_t
+am_hal_mram_recovery_read_status(am_hal_mram_recovery_status_t *psStatus)
 {
 
     if ( psStatus == NULL )

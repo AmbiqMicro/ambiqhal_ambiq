@@ -4,10 +4,51 @@
 //!
 //! @brief Functions for interfacing with the MSPI.
 //!
-//! @addtogroup mspi4 MSPI - Multi-bit SPI
+//! @addtogroup mspi4_ap510 MSPI - Multi-bit SPI
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//! the Multi-bit SPI (MSPI) modules on Apollo5 devices. It supports
+//! PI communication, DMA transfers, command queue operations, device
+//! configuration, and interrupt handling for high-speed serial memory
+//! and peripheral access.
+//!
+//! @section mspi_features Key Features
+//!
+//! 1. @b Multi-bit @b SPI: Support for 1-bit, 2-bit, 4-bit, and 8-bit SPI modes.
+//! 2. @b DMA @b Transfers: High-speed DMA-based data transfer operations.
+//! 3. @b Command @b Queue: Advanced command queue for complex transaction sequences.
+//! 4. @b Device @b Configuration: Flexible device configuration and initialization.
+//! 5. @b Interrupt @b Handling: Comprehensive interrupt management and status monitoring.
+//! 6. @b Power @b Management: Power state control and state retention capabilities.
+//!
+//! @section mspi_functionality Functionality
+//!
+//! - Initialize and configure MSPI modules for various devices
+//! - Perform blocking and non-blocking data transfers
+//! - Manage DMA transfers with callback support
+//! - Handle command queue operations and sequencing
+//! - Support high-priority transaction processing
+//! - Provide interrupt-driven operation with status monitoring
+//! - Enable power management and state retention
+//! - Support XIP (Execute-In-Place) configurations
+//!
+//! @section mspi_usage Usage
+//!
+//! 1. Initialize MSPI using am_hal_mspi_initialize()
+//! 2. Configure device settings with am_hal_mspi_device_configure()
+//! 3. Enable MSPI module with am_hal_mspi_enable()
+//! 4. Perform transfers using blocking or non-blocking functions
+//! 5. Handle interrupts and manage power states as needed
+//!
+//! @section mspi_configuration Configuration
+//!
+//! - @b Device @b Support: Multiple flash and memory device configurations
+//! - @b Clock @b Management: Configurable clock sources and frequencies
+//! - @b DMA @b Settings: Transfer control buffer and threshold configuration
+//! - @b Command @b Queue: Configurable queue depth and entry management
+//! - @b Interrupt @b Masking: Selective interrupt enable/disable control
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +82,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -316,6 +357,16 @@ static am_hal_mspi_state_t  g_MSPIState[AM_REG_MSPI_NUM_MODULES];
 // Internal Functions.
 //
 //*****************************************************************************
+//*****************************************************************************
+//
+//! @brief Get pause value for MSPI command queue.
+//!
+//! @param pMSPIState - Pointer to MSPI state structure.
+//! @param pause - Pause value to get.
+//!
+//! @return Returns the pause value.
+//!
+//*****************************************************************************
 static uint32_t
 get_pause_val(am_hal_mspi_state_t *pMSPIState, uint32_t pause)
 {
@@ -337,7 +388,19 @@ get_pause_val(am_hal_mspi_state_t *pMSPIState, uint32_t pause)
     return retval;
 }
 
-uint32_t
+//*****************************************************************************
+//
+//! @brief Build DMA command list for MSPI.
+//!
+//! @param pMSPIState - Pointer to MSPI state structure.
+//! @param eMode - Transfer mode.
+//! @param pCQEntry - Pointer to command queue entry.
+//! @param pTransaction - Pointer to transaction structure.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
+static uint32_t
 build_dma_cmdlist(am_hal_mspi_state_t *pMSPIState,
                   am_hal_mspi_trans_e eMode,
                   void  *pCQEntry,
@@ -462,16 +525,15 @@ build_dma_cmdlist(am_hal_mspi_state_t *pMSPIState,
 
 //*****************************************************************************
 //
-//! @brief Writes data to the MSPI FIFO.
+//! @brief Write data to MSPI FIFO.
 //!
-//! @param ui32Module - Selects the MSPI module to use (zero or one).
-//! @param pui32Data - Pointer to an array of the data to be written.
-//! @param ui32NumBytes - Number of BYTES to copy into the FIFO.
+//! @param ui32Module - MSPI module number.
+//! @param pui32Data - Pointer to data to write.
+//! @param ui32NumBytes - Number of bytes to write.
+//! @param ui32Timeout - Timeout value.
 //!
-//! This function copies data from the array \e pui32Data into the MSPI FIFO.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//! @return HAL status of the operation.
-//
 //*****************************************************************************
 static uint32_t
 mspi_fifo_write(uint32_t ui32Module, uint32_t *pui32Data,
@@ -517,16 +579,15 @@ mspi_fifo_write(uint32_t ui32Module, uint32_t *pui32Data,
 
 //*****************************************************************************
 //
-//! @brief Reads data from the MSPI FIFO.
+//! @brief Read data from MSPI FIFO.
 //!
-//! @param ui32Module - Selects the IOM module to use (zero or one).
-//! @param pui32Data - Pointer to an array where the FIFO data will be copied.
-//! @param ui32NumBytes - Number of bytes to copy into array.
+//! @param ui32Module - MSPI module number.
+//! @param pui32Data - Pointer to store read data.
+//! @param ui32NumBytes - Number of bytes to read.
+//! @param ui32Timeout - Timeout value.
 //!
-//! This function copies data from the MSPI FIFO into the array \e pui32Data.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//! @return HAL status of the operation.
-//
 //*****************************************************************************
 static uint32_t
 mspi_fifo_read(uint32_t ui32Module, uint32_t *pui32Data,
@@ -631,17 +692,14 @@ mspi_fifo_read(uint32_t ui32Module, uint32_t *pui32Data,
 
 //*****************************************************************************
 //
-//! @brief Initializes the MSPI Command Queue.
+//! @brief Initialize MSPI command queue.
 //!
-//! @param ui32Module   - MSPI Module Number
-//! @param ui32Length   - length of the SRAM Command Queue buffer in words.
-//! @param pTCB         - pointer to the SRAM to use for the Command Queue.
+//! @param ui32Module - MSPI module number.
+//! @param ui32Length - Length of command queue.
+//! @param pTCB - Pointer to transfer control buffer.
 //!
-//! This function initializes the global command queue structure.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//! @return HAL status of the operation.
-//
-//
 //*****************************************************************************
 static uint32_t
 mspi_cq_init(uint32_t ui32Module, uint32_t ui32Length,
@@ -658,15 +716,12 @@ mspi_cq_init(uint32_t ui32Module, uint32_t ui32Length,
 
 //*****************************************************************************
 //
-//! @brief Terminates the MSPI Command Queue.
+//! @brief Terminate MSPI command queue.
 //!
-//! @param ui32Module   - MSPI instance.
+//! @param pHandle - MSPI handle.
 //!
-//! This function resets the global command queue structure.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//! @return HAL status of the operation.
-//
-//
 //*****************************************************************************
 static uint32_t
 mspi_cq_term(void *pHandle)
@@ -688,22 +743,16 @@ mspi_cq_term(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief Adds a transaction the MSPI Command Queue.
+//! @brief Add transaction to MSPI command queue.
 //!
-//! @param pHandle       - handle for the interface.
-//! @param pTransaction  - transaction to add to the CQ
-//! @param eMode         - Mode of the MSPI Transmission
-//! @param pfnCallback   - pointer the callback function to be executed when
-//!                       transaction is complete.
-//! @param pCallbackCtxt - pointer to the context to the callback (could be NULL)
+//! @param pHandle - MSPI handle.
+//! @param pTransaction - Pointer to transaction structure.
+//! @param eMode - Transaction mode.
+//! @param pfnCallback - Callback function.
+//! @param pCallbackCtxt - Callback context.
 //!
-//! This function copies data from the IOM FIFO into the array \e pui32Data.
-//! This is how input data from SPI or I2C transactions may be retrieved.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//!
-//! @return HAL status of the operation.
-//
-//
 //*****************************************************************************
 static uint32_t
 mspi_cq_add_transaction(void *pHandle,
@@ -776,16 +825,12 @@ mspi_cq_add_transaction(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief Enable the Command Queue operation.
+//! @brief Enable MSPI command queue.
 //!
-//! @param pHandle       - handle for the interface.
+//! @param pHandle - MSPI handle.
 //!
-//! This function enables Command Queue operation.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//!
-//! @return HAL status of the operation.
-//
-//
 //*****************************************************************************
 static uint32_t
 mspi_cq_enable(void *pHandle)
@@ -808,16 +853,12 @@ mspi_cq_enable(void *pHandle)
 }
 //*****************************************************************************
 //
-//! @brief Disable the Command Queue operation.
+//! @brief Disable MSPI command queue.
 //!
-//! @param pHandle       - handle for the interface.
+//! @param pHandle - MSPI handle.
 //!
-//! This function disables the Command Queue operation.
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //!
-//!
-//! @return HAL status of the operation.
-//
-//
 //*****************************************************************************
 static uint32_t
 mspi_cq_disable(void *pHandle)
@@ -830,6 +871,15 @@ mspi_cq_disable(void *pHandle)
     return am_hal_cmdq_disable(pMSPIState->CQ.pCmdQHdl);
 }
 
+//*****************************************************************************
+//
+//! @brief Pause MSPI command queue.
+//!
+//! @param pMSPIState - MSPI state.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t
 mspi_cq_pause(am_hal_mspi_state_t *pMSPIState)
 {
@@ -873,6 +923,15 @@ mspi_cq_pause(am_hal_mspi_state_t *pMSPIState)
     return status;
 }
 
+//*****************************************************************************
+//
+//! @brief Program the DMA
+//!
+//! @param pHandle - MSPI handle.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t
 program_dma(void *pHandle)
 {
@@ -915,6 +974,16 @@ program_dma(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+//! @brief Schedule High Priority Transactions
+//!
+//! @param pMSPIState - MSPI state.
+//! @param numTrans - Number of High Priority Transactions
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t
 sched_hiprio(am_hal_mspi_state_t *pMSPIState, uint32_t numTrans)
 {
@@ -961,6 +1030,20 @@ sched_hiprio(am_hal_mspi_state_t *pMSPIState, uint32_t numTrans)
     return ui32Status;
 }
 
+//*****************************************************************************
+//
+//! @brief Add High Priority Transaction
+//!
+//! @param pHandle - MSPI handle.
+//! @param pDMATrans - MSPI DMA transfer config
+//! @param pfnCallback   - pointer the callback function to be executed when
+//!                       transaction is complete can be set to NULL).
+//! @param pCallbackCtxt - context registered which is passed on to the callback
+//!                       function
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static uint32_t
 mspi_add_hp_transaction(void *pHandle,
                         am_hal_mspi_dma_transfer_t *pDMATrans,
@@ -999,14 +1082,12 @@ mspi_add_hp_transaction(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief Configure the device config, seperate I/O, mixed mode, and internal
-//!        PADs based on the device configuration
+//! @brief Configure MSPI device.
 //!
-//! @param pMSPIState   - MSPI State
+//! @param pMSPIState - Pointer to MSPI state structure.
 //!
-//! @return HAL status of the operation.
-//
-//
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 static uint32_t
 mspi_device_configure(am_hal_mspi_state_t *pMSPIState)
@@ -1186,13 +1267,12 @@ mspi_device_configure(am_hal_mspi_state_t *pMSPIState)
 
 //*****************************************************************************
 //
-//! @brief Configure the device mixed mode for PIO transactions
+//! @brief Configure MSPI PIO mixed mode.
 //!
-//! @param pMSPIState   - MSPI State
+//! @param pMSPIState - Pointer to MSPI state structure.
 //!
-//! @return HAL status of the operation.
-//
-//
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 static uint32_t
 mspi_piomixed_configure(am_hal_mspi_state_t *pMSPIState)
@@ -1254,11 +1334,27 @@ mspi_piomixed_configure(am_hal_mspi_state_t *pMSPIState)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+//! @brief Dummy callback function for MSPI.
+//!
+//! @param pCallbackCtxt - Callback context.
+//! @param status - Status value.
+//!
+//*****************************************************************************
 static void mspi_dummy_callback(void *pCallbackCtxt, uint32_t status)
 {
     // Dummy - Do nothing
 }
 
+//*****************************************************************************
+//
+//! @brief Sequence loopback callback for MSPI.
+//!
+//! @param pCallbackCtxt - Callback context.
+//! @param status - Status value.
+//!
+//*****************************************************************************
 static void mspi_seq_loopback(void *pCallbackCtxt, uint32_t status)
 {
     // Reset the state to allow serving callbacks for next set
@@ -1271,6 +1367,16 @@ static void mspi_seq_loopback(void *pCallbackCtxt, uint32_t status)
     MSPIn(pMSPIState->ui32Module)->CQSETCLEAR = AM_HAL_MSPI_SC_UNPAUSE_SEQLOOP;
 }
 
+//*****************************************************************************
+//
+//! @brief Control MSPI clock generator.
+//!
+//! @param ui32Module - MSPI module number.
+//! @param bEnable - Enable flag.
+//! @param bConfig - Configuration flag.
+//! @param eClockSel - Clock selection.
+//!
+//*****************************************************************************
 static void mspi_clkgen_ctrl(uint32_t ui32Module, bool bEnable, bool bConfig, am_hal_mspi_io_clock_sel_e eClockSel)
 {
     uint32_t ui32MSPIxIOCLKSEL;
@@ -1296,6 +1402,13 @@ static void mspi_clkgen_ctrl(uint32_t ui32Module, bool bEnable, bool bConfig, am
     AM_CRITICAL_END
 }
 
+//*****************************************************************************
+//
+//! @brief Get XIP off minimum delay for MSPI.
+//!
+//! @param pMSPIState - Pointer to MSPI state structure.
+//!
+//*****************************************************************************
 static void mspi_get_xip_off_min_delay(am_hal_mspi_state_t *pMSPIState)
 {
     switch ( pMSPIState->eClockFreq )
@@ -1350,6 +1463,16 @@ static const uint32_t mspi_ap_sizes[AM_HAL_MSPI_AP_SIZE_MAX + 1] = {
     512*1024*1024,
 };
 
+//*****************************************************************************
+//
+//! @brief Check MSPI XIP configuration.
+//!
+//! @param ui32Module - MSPI module number.
+//! @param pXipConfig - Pointer to XIP configuration.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
+//*****************************************************************************
 static inline uint32_t
 mspi_xip_config_check(uint32_t ui32Module, am_hal_mspi_xip_config_t *pXipConfig)
 {
@@ -1421,9 +1544,11 @@ mspi_xip_config_check(uint32_t ui32Module, am_hal_mspi_xip_config_t *pXipConfig)
 //
 //*****************************************************************************
 
+//*****************************************************************************
 //
 // MSPI initialization function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_initialize(uint32_t ui32Module, void **ppHandle)
 {
@@ -1488,9 +1613,11 @@ am_hal_mspi_initialize(uint32_t ui32Module, void **ppHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI device default configuration function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_default_device_config_set(void *pHandle,
                                       am_hal_mspi_dev_config_t *pDevConfig)
@@ -1513,9 +1640,11 @@ am_hal_mspi_default_device_config_set(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI configuration function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_configure(void *pHandle,
                       const am_hal_mspi_config_t *pConfig)
@@ -1577,9 +1706,11 @@ am_hal_mspi_configure(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI device configuration function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_device_configure(void *pHandle,
                              const am_hal_mspi_dev_config_t *pConfig)
@@ -1639,7 +1770,6 @@ am_hal_mspi_device_configure(void *pHandle,
     mspi_clkgen_ctrl(ui32Module, false, false, (am_hal_mspi_io_clock_sel_e)0);
 
     {
-
         am_hal_clkmgr_clock_id_e eClockSrc;
         uint32_t ui32Status;
 
@@ -2083,9 +2213,11 @@ am_hal_mspi_device_configure(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI Enable function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_enable(void *pHandle)
 {
@@ -2136,9 +2268,11 @@ am_hal_mspi_enable(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI Disable function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_disable(void *pHandle)
 {
@@ -2197,9 +2331,11 @@ am_hal_mspi_disable(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI Deinitialize function
 //
+//*****************************************************************************
 uint32_t
 am_hal_mspi_deinitialize(void *pHandle)
 {
@@ -2232,12 +2368,15 @@ am_hal_mspi_deinitialize(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI device specific control function.
 //
-uint32_t am_hal_mspi_control(void *pHandle,
-                             am_hal_mspi_request_e eRequest,
-                             const void *pConfig)
+//*****************************************************************************
+uint32_t
+am_hal_mspi_control(void *pHandle,
+                    am_hal_mspi_request_e eRequest,
+                    const void *pConfig)
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
     uint32_t                      ui32Module;
@@ -3514,12 +3653,15 @@ uint32_t am_hal_mspi_control(void *pHandle,
     return ui32Status;
 }
 
+//*****************************************************************************
 //
 // MSPI blocking transfer function
 //
-uint32_t am_hal_mspi_blocking_transfer(void *pHandle,
-                                       am_hal_mspi_pio_transfer_t *pTransaction,
-                                       uint32_t ui32Timeout)
+//*****************************************************************************
+uint32_t
+am_hal_mspi_blocking_transfer(void *pHandle,
+                              am_hal_mspi_pio_transfer_t *pTransaction,
+                              uint32_t ui32Timeout)
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
     uint32_t                      ui32Module;
@@ -3700,14 +3842,17 @@ uint32_t am_hal_mspi_blocking_transfer(void *pHandle,
     return ui32Status;
 }
 
+//*****************************************************************************
 //
 // MSPI Non-Blocking transfer function
 //
-uint32_t am_hal_mspi_nonblocking_transfer(void *pHandle,
-                                          void *pTransfer,
-                                          am_hal_mspi_trans_e eMode,
-                                          am_hal_mspi_callback_t pfnCallback,
-                                          void *pCallbackCtxt)
+//*****************************************************************************
+uint32_t
+am_hal_mspi_nonblocking_transfer(void *pHandle,
+                                 void *pTransfer,
+                                 am_hal_mspi_trans_e eMode,
+                                 am_hal_mspi_callback_t pfnCallback,
+                                 void *pCallbackCtxt)
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
     uint32_t                      ui32Status = AM_HAL_STATUS_SUCCESS;
@@ -3836,11 +3981,14 @@ uint32_t am_hal_mspi_nonblocking_transfer(void *pHandle,
     return ui32Status;
 }
 
+//*****************************************************************************
 //
 // MSPI status function
 //
-uint32_t am_hal_mspi_status_get(void *pHandle,
-                                am_hal_mspi_status_t *pStatus )
+//*****************************************************************************
+uint32_t
+am_hal_mspi_status_get(void *pHandle,
+                       am_hal_mspi_status_t *pStatus )
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
     uint32_t                      ui32Module;
@@ -3869,11 +4017,14 @@ uint32_t am_hal_mspi_status_get(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI enable interrupts function
 //
-uint32_t am_hal_mspi_interrupt_enable(void *pHandle,
-                                      uint32_t ui32IntMask)
+//*****************************************************************************
+uint32_t
+am_hal_mspi_interrupt_enable(void *pHandle,
+                             uint32_t ui32IntMask)
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
     uint32_t                      ui32Module;
@@ -3901,11 +4052,14 @@ uint32_t am_hal_mspi_interrupt_enable(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI disable interrupts function
 //
-uint32_t am_hal_mspi_interrupt_disable(void *pHandle,
-                                       uint32_t ui32IntMask)
+//*****************************************************************************
+uint32_t
+am_hal_mspi_interrupt_disable(void *pHandle,
+                              uint32_t ui32IntMask)
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
     uint32_t                      ui32Module;
@@ -3932,12 +4086,15 @@ uint32_t am_hal_mspi_interrupt_disable(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI interrupt status function
 //
-uint32_t am_hal_mspi_interrupt_status_get(void *pHandle,
-                                          uint32_t  *pui32Status,
-                                          bool bEnabledOnly)
+//*****************************************************************************
+uint32_t
+am_hal_mspi_interrupt_status_get(void *pHandle,
+                                 uint32_t  *pui32Status,
+                                 bool bEnabledOnly)
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
     uint32_t                      ui32Module;
@@ -3969,11 +4126,14 @@ uint32_t am_hal_mspi_interrupt_status_get(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI interrupt clear
 //
-uint32_t am_hal_mspi_interrupt_clear(void *pHandle,
-                                     uint32_t ui32IntMask)
+//*****************************************************************************
+uint32_t
+am_hal_mspi_interrupt_clear(void *pHandle,
+                            uint32_t ui32IntMask)
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
     uint32_t                      ui32Module;
@@ -4000,10 +4160,13 @@ uint32_t am_hal_mspi_interrupt_clear(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI interrupt service routine
 //
-uint32_t am_hal_mspi_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
+//*****************************************************************************
+uint32_t
+am_hal_mspi_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
     uint32_t                      ui32Module;
@@ -4268,12 +4431,15 @@ uint32_t am_hal_mspi_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI power control function
 //
-uint32_t am_hal_mspi_power_control(void *pHandle,
-                                   am_hal_sysctrl_power_state_e ePowerState,
-                                   bool bRetainState)
+//*****************************************************************************
+uint32_t
+am_hal_mspi_power_control(void *pHandle,
+                          am_hal_sysctrl_power_state_e ePowerState,
+                          bool bRetainState)
 {
     am_hal_mspi_state_t     *pMSPIState = (am_hal_mspi_state_t *)pHandle;
 
@@ -4481,14 +4647,17 @@ uint32_t am_hal_mspi_power_control(void *pHandle,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // MSPI High Priority transfer function
 //
-uint32_t am_hal_mspi_highprio_transfer(void *pHandle,
-                                       am_hal_mspi_dma_transfer_t *pTransfer,
-                                       am_hal_mspi_trans_e eMode,
-                                       am_hal_mspi_callback_t pfnCallback,
-                                       void *pCallbackCtxt)
+//*****************************************************************************
+uint32_t
+am_hal_mspi_highprio_transfer(void *pHandle,
+                              am_hal_mspi_dma_transfer_t *pTransfer,
+                              am_hal_mspi_trans_e eMode,
+                              am_hal_mspi_callback_t pfnCallback,
+                              void *pCallbackCtxt)
 {
     am_hal_mspi_state_t           *pMSPIState = (am_hal_mspi_state_t *)pHandle;
     uint32_t                      ui32Status = AM_HAL_STATUS_SUCCESS;

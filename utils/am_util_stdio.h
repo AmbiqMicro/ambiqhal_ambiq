@@ -2,20 +2,13 @@
 //
 //! @file am_util_stdio.h
 //!
-//! @brief A few printf-style functions for use with Ambiq products
+//! @brief Standard Input/Output Utility Functions
 //!
-//! Functions for performing printf-style operations without dynamic memory
-//! allocation.
-//!
-//! For further information about this module concerning its history, uses,
-//! and limitations, please see the Ambiq Micro KB article "Q&A: What does
-//! the AmbiqSuite SDK am_util_stdio_printf() function do?" at:
-//!
-//! https://support.ambiqmicro.com/hc/en-us/articles/360040441631
-//!
-//! @addtogroup stdio STDIO - Ambiq's Implementation
+//! @addtogroup stdio_utils STDIO Utility Functions
 //! @ingroup utils
 //! @{
+//!
+//! https://support.ambiqmicro.com/hc/en-us/articles/360040441631
 //
 //*****************************************************************************
 
@@ -50,7 +43,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_STDIO_H

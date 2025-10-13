@@ -4,11 +4,44 @@
 //!
 //! @brief SPOT manager functions that manage power states for PCM2.1 parts
 //!
-//! @addtogroup spotmgr5b SPOTMGR - SPOT Manager
+//! @addtogroup spotmgr_21_ap510 SPOTMGR - SPOT Manager PCM2.1
 //! @ingroup apollo510_hal
 //! @{
-//
-// ****************************************************************************
+//!
+//! Purpose: This module provides SPOT manager functionality for PCM2.1
+//! Apollo5 devices, supporting advanced power state management, peripheral
+//! control, and system optimization. It enables efficient power
+//! management and system reliability for PCM2.1-based designs.
+//!
+//! @section hal_spotmgr_pcm2_1_features Key Features
+//!
+//! 1. @b PCM2.1 @b Support: Power management for PCM2.1 hardware.
+//! 2. @b Temperature @b Compensation: Handle temperature-based power adjustments.
+//! 3. @b SIMOBUCK/LDO @b Integration: Manage power domain transitions.
+//! 4. @b SDIO/GPU @b Handling: Special handling for SDIO and GPU power events.
+//! 5. @b Extensible: Support for custom power management strategies.
+//!
+//! @section hal_spotmgr_pcm2_1_functionality Functionality
+//!
+//! - Manage power state transitions for PCM2.1 hardware
+//! - Integrate with SIMOBUCK, LDO, and other power domains
+//! - Handle temperature compensation and event postponement
+//! - Support for SDIO and GPU power event handling
+//! - Provide hooks for board-specific power management
+//!
+//! @section hal_spotmgr_pcm2_1_usage Usage
+//!
+//! 1. Initialize SPOT manager for PCM2.1 hardware
+//! 2. Handle power state transitions in response to events
+//! 3. Integrate with board and application power management
+//! 4. Extend with custom logic as needed
+//!
+//! @section hal_spotmgr_pcm2_1_configuration Configuration
+//!
+//! - @b PCM @b Version: Select PCM2.1 for hardware
+//! - @b Temperature @b Compensation: Configure compensation parameters
+//! - @b SDIO/GPU: Set up event handling as required
+//****************************************************************************
 
 // ****************************************************************************
 //
@@ -41,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -156,10 +189,12 @@ typedef union
 #define VDDCACTLOWTONTRIM_BOOST_STATE14 6
 //! Boost code for VDDCACTLOWTONTRIM in power state 15
 #define VDDCACTLOWTONTRIM_BOOST_STATE15 12
-//! VDDCLVACTLOWTONTRIM trim code for power state 1 5 17
-#define VDDCLVACTLOWTONTRIM_POWER_STATE_1_5_17 4
-//! VDDCLVACTLOWTONTRIM trim code for all other power states except power state 1 (and 5).
-#define VDDCLVACTLOWTONTRIM_DEFAULT 6
+//! VDDCLVACTLOWTONTRIM trim code for power state 1
+#define VDDCLVACTLOWTONTRIM_POWER_STATE_1  4
+//! VDDCLVACTLOWTONTRIM trim code for power state 5 17
+#define VDDCLVACTLOWTONTRIM_POWER_STATE_5_17 6
+//! VDDCLVACTLOWTONTRIM trim code for all other power states except power state 1, 5, and 17.
+#define VDDCLVACTLOWTONTRIM_DEFAULT 7
 //! Maximum delay for waiting for timer AM_HAL_INTERNAL_TIMER_NUM_A is disabled
 #define TIMER_A_DISABLE_WAIT_IN_US   2500
 
@@ -173,10 +208,10 @@ typedef union
 static int32_t g_i32CORELDODiff = 0;
 
 //! VDDC voltage level for power states, a lager number indicates the voltage is higher
-static uint32_t g_ui32PwrStVddcVoltLvl[20] = {0, 0, 1, 2, 1, 1, 2, 3, 6, 4, 4, 4, 8, 7, 5, 5, 1, 1, 2, 3};
+static uint32_t g_ui32PwrStVddcVoltLvl[21] = {0, 0, 1, 2, 1, 1, 2, 3, 6, 4, 4, 4, 8, 7, 5, 5, 1, 1, 2, 3, 3};
 
 //! VDDF voltage level for power states, a lager number indicates the voltage is higher
-static uint32_t g_ui32PwrStVddfVoltLvl[20] = {1, 0, 0, 0, 3, 2, 2, 2, 5, 4, 4, 4, 6, 4, 4, 4, 6, 4, 4, 4};
+static uint32_t g_ui32PwrStVddfVoltLvl[21] = {1, 0, 0, 0, 3, 2, 2, 2, 5, 4, 4, 4, 6, 4, 4, 4, 6, 4, 4, 4, 6};
 
 //! New VDDC TVRGCVREFTRIM trim value
 static uint32_t g_ui32NewVddcTrim = 0;
@@ -184,8 +219,8 @@ static uint32_t g_ui32NewVddcTrim = 0;
 //! New VDDF TVRGFVREFTRIM trim value
 static uint32_t g_ui32NewVddfTrim = 0;
 
-//! The default power state is 7.
-static uint32_t g_ui32CurPowerStateStatic = 7;
+//! The default power state is 20.
+static uint32_t g_ui32CurPowerStateStatic = 20;
 
 //*****************************************************************************
 //
@@ -214,28 +249,6 @@ spotmgr_temp_to_range(float fTemp)
     return AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE;
 }
 
-//*****************************************************************************
-//
-//! Inline function for boosting LDOs for power state transitions
-//
-//*****************************************************************************
-static inline void
-spotmgr_ldo_boost(bool bBoostMemLdo)
-{
-    //
-    // Boost memldo
-    //
-    if (bBoostMemLdo)
-    {
-        MCUCTRL->D2ASPARE_b.MEMLDOREF = 0x3;
-        MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.DFLTMEMLDOACTTRIM;
-    }
-    //
-    // Overflow checks for boosting coreldo
-    //
-    DIFF_OVF_CAP(g_i32CORELDODiff, CORELDO_BOOST_FOR_TVRG_ADJ, MCUCTRL, LDOREG1, CORELDOACTIVETRIM);
-    MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM += g_i32CORELDODiff;
-}
 
 //*****************************************************************************
 //
@@ -246,18 +259,18 @@ static inline void
 spotmgr_ldo_boost_remove(bool bReduceCoreLdo)
 {
     //
-    // Change memldo trim to support switching memldo reference to tvrgf
-    //
-    MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.MEMLDOACTTRIM;
-    MCUCTRL->D2ASPARE_b.MEMLDOREF = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.MEMLDOD2ASPARE;
-
-    //
     // Reduce Core LDO
     //
     if (bReduceCoreLdo)
     {
         MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM -= g_i32CORELDODiff;
+        am_hal_delay_us(10);
     }
+    //
+    // Change memldo trim to support switching memldo reference to tvrgf
+    //
+    MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.MEMLDOACTTRIM;
+    MCUCTRL->D2ASPARE_b.MEMLDOREF = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.MEMLDOD2ASPARE;
 }
 
 //*****************************************************************************
@@ -274,7 +287,32 @@ spotmgr_buck_trims_update(void)
     if (!g_bIsPCM2p1WoPatch)
     {
         MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = g_ui32NewVddcTrim;
+        am_hal_delay_us(10);
         MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = g_ui32NewVddfTrim;
+    }
+}
+
+//*****************************************************************************
+//
+//! Inline function for setting ANALDO according to the temperature.
+//
+//*****************************************************************************
+static inline void
+spotmgr_analdo_set(am_hal_spotmgr_tempco_range_e eTempRange)
+{
+    //
+    // Forces ANALDO into active mode when the temperature is below 0C.
+    //
+    if ((eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_VERY_LOW) ||
+        (eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_LOW))
+    {
+        MCUCTRL->VRCTRL_b.ANALDOACTIVE = 1;
+        MCUCTRL->VRCTRL_b.ANALDOPDNB = 1;
+        MCUCTRL->VRCTRL_b.ANALDOOVER = 1;
+    }
+    else
+    {
+        MCUCTRL->VRCTRL_b.ANALDOOVER = 0;
     }
 }
 
@@ -287,10 +325,51 @@ void
 am_hal_spotmgr_pcm2_1_boost_timer_interrupt_service(void)
 {
     AM_CRITICAL_BEGIN
+#if AM_HAL_SPOTMGR_DOUBLE_BOOST_PCM2_1
     //
     // Remove double boost if needed
     //
     spotmgr_buck_trims_update();
+#endif
+    //
+    // If temperature < 50C, change the power to VDDC.
+    // Else, we leave the CPU running off VDDF.
+    //
+    if (g_bSwitchingToHp)
+    {
+        if ((g_ui32CurPowerStateStatic != 8) && (g_ui32CurPowerStateStatic != 12))
+        {
+            MCUCTRL->PWRSW0_b.PWRSWVDDCPUOVERRIDE = 1;
+            MCUCTRL->PWRSW0_b.PWRSWVDDCAOROVERRIDE = 1;
+        }
+        g_bSwitchingToHp = false;
+    }
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
+    //
+    // Clear interrupt status for this timer
+    // Disable timer
+    //
+    am_hal_spotmgr_timer_stop();
+#endif
+    //
+    // Remove LDOs boost
+    //
+    spotmgr_ldo_boost_remove(true);
+
+    AM_CRITICAL_END
+}
+
+//*****************************************************************************
+//
+//! @brief Set power settings after CPU LP to HP transition
+//!
+//! @return None.
+//
+//*****************************************************************************
+uint32_t
+am_hal_spotmgr_pcm2_1_post_lptohp_handle(void)
+{
+#if !AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
     //
     // If temperature < 50C, change the power to VDDC.
     // Else, we leave the CPU running off VDDF.
@@ -305,16 +384,12 @@ am_hal_spotmgr_pcm2_1_boost_timer_interrupt_service(void)
         g_bSwitchingToHp = false;
     }
     //
-    // Clear interrupt status for this timer
-    // Disable timer
-    //
-    am_hal_spotmgr_timer_stop();
-    //
     // Remove LDOs boost
     //
     spotmgr_ldo_boost_remove(true);
+#endif
 
-    AM_CRITICAL_END
+    return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************
@@ -331,12 +406,15 @@ spotmgr_buck_deepsleep_state_determine(am_hal_spotmgr_power_status_t * psPwrStat
 {
     //
     // Check temperature range and peripherals power status, if there is any
-    // peripheral enabled in deepsleep or temperature range is HIGH, the
+    // peripheral or SYSPLL enabled in deepsleep or temperature range is HIGH, the
     // simobuck must be forced to stay in active mode in deepsleep.
     //
-    if ((psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH) ||
-        (psPwrStatus->ui32DevPwrSt & DEVPWRST_MONITOR_PERIPH_MASK)    ||
-        (psPwrStatus->ui32AudSSPwrSt & AUDSSPWRST_MONITOR_PERIPH_MASK))
+    if ((psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH)   ||
+        (psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE) ||
+        (psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_UNKNOWN)      ||
+        (psPwrStatus->ui32DevPwrSt & DEVPWRST_MONITOR_PERIPH_MASK)      ||
+        (psPwrStatus->ui32AudSSPwrSt & AUDSSPWRST_MONITOR_PERIPH_MASK)  ||
+        (MCUCTRL->PLLCTL0_b.SYSPLLPDB == MCUCTRL_PLLCTL0_SYSPLLPDB_ENABLE))
     {
         g_bFrcBuckAct = true;
         return;
@@ -426,7 +504,7 @@ spotmgr_internal_power_domain_set(am_hal_spotmgr_cpu_state_e eCpuState, am_hal_s
 
 //*****************************************************************************
 //
-//! @brief Ton adjust
+//! @brief Core function for Ton adjusting
 //!        The Simobuck Ton values for VDDC and VDDF must be adjusted accordingly
 //!        when the status is changed.
 //!
@@ -437,33 +515,9 @@ spotmgr_internal_power_domain_set(am_hal_spotmgr_cpu_state_e eCpuState, am_hal_s
 //
 //*****************************************************************************
 static void
-spotmgr_power_ton_adjust(uint32_t ui32TonState, uint32_t ui32TarPwrState)
+spotmgr_power_ton_adjust_core(uint32_t ui32TonState, uint32_t ui32TarPwrState)
 {
-    int32_t i32CORELDODiff, i32MEMLDODiff;
     uint32_t ui32VDDCACTLOWTONTRIM, ui32VDDFACTLOWTONTRIM;
-    //
-    // Overflow checks for boosting coreldo and memldo
-    //
-    DIFF_OVF_CAP(i32CORELDODiff, CORELDO_BOOST_FOR_TON_ADJ, MCUCTRL, LDOREG1, CORELDOACTIVETRIM);
-    DIFF_OVF_CAP(i32MEMLDODiff, MEMLDO_BOOST_FOR_TON_ADJ, MCUCTRL, LDOREG2, MEMLDOACTIVETRIM);
-    //
-    // Boost coreldo and memldo output voltage
-    //
-    MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM += i32CORELDODiff;
-    MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM += i32MEMLDODiff;
-    //
-    // Delay 20us for LDO boost
-    //
-    am_hal_delay_us(20);
-    //
-    // Short VDDC to VDDCLV
-    //
-    MCUCTRL->PWRSW1_b.SHORTVDDCVDDCLVORVAL = 1;
-    MCUCTRL->PWRSW1_b.SHORTVDDCVDDCLVOREN = 1;
-    //
-    // Delay 20us for waiting for power stabilization
-    //
-    am_hal_delay_us(20);
     //
     // Apply different Ton trims to different modes
     //
@@ -568,16 +622,69 @@ spotmgr_power_ton_adjust(uint32_t ui32TonState, uint32_t ui32TarPwrState)
     MCUCTRL->SIMOBUCK2_b.VDDCACTLOWTONTRIM = ui32VDDCACTLOWTONTRIM;
     MCUCTRL->SIMOBUCK7_b.VDDFACTLOWTONTRIM = ui32VDDFACTLOWTONTRIM;
     //
-    // VDDC_LV Ton adjustments for power state 1 and 5, 17
+    // VDDC_LV Ton adjustments for power state 1.
     //
-    if ((ui32TarPwrState == 1) || (ui32TarPwrState == 5) || (ui32TarPwrState == 17))
+    if (ui32TarPwrState == 1)
     {
-        MCUCTRL->SIMOBUCK4_b.VDDCLVACTLOWTONTRIM = VDDCLVACTLOWTONTRIM_POWER_STATE_1_5_17;
+        MCUCTRL->SIMOBUCK4_b.VDDCLVACTLOWTONTRIM = VDDCLVACTLOWTONTRIM_POWER_STATE_1;
+    }
+    //
+    // VDDC_LV Ton adjustments for power state 5 and 17.
+    //
+    else if ((ui32TarPwrState == 5) || (ui32TarPwrState == 17))
+    {
+        MCUCTRL->SIMOBUCK4_b.VDDCLVACTLOWTONTRIM = VDDCLVACTLOWTONTRIM_POWER_STATE_5_17;
     }
     else
     {
         MCUCTRL->SIMOBUCK4_b.VDDCLVACTLOWTONTRIM = VDDCLVACTLOWTONTRIM_DEFAULT;
     }
+}
+
+//*****************************************************************************
+//
+//! @brief Ton adjust
+//!        The Simobuck Ton values for VDDC and VDDF must be adjusted accordingly
+//!        when the status is changed.
+//!
+//! @param ui32TonState    - New Ton state.
+//! @param ui32TarPwrState - New power state.
+//!
+//! @return None.
+//
+//*****************************************************************************
+static void
+spotmgr_power_ton_adjust(uint32_t ui32TonState, uint32_t ui32TarPwrState)
+{
+    int32_t i32CORELDODiff, i32MEMLDODiff;
+    //
+    // Overflow checks for boosting memldo and coreldo
+    //
+    DIFF_OVF_CAP(i32MEMLDODiff, MEMLDO_BOOST_FOR_TON_ADJ, MCUCTRL, LDOREG2, MEMLDOACTIVETRIM);
+    DIFF_OVF_CAP(i32CORELDODiff, CORELDO_BOOST_FOR_TON_ADJ, MCUCTRL, LDOREG1, CORELDOACTIVETRIM);
+    //
+    // Boost memldo and coreldo output voltage
+    //
+    MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM += i32MEMLDODiff;
+    am_hal_delay_us(5);
+    MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM += i32CORELDODiff;
+    //
+    // Delay 20us for LDO boost
+    //
+    am_hal_delay_us(20);
+    //
+    // Short VDDC to VDDCLV
+    //
+    MCUCTRL->PWRSW1_b.SHORTVDDCVDDCLVORVAL = 1;
+    MCUCTRL->PWRSW1_b.SHORTVDDCVDDCLVOREN = 1;
+    //
+    // Delay 20us for waiting for power stabilization
+    //
+    am_hal_delay_us(20);
+    //
+    // Apply different Ton trims to different modes
+    //
+    spotmgr_power_ton_adjust_core(ui32TonState, ui32TarPwrState);
     //
     // Remove VDDC and VDDCLV short
     //
@@ -587,6 +694,7 @@ spotmgr_power_ton_adjust(uint32_t ui32TonState, uint32_t ui32TarPwrState)
     // Reduce coreldo and memldo output voltage
     //
     MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM -= i32CORELDODiff;
+    am_hal_delay_us(10);
     MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM -= i32MEMLDODiff;
 }
 
@@ -608,15 +716,21 @@ static void
 spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint32_t ui32TonState, uint32_t ui32CurTonState)
 {
     bool bUp = false;
-    static uint32_t ui32BasePwrStateStatic = 7;
-    am_hal_spotmgr_trim_settings_t *pTrimSettings = &g_sSpotMgrINFO1regs.sPowerStateArray[ui32PwrState];
-    am_hal_spotmgr_trim_settings_t *pCurTrimSettings = &g_sSpotMgrINFO1regs.sPowerStateArray[ui32CurPwrState];
-    am_hal_spotmgr_trim_settings_t *pBaseTrimSettings = &g_sSpotMgrINFO1regs.sPowerStateArray[ui32BasePwrStateStatic];
     bool bEnableICache = false;
-    uint32_t ui32BaseVddfTrim = 0, ui32BaseVddcTrim = 0;
     uint32_t ui32TimerDelayInUs = 0;
-    int32_t  i32DblBstVddcDiff = 0, i32DblBstVddfDiff = 0;
+    am_hal_spotmgr_trim_settings_t *pTrimSettings = &g_sSpotMgrINFO1regs.sPowerStateArray[ui32PwrState];
 
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
+    static uint32_t ui32BasePwrStateStatic = 20;
+#endif
+#if AM_HAL_SPOTMGR_DOUBLE_BOOST_PCM2_1
+    am_hal_spotmgr_trim_settings_t *pCurTrimSettings = &g_sSpotMgrINFO1regs.sPowerStateArray[ui32CurPwrState];
+    uint32_t ui32BaseVddfTrim = 0, ui32BaseVddcTrim = 0;
+    int32_t  i32DblBstVddcDiff = 0, i32DblBstVddfDiff = 0;
+#endif
+#if AM_HAL_SPOTMGR_DOUBLE_BOOST_PCM2_1 && AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
+    am_hal_spotmgr_trim_settings_t *pBaseTrimSettings = &g_sSpotMgrINFO1regs.sPowerStateArray[ui32BasePwrStateStatic];
+#endif
     //
     // If PwrState does not change, check the TonState changes and update Ton trims
     //
@@ -675,35 +789,22 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
             // Assign new TVRGF trims
             //
             g_ui32NewVddfTrim = pTrimSettings->PWRSTATE_b.TVRGFACTTRIM;
-            //
-            // CoreLDO trims
-            //
-            MCUCTRL->LDOREG1_b.CORELDOTEMPCOTRIM = pTrimSettings->PWRSTATE_b.CORELDOTEMPCOTRIM;
+#if AM_HAL_SPOTMGR_DOUBLE_BOOST_PCM2_1
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
             if (TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0EN)
             {
-                //
-                // Update the LDO trims and boost in single assignment.
-                //
-                // Overflow checks for boosting coreldo
-                //
-                if ((pTrimSettings->PWRSTATE_b.CORELDOACTTRIM + CORELDO_BOOST_FOR_TVRG_ADJ) > (MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Msk >> MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Pos))
-                {
-                    g_i32CORELDODiff = (MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Msk >> MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Pos) - pTrimSettings->PWRSTATE_b.CORELDOACTTRIM;
-                }
-                else
-                {
-                    g_i32CORELDODiff = CORELDO_BOOST_FOR_TVRG_ADJ;
-                }
-                MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = pTrimSettings->PWRSTATE_b.CORELDOACTTRIM + g_i32CORELDODiff;
                 ui32BaseVddcTrim = pBaseTrimSettings->PWRSTATE_b.TVRGCACTTRIM;
                 ui32BaseVddfTrim = pBaseTrimSettings->PWRSTATE_b.TVRGFACTTRIM;
             }
             else
             {
-                MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = pTrimSettings->PWRSTATE_b.CORELDOACTTRIM;
                 ui32BaseVddcTrim = pCurTrimSettings->PWRSTATE_b.TVRGCACTTRIM;
                 ui32BaseVddfTrim = pCurTrimSettings->PWRSTATE_b.TVRGFACTTRIM;
             }
+#else // !AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
+            ui32BaseVddcTrim = pCurTrimSettings->PWRSTATE_b.TVRGCACTTRIM;
+            ui32BaseVddfTrim = pCurTrimSettings->PWRSTATE_b.TVRGFACTTRIM;
+#endif // AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
             //
             // Calculate the trim difference for double boost.
             // If voltage is being reduced, calculate the actual difference without double but with the sign
@@ -733,8 +834,9 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
                 (ui32BaseVddfTrim + i32DblBstVddfDiff > (MCUCTRL_VREFGEN4_TVRGFVREFTRIM_Msk >> MCUCTRL_VREFGEN4_TVRGFVREFTRIM_Pos)) ||
                 g_bIsPCM2p1WoPatch)
             {
-                MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = g_ui32NewVddcTrim;
                 MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = g_ui32NewVddfTrim;
+                am_hal_delay_us(10);
+                MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = g_ui32NewVddcTrim;
                 if (g_bIsPCM2p1WoPatch)
                 {
                     ui32TimerDelayInUs = LDO_BOOST_DURATION_IN_US;
@@ -746,10 +848,25 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
             }
             else
             {
-                MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = ui32BaseVddcTrim + i32DblBstVddcDiff;
                 MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = ui32BaseVddfTrim + i32DblBstVddfDiff;
+                am_hal_delay_us(10);
+                MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = ui32BaseVddcTrim + i32DblBstVddcDiff;
                 ui32TimerDelayInUs = LDO_BOOST_DURATION_OPTIMIZED_DOUBLE_BOOST_IN_US;
             }
+#else // !AM_HAL_SPOTMGR_DOUBLE_BOOST_PCM2_1
+            MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = g_ui32NewVddfTrim;
+            am_hal_delay_us(10);
+            MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = g_ui32NewVddcTrim;
+            if (g_bIsPCM2p1WoPatch)
+            {
+                ui32TimerDelayInUs = LDO_BOOST_DURATION_IN_US;
+            }
+            else
+            {
+                ui32TimerDelayInUs = LDO_BOOST_DURATION_OPTIMIZED_IN_US;
+            }
+#endif // AM_HAL_SPOTMGR_DOUBLE_BOOST_PCM2_1
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
             //
             // If timer is running, restart the timer if voltage of next power
             // state is higher than current power state.
@@ -757,16 +874,51 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
             if (TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0EN)
             {
                 //
+                // CoreLDO trims
+                //
+                MCUCTRL->LDOREG1_b.CORELDOTEMPCOTRIM = pTrimSettings->PWRSTATE_b.CORELDOTEMPCOTRIM;
+                //
+                // Overflow checks for boosting coreldo
+                //
+                if ((pTrimSettings->PWRSTATE_b.CORELDOACTTRIM + CORELDO_BOOST_FOR_TVRG_ADJ) > (MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Msk >> MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Pos))
+                {
+                    g_i32CORELDODiff = (MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Msk >> MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Pos) - pTrimSettings->PWRSTATE_b.CORELDOACTTRIM;
+                }
+                else
+                {
+                    g_i32CORELDODiff = CORELDO_BOOST_FOR_TVRG_ADJ;
+                }
+                MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = pTrimSettings->PWRSTATE_b.CORELDOACTTRIM + g_i32CORELDODiff;
+                //
                 // Restart timer
                 //
                 am_hal_spotmgr_timer_restart(ui32TimerDelayInUs);
             }
             else
+#endif // AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
             {
                 //
-                // Boost LDOs
+                // Boost MemLDO
                 //
-                spotmgr_ldo_boost(true);
+                MCUCTRL->D2ASPARE_b.MEMLDOREF = 0x3;
+                MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.DFLTMEMLDOACTTRIM;
+                //
+                // CoreLDO trims
+                //
+                MCUCTRL->LDOREG1_b.CORELDOTEMPCOTRIM = pTrimSettings->PWRSTATE_b.CORELDOTEMPCOTRIM;
+                //
+                // Overflow checks for boosting coreldo
+                //
+                if ((pTrimSettings->PWRSTATE_b.CORELDOACTTRIM + CORELDO_BOOST_FOR_TVRG_ADJ) > (MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Msk >> MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Pos))
+                {
+                    g_i32CORELDODiff = (MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Msk >> MCUCTRL_LDOREG1_CORELDOACTIVETRIM_Pos) - pTrimSettings->PWRSTATE_b.CORELDOACTTRIM;
+                }
+                else
+                {
+                    g_i32CORELDODiff = CORELDO_BOOST_FOR_TVRG_ADJ;
+                }
+                MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = pTrimSettings->PWRSTATE_b.CORELDOACTTRIM + g_i32CORELDODiff;
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
                 //
                 // Start timer
                 //
@@ -775,12 +927,13 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
                 // Update ui32BasePwrStateStatic
                 //
                 ui32BasePwrStateStatic = ui32CurPwrState;
+#endif
             }
             //
             // As it stands, none of the CPU HP states are same or lower power than CPU LP states
             // If switching from CPU LP to HP mode, switch the VDDMCPU domain from VDDC to VDDF
             //
-            if (((ui32CurPwrState <= 7) || ((ui32CurPwrState >= 16) && (ui32CurPwrState <= 19))) &&
+            if (((ui32CurPwrState <= 7) || ((ui32CurPwrState >= 16) && (ui32CurPwrState <= 20))) &&
                 ((ui32PwrState >= 8) && (ui32PwrState <= 15)))
             {
                 //
@@ -805,9 +958,32 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
             {
                 am_hal_cachectrl_icache_enable();
             }
+#if !AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
+            //
+            // Use blocking delay instead of timer delay for boost voltage.
+            //
+            am_hal_delay_us(ui32TimerDelayInUs - 20);
+#if AM_HAL_SPOTMGR_DOUBLE_BOOST_PCM2_1
+            //
+            // Remove double boost if needed
+            //
+            spotmgr_buck_trims_update();
+#endif
+            //
+            // Remove LDO boost if not switching to HP mode.
+            //
+            if (g_bSwitchingToHp == false)
+            {
+                //
+                // Remove LDOs boost
+                //
+                spotmgr_ldo_boost_remove(true);
+            }
+#endif
         }
         else // Lower down to the lower voltage level
         {
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
             //
             // CoreLDO trims
             //
@@ -841,6 +1017,7 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
             if (g_bIsPCM2p1WoPatch || !(TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0EN))
             {
                 MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = pTrimSettings->PWRSTATE_b.TVRGCACTTRIM;
+                am_hal_delay_us(10);
                 MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = pTrimSettings->PWRSTATE_b.TVRGFACTTRIM;
             }
             else
@@ -848,6 +1025,13 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
                 g_ui32NewVddcTrim = pTrimSettings->PWRSTATE_b.TVRGCACTTRIM;
                 g_ui32NewVddfTrim = pTrimSettings->PWRSTATE_b.TVRGFACTTRIM;
             }
+#else // !AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
+            MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = pTrimSettings->PWRSTATE_b.CORELDOACTTRIM;
+            MCUCTRL->LDOREG1_b.CORELDOTEMPCOTRIM  = pTrimSettings->PWRSTATE_b.CORELDOTEMPCOTRIM;
+            MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = pTrimSettings->PWRSTATE_b.TVRGCACTTRIM;
+            am_hal_delay_us(10);
+            MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = pTrimSettings->PWRSTATE_b.TVRGFACTTRIM;
+#endif // AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
             //
             // Adjust VDDC and VDDF Simobuck Tons if Ton state is changing
             //
@@ -869,6 +1053,8 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
             {
                 spotmgr_power_ton_adjust(ui32TonState, ui32PwrState);
             }
+
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
             //
             // If timer is running, compare the voltage of target power state
             // and the base voltage of the last power rail ramping up
@@ -897,6 +1083,7 @@ spotmgr_power_trims_update(uint32_t ui32PwrState, uint32_t ui32CurPwrState, uint
                     spotmgr_ldo_boost_remove(false);
                 }
             }
+#endif // AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
         }
     }
 }
@@ -925,6 +1112,16 @@ spotmgr_power_state_determine(am_hal_spotmgr_power_status_t * psPwrStatus, uint3
     {
         .ePwrStateDesc = (am_hal_spotmgr_power_state_desc_e)0
     };
+
+    //
+    // Retrun power state 20 if no tempco report is received.
+    //
+    if (psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_UNKNOWN)
+    {
+        *pui32PwrState = 20;
+        *pui32TonState = 6;
+        return AM_HAL_STATUS_SUCCESS;
+    }
 
     //
     // Update sPwrStatDesc according to temperature, power status and perfomance modes.
@@ -1261,12 +1458,68 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
 #ifdef AM_HAL_SPOTMGR_PROFILING
     bool bLogSleepChangeEvt = false;
 #endif
-
+    //
+    // static variable for temperature range, the default temperature is
+    // unknown before the frist temperature report.
+    //
+    static am_hal_spotmgr_tempco_range_e eCurTempRangeStatic = AM_HAL_SPOTMGR_TEMPCO_UNKNOWN;
     //
     // Check if SIMOBUCK is enabled
     //
-    if ( PWRCTRL->VRSTATUS_b.SIMOBUCKST != PWRCTRL_VRSTATUS_SIMOBUCKST_ACT )
+    if (PWRCTRL->VRSTATUS_b.SIMOBUCKST != PWRCTRL_VRSTATUS_SIMOBUCKST_ACT)
     {
+        //
+        // If the stimulus is temperature, note it down even if SIMOBUCK is not active
+        //
+        if (eStimulus == AM_HAL_SPOTMGR_STIM_TEMP)
+        {
+            if (pArgs != NULL)
+            {
+                am_hal_spotmgr_tempco_param_t *psTemp = (am_hal_spotmgr_tempco_param_t *)pArgs;
+                eCurTempRangeStatic = spotmgr_temp_to_range(psTemp->fTemperature);
+                g_bTempLessThan50C = (eCurTempRangeStatic <= AM_HAL_SPOTMGR_TEMPCO_RANGE_MID);
+
+                if (g_bIsPCM2p1WoPatch == false)
+                {
+                    //
+                    // Set ANALDO according to the temperature.
+                    //
+                    spotmgr_analdo_set(eCurTempRangeStatic);
+                }
+
+                switch(eCurTempRangeStatic)
+                {
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_VERY_LOW:
+                        psTemp->fRangeLower = LOW_LIMIT;
+                        psTemp->fRangeHigher = VDDC_VDDF_TEMPCO_THRESHOLD_LOW;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_LOW:
+                        psTemp->fRangeLower = VDDC_VDDF_TEMPCO_THRESHOLD_LOW - TEMP_HYSTERESIS;
+                        psTemp->fRangeHigher = VDDC_VDDF_TEMPCO_THRESHOLD_MID;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_MID:
+                        psTemp->fRangeLower = VDDC_VDDF_TEMPCO_THRESHOLD_MID - TEMP_HYSTERESIS;
+                        psTemp->fRangeHigher = VDDC_VDDF_TEMPCO_THRESHOLD_HIGH;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH:
+                        psTemp->fRangeLower = VDDC_VDDF_TEMPCO_THRESHOLD_HIGH - TEMP_HYSTERESIS;
+                        psTemp->fRangeHigher = HIGH_LIMIT;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_UNKNOWN:
+                    case AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE:
+                        psTemp->fRangeLower = 0.0f;
+                        psTemp->fRangeHigher = 0.0f;
+                        return AM_HAL_STATUS_INVALID_ARG;
+                }
+            }
+            else
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+        }
+        //
+        // Return success when SIMOBUCK is not active
+        //
         return AM_HAL_STATUS_SUCCESS;
     }
     //
@@ -1280,7 +1533,6 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
     // Static variables for storing the last/current status, initialise them to the default values after MCU powering up.
     //
     static uint32_t ui32CurTonStateStatic = 6;      // The default Ton state is 6 - CPU LP, GPU off and any peripheral on.
-    static am_hal_spotmgr_tempco_range_e eCurTempRangeStatic = AM_HAL_SPOTMGR_TEMPCO_RANGE_VERY_LOW;    // The default state is 7. The temp range is VERY_LOW in state 7.
     static am_hal_spotmgr_cpu_state_e eLastCpuStateStatic = AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_LP;          // The default CPU state after MCU powering up is LP.
     AM_CRITICAL_BEGIN
 #if defined(AM_HAL_SPOTMGR_PROFILING) && defined(AM_HAL_SPOTMGR_PROFILING_VERBOSE)
@@ -1325,14 +1577,18 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
         sPwrStatus.ui32SsramPwrSt = PWRCTRL->SSRAMPWRST;
         sPwrStatus.eTempRange = eCurTempRangeStatic;
         sPwrStatus.eGpuState = (sPwrStatus.ui32DevPwrSt & PWRCTRL_DEVPWRSTATUS_PWRSTGFX_Msk) ?
-                               (g_eCurGpuPwrMode == AM_HAL_PWRCTRL_GPU_MODE_LOW_POWER ? AM_HAL_SPOTMGR_GPUSTATE_ACTIVE_LP : AM_HAL_SPOTMGR_GPUSTATE_ACTIVE_HP) :
+                               (PWRCTRL->GFXPERFREQ_b.GFXPERFREQ == AM_HAL_PWRCTRL_GPU_MODE_LOW_POWER ? AM_HAL_SPOTMGR_GPUSTATE_ACTIVE_LP : AM_HAL_SPOTMGR_GPUSTATE_ACTIVE_HP) :
                                AM_HAL_SPOTMGR_GPUSTATE_OFF;
-        sPwrStatus.eCpuState = eLastCpuStateStatic;
+        sPwrStatus.eCpuState = (PWRCTRL->MCUPERFREQ_b.MCUPERFREQ == AM_HAL_PWRCTRL_MCU_MODE_LOW_POWER) ? AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_LP :
+                               AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_HP;
         //
         // Get the requested/target status
         //
         switch (eStimulus)
         {
+            case AM_HAL_SPOTMGR_STIM_INIT_STATE:
+                break;
+
             case AM_HAL_SPOTMGR_STIM_DEVPWR:
                 if (bOn)
                 {
@@ -1394,7 +1650,15 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                     eCurTempRangeStatic = sPwrStatus.eTempRange;
                     g_bTempLessThan50C = (eCurTempRangeStatic <= AM_HAL_SPOTMGR_TEMPCO_RANGE_MID);
 
-                    switch(eCurTempRangeStatic)
+                    if (g_bIsPCM2p1WoPatch == false)
+                    {
+                        //
+                        // Set ANALDO according to the temperature.
+                        //
+                        spotmgr_analdo_set(eCurTempRangeStatic);
+                    }
+
+                    switch (eCurTempRangeStatic)
                     {
                         case AM_HAL_SPOTMGR_TEMPCO_RANGE_VERY_LOW:
                             psTempCo->fRangeLower = LOW_LIMIT;
@@ -1412,6 +1676,7 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                             psTempCo->fRangeLower = VDDC_VDDF_TEMPCO_THRESHOLD_HIGH - TEMP_HYSTERESIS;
                             psTempCo->fRangeHigher = HIGH_LIMIT;
                             break;
+                        case AM_HAL_SPOTMGR_TEMPCO_UNKNOWN:
                         case AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE:
                             psTempCo->fRangeLower = 0.0f;
                             psTempCo->fRangeHigher = 0.0f;
@@ -1431,13 +1696,13 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                     sPwrStatus.eCpuState = *((am_hal_spotmgr_cpu_state_e *)pArgs);
                     if (eLastCpuStateStatic != sPwrStatus.eCpuState)
                     {
-                        #ifdef AM_HAL_SPOTMGR_PROFILING
+#ifdef AM_HAL_SPOTMGR_PROFILING
                         if ((eLastCpuStateStatic >= AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP) ||
                             (sPwrStatus.eCpuState >= AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP))
                         {
                             bLogSleepChangeEvt = true;
                         }
-                        #endif
+#endif
 
                         //
                         // If CPU is going to deep sleep, need to determine the buck state
@@ -1446,9 +1711,8 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                         if (sPwrStatus.eCpuState == AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP)
                         {
                             spotmgr_buck_deepsleep_state_determine(&sPwrStatus);
-                            if ((g_ui32CurPowerStateStatic != 8)  &&
-                                (g_ui32CurPowerStateStatic != 12) &&
-                                (!TIMERn(AM_HAL_INTERNAL_TIMER_NUM_A)->CTRL0_b.TMR0EN) )
+                            if ((g_ui32CurPowerStateStatic != 8) &&
+                                (g_ui32CurPowerStateStatic != 12))
                             {
                                 g_bVddcaorVddcpuOverride = true;
                             }
@@ -1465,9 +1729,19 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                             (sPwrStatus.eCpuState == AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_HP))
                         {
                             //
-                            // Handle this case in timer isr, just update eLastCpuStateStatic here.
+                            // Refuse CPU transition to HP if no temperature report is received.
                             //
-                            eLastCpuStateStatic = sPwrStatus.eCpuState;
+                            if (eCurTempRangeStatic == AM_HAL_SPOTMGR_TEMPCO_UNKNOWN)
+                            {
+                                ui32Status = AM_HAL_STATUS_INVALID_OPERATION;
+                            }
+                            else
+                            {
+                                //
+                                // Handle this case in timer isr, just update eLastCpuStateStatic here.
+                                //
+                                eLastCpuStateStatic = sPwrStatus.eCpuState;
+                            }
                         }
                         //
                         // If CPU is switching from HP to LP, voltage level will be reduced,
@@ -1535,6 +1809,11 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                 }
                 break;
 
+            case AM_HAL_SPOTMGR_STIM_BACK_TO_DEFAULT_STATE:
+                eCurTempRangeStatic = AM_HAL_SPOTMGR_TEMPCO_UNKNOWN;
+                sPwrStatus.eTempRange = AM_HAL_SPOTMGR_TEMPCO_UNKNOWN;
+                break;
+
             default:
                 ui32Status = AM_HAL_STATUS_INVALID_ARG;
                 break;
@@ -1561,7 +1840,6 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
                     changeLog.args = pArgs ? *((uint32_t *)pArgs) : 0xDEADBEEF;
                     am_hal_spotmgr_log_change(&changeLog);
 #endif
-
                     //
                     // Update trims
                     //
@@ -1621,8 +1899,17 @@ am_hal_spotmgr_pcm2_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus, bo
 //*****************************************************************************
 uint32_t am_hal_spotmgr_pcm2_1_simobuck_init_bfr_ovr(void)
 {
-    MCUCTRL->SIMOBUCK4_b.VDDCLVACTLOWTONTRIM = VDDCLVACTLOWTONTRIM_DEFAULT;
-    return AM_HAL_STATUS_SUCCESS;
+    if (g_sSpotMgrINFO1regs.ui32SpotMgrINFO1GlobalValid == INFO1GLOBALVALID)
+    {
+        MCUCTRL->SIMOBUCK4_b.VDDCLVACTLOWTONTRIM = VDDCLVACTLOWTONTRIM_DEFAULT;
+        MCUCTRL->VREFGEN4_b.TVRGFVREFTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[20].PWRSTATE_b.TVRGFACTTRIM;
+        MCUCTRL->VREFGEN2_b.TVRGCVREFTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[20].PWRSTATE_b.TVRGCACTTRIM;
+        return AM_HAL_STATUS_SUCCESS;
+    }
+    else
+    {
+        return AM_HAL_STATUS_FAIL;
+    }
 }
 
 //*****************************************************************************
@@ -1635,14 +1922,19 @@ uint32_t am_hal_spotmgr_pcm2_1_simobuck_init_bfr_ovr(void)
 //*****************************************************************************
 uint32_t am_hal_spotmgr_pcm2_1_simobuck_init_bfr_enable(void)
 {
-    if ( g_sSpotMgrINFO1regs.ui32SpotMgrINFO1GlobalValid == INFO1GLOBALVALID )
+    if (g_sSpotMgrINFO1regs.ui32SpotMgrINFO1GlobalValid == INFO1GLOBALVALID)
     {
         //
         // Reduce CORELDOACTIVETRIM
         //
-        MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = g_sSpotMgrINFO1regs.sPowerStateArray[7].PWRSTATE_b.CORELDOACTTRIM;
+        MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = g_sSpotMgrINFO1regs.sPowerStateArray[20].PWRSTATE_b.CORELDOACTTRIM;
+        MCUCTRL->LDOREG1_b.CORELDOTEMPCOTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[20].PWRSTATE_b.CORELDOTEMPCOTRIM;
+        return AM_HAL_STATUS_SUCCESS;
     }
-    return AM_HAL_STATUS_SUCCESS;
+    else
+    {
+        return AM_HAL_STATUS_FAIL;
+    }
 }
 
 //*****************************************************************************
@@ -1655,22 +1947,52 @@ uint32_t am_hal_spotmgr_pcm2_1_simobuck_init_bfr_enable(void)
 //*****************************************************************************
 uint32_t am_hal_spotmgr_pcm2_1_simobuck_init_aft_enable(void)
 {
-    if ( g_sSpotMgrINFO1regs.ui32SpotMgrINFO1GlobalValid == INFO1GLOBALVALID )
+    uint32_t ui32Status;
+
+    if (g_sSpotMgrINFO1regs.ui32SpotMgrINFO1GlobalValid == INFO1GLOBALVALID)
     {
         //
         // Change memldo trim to support switching memldo reference to tvrgf
         //
+        am_hal_delay_us(100);
         MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.MEMLDOACTTRIM;
         MCUCTRL->D2ASPARE_b.MEMLDOREF = g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.MEMLDOD2ASPARE;
+        am_hal_delay_us(100);
     }
-    return AM_HAL_STATUS_SUCCESS;
+    else
+    {
+        return AM_HAL_STATUS_FAIL;
+    }
+
+    ui32Status = am_hal_delay_us_status_check(AM_HAL_PWRCTRL_MAX_WAIT_SIMOBUCK_ACT_US,
+                                              (uint32_t) &(PWRCTRL->VRSTATUS),
+                                              PWRCTRL_VRSTATUS_SIMOBUCKST_Msk,
+                                              (PWRCTRL_VRSTATUS_SIMOBUCKST_ACT << PWRCTRL_VRSTATUS_SIMOBUCKST_Pos),
+                                              true);
+    //
+    // Check for success.
+    //
+    if (AM_HAL_STATUS_SUCCESS != ui32Status)
+    {
+        return ui32Status;
+    }
+    else
+    {
+        //
+        // Initialise MCU power state after enabling SIMOBUCK
+        //
+        return am_hal_spotmgr_pcm2_1_power_state_update(AM_HAL_SPOTMGR_STIM_INIT_STATE, false, NULL);
+    }
 }
 
+//
+// Fort PCM2.1, this function is not working. Please keep NO_TEMPSENSE_IN_DEEPSLEEP as false.
+//
 #if NO_TEMPSENSE_IN_DEEPSLEEP
 //*****************************************************************************
 //
 //! @brief Prepare SPOT manager for suspended tempco during deep sleep for
-//!        PCM2.1
+//!        PCM2.1.
 //!
 //! @return SUCCESS or other Failures.
 //
@@ -1685,7 +2007,7 @@ uint32_t am_hal_spotmgr_pcm2_1_tempco_suspend(void)
         // Fix the temperature range to the highest and update the SPOT Manager before going to deepsleep.
         //
         sTempCo.fTemperature = VDDC_VDDF_TEMPCO_THRESHOLD_HIGH + 1.0f;
-        am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
+        return am_hal_spotmgr_pcm2_1_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
     }
     else
     {
@@ -1694,9 +2016,8 @@ uint32_t am_hal_spotmgr_pcm2_1_tempco_suspend(void)
         // Fix the temperature range to the lowest and update the SPOT Manager before going to deepsleep.
         //
         sTempCo.fTemperature =  VDDC_VDDF_TEMPCO_THRESHOLD_LOW - 1.0f;
-        am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
+        return am_hal_spotmgr_pcm2_1_power_state_update(AM_HAL_SPOTMGR_STIM_TEMP, false, (void *) &sTempCo);
     }
-    return AM_HAL_STATUS_SUCCESS;
 }
 #endif
 
@@ -1735,17 +2056,22 @@ am_hal_spotmgr_pcm2_1_init(void)
 
     CHK_OFFSET_DELTA(AM_REG_OTP_INFO1_POWERSTATE15_O , AM_REG_OTP_INFO1_POWERSTATE0_O , 16);
     RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_POWERSTATE0_O  / 4), 16, (uint32_t *) &(g_sSpotMgrINFO1regs.sPowerStateArray[0]));
+    RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_L_TRIMCODE_O / 4),  1, (uint32_t *) &g_sSpotMgrINFO1regs.sLtrim);
+    RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_E_TRIMCODE_O / 4), 1, (uint32_t *) &g_sSpotMgrINFO1regs.sEtrim);
+
     //
-    // Trims for power state 16~19
+    // Trims for power state 16~20
     //
     g_sSpotMgrINFO1regs.sPowerStateArray[16] = g_sSpotMgrINFO1regs.sPowerStateArray[4];
     g_sSpotMgrINFO1regs.sPowerStateArray[17] = g_sSpotMgrINFO1regs.sPowerStateArray[5];
     g_sSpotMgrINFO1regs.sPowerStateArray[18] = g_sSpotMgrINFO1regs.sPowerStateArray[6];
     g_sSpotMgrINFO1regs.sPowerStateArray[19] = g_sSpotMgrINFO1regs.sPowerStateArray[7];
+    g_sSpotMgrINFO1regs.sPowerStateArray[20] = g_sSpotMgrINFO1regs.sPowerStateArray[7];
     g_sSpotMgrINFO1regs.sPowerStateArray[16].PWRSTATE_b.TVRGFACTTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[12].PWRSTATE_b.TVRGFACTTRIM;
     g_sSpotMgrINFO1regs.sPowerStateArray[17].PWRSTATE_b.TVRGFACTTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[13].PWRSTATE_b.TVRGFACTTRIM;
     g_sSpotMgrINFO1regs.sPowerStateArray[18].PWRSTATE_b.TVRGFACTTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[14].PWRSTATE_b.TVRGFACTTRIM;
     g_sSpotMgrINFO1regs.sPowerStateArray[19].PWRSTATE_b.TVRGFACTTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[15].PWRSTATE_b.TVRGFACTTRIM;
+    g_sSpotMgrINFO1regs.sPowerStateArray[20].PWRSTATE_b.TVRGFACTTRIM = g_sSpotMgrINFO1regs.sPowerStateArray[12].PWRSTATE_b.TVRGFACTTRIM;
 
     CHK_OFFSET_DELTA(AM_REG_OTP_INFO1_DEFAULTTON_O, AM_REG_OTP_INFO1_GPUVDDCTON_O, 4 );
     RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_GPUVDDCTON_O  / 4), 4, &info1buf[0]);
@@ -1781,20 +2107,59 @@ am_hal_spotmgr_pcm2_1_init(void)
     //
     g_sSpotMgrINFO1regs.sMemldoCfg.MEMLDOCONFIG_b.VDDFCOMPTRIMMINUS = 31;
 
+    if (g_ui32MinorTrimVer == 0x5F)
+    {
+        float f32MvBoost;
+        uint32_t ui32CodeBoost, ui32Tmp1, ui32Tmp2;
+        ui32Tmp1 = (g_sSpotMgrINFO1regs.sEtrim.E_TRIMCODE_b.L16 + g_sSpotMgrINFO1regs.sEtrim.E_TRIMCODE_b.H16) -
+                   (g_sSpotMgrINFO1regs.sLtrim.L_TRIMCODE_b.L16 + g_sSpotMgrINFO1regs.sLtrim.L_TRIMCODE_b.H16);
+        ui32Tmp2 = g_sSpotMgrINFO1regs.sPowerStateArray[12].PWRSTATE_b.TVRGFACTTRIM - g_sSpotMgrINFO1regs.sPowerStateArray[13].PWRSTATE_b.TVRGFACTTRIM;
+        ui32Tmp2 = (ui32Tmp2 >= 0) ? (ui32Tmp2) : (0);
+        f32MvBoost = 218 - 0.5f * ui32Tmp1;
+        ui32CodeBoost = (f32MvBoost > 0.0f) ? (f32MvBoost * ui32Tmp2 / 45 + 0.5f) : (0);
+
+        for (uint32_t ps = 0; ps < sizeof(g_sSpotMgrINFO1regs.sPowerStateArray) / sizeof(am_hal_spotmgr_trim_settings_t); ps++)
+        {
+            uint32_t ui32Trvgftrim = g_sSpotMgrINFO1regs.sPowerStateArray[ps].PWRSTATE_b.TVRGFACTTRIM + ui32CodeBoost;
+            //
+            // Ensure ui32Trvgftrim is within the upper limit (0x7F) and the lower limit (0x8).
+            //
+            ui32Trvgftrim = (ui32Trvgftrim > 0x7F) ? (0x7F) : ((ui32Trvgftrim < 0x8) ? (0x8) : (ui32Trvgftrim));
+            g_sSpotMgrINFO1regs.sPowerStateArray[ps].PWRSTATE_b.TVRGFACTTRIM = ui32Trvgftrim;
+        }
+    }
+
     //
     // All done, mark the data as valid
     //
     g_sSpotMgrINFO1regs.ui32SpotMgrINFO1GlobalValid = INFO1GLOBALVALID;
 
+    if (g_bIsPCM2p1WoPatch)
+    {
+        //
+        // Powers up ACRG bias current (required when forcing ANALDO into active mode when entering Sleep mode).
+        //
+        MCUCTRL->ACRG_b.ACRGPWD = 0;
+        MCUCTRL->ACRG_b.ACRGSWE = 1;
+    }
+    //
+    // Forces ANALDO into active mode by default.
+    //
+    MCUCTRL->VRCTRL_b.ANALDOACTIVE = 1;
+    MCUCTRL->VRCTRL_b.ANALDOPDNB = 1;
+    MCUCTRL->VRCTRL_b.ANALDOOVER = 1;
+
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
     //
     // Initialise the timer for power boost
     //
     am_hal_spotmgr_timer_init();
+#endif
 
 #ifdef AM_HAL_SPOTMGR_PROFILING
     am_hal_spotmgr_changelog_t changeLog;
-    changeLog.u.s.pwrState = 7;
-    changeLog.u.s.tonState = 5;
+    changeLog.u.s.pwrState = 20;
+    changeLog.u.s.tonState = 6;
     changeLog.u.s.eStimulus = AM_HAL_SPOTMGR_PROFILING_ESTIM_INVALID;
     changeLog.u.s.bOn = AM_HAL_SPOTMGR_PROFILING_BON_INVALID;
     changeLog.args = 0xDEADBEEF;
@@ -1806,14 +2171,13 @@ am_hal_spotmgr_pcm2_1_init(void)
 
 //*****************************************************************************
 //
-//! @brief Reset power state to POR default for PCM2.1
+//! @brief Reset power state to safe power state for PCM2.1
 //!
 //! @return SUCCESS or other Failures.
 //
 //*****************************************************************************
 uint32_t am_hal_spotmgr_pcm2_1_default_reset(void)
 {
-    am_hal_pwrctrl_temp_thresh_t dummy;
     //
     // Turn on OTP if all peripherals are all off
     //
@@ -1830,12 +2194,10 @@ uint32_t am_hal_spotmgr_pcm2_1_default_reset(void)
         return AM_HAL_STATUS_FAIL;
     }
     //
-    // Report the lowest temperature to spotmgr
+    // Using AM_HAL_SPOTMGR_STIM_BACK_TO_DEFAULT_STATE to reset MCU power state to safe power state.
     //
-    if (am_hal_pwrctrl_temp_update(-40.0f, &dummy) != AM_HAL_STATUS_SUCCESS)
-    {
-        return AM_HAL_STATUS_FAIL;
-    }
+    am_hal_spotmgr_pcm2_1_power_state_update(AM_HAL_SPOTMGR_STIM_BACK_TO_DEFAULT_STATE, false, NULL);
+#if AM_HAL_SPOTMGR_TIMER_DELAY_PCM2_1
     //
     // Polling the timer AM_HAL_INTERNAL_TIMER_NUM_A status until it is disabled,
     // to guarantee all power state updating operations are completed.
@@ -1848,11 +2210,12 @@ uint32_t am_hal_spotmgr_pcm2_1_default_reset(void)
     {
         return AM_HAL_STATUS_TIMEOUT;
     }
+#endif
 
     return AM_HAL_STATUS_SUCCESS;
 }
 
-#endif
+#endif // !AM_HAL_SPOTMGR_PCM2_1_DISABLE
 
 //*****************************************************************************
 //

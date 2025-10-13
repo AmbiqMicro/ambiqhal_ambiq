@@ -4,10 +4,45 @@
 //!
 //! @brief Hardware abstraction layer for the Reset Generator module.
 //!
-//! @addtogroup rstgen2 Reset - Reset Generator (RSTGEN)
+//! @addtogroup rstgen2_ap510 Reset - Reset Generator (RSTGEN)
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides hardware abstraction layer functions for the
+//!          Reset Generator (RSTGEN) module on Apollo5 devices. It supports
+//!          system reset control, brownout detection, watchdog reset management,
+//!          and interrupt handling for system reliability and recovery.
+//!
+//! @section hal_reset_features Key Features
+//!
+//! 1. @b System @b Reset: Control system reset operations and sources.
+//! 2. @b Brownout @b Detection: Monitor voltage levels and trigger resets.
+//! 3. @b Watchdog @b Reset: Manage watchdog timer reset functionality.
+//! 4. @b Interrupt @b Support: Interrupt handling for reset events.
+//! 5. @b Status @b Monitoring: Reset status and source identification.
+//!
+//! @section hal_reset_functionality Functionality
+//!
+//! - Configure reset generator parameters
+//! - Control system reset operations
+//! - Handle brownout detection and response
+//! - Manage watchdog reset functionality
+//! - Monitor reset status and sources
+//!
+//! @section hal_reset_usage Usage
+//!
+//! 1. Configure reset generator using am_hal_reset_configure()
+//! 2. Control reset operations as needed
+//! 3. Handle reset interrupts and events
+//! 4. Monitor reset status and sources
+//! 5. Manage system recovery operations
+//!
+//! @section hal_reset_configuration Configuration
+//!
+//! - @b Reset @b Sources: Configure reset source enable/disable
+//! - @b Brownout @b Levels: Set up voltage monitoring thresholds
+//! - @b Watchdog @b Reset: Configure watchdog reset parameters
+//! - @b Interrupts: Set up interrupt sources and handlers
 //*****************************************************************************
 
 //*****************************************************************************
@@ -29,9 +64,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -44,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

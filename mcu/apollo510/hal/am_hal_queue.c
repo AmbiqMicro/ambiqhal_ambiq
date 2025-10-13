@@ -4,10 +4,43 @@
 //!
 //! @brief Functions for implementing a queue system.
 //!
-//! @addtogroup queue4 Queue Implementation
+//! @addtogroup queue4_ap510 Queue Implementation
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides a thread-safe queue implementation for Apollo5
+//! devices, supporting FIFO operations with configurable item sizes and buffer
+//! capacities. It enables efficient data management for applications requiring
+//! reliable buffering and synchronization between different system components.
+//!
+//! @section hal_queue_features Key Features
+//!
+//! 1. @b Generic @b Data @b Support: Store any data type with configurable item size.
+//! 2. @b FIFO @b Semantics: First-in, first-out queue behavior.
+//! 3. @b Thread-Safe: Critical section protection for concurrent access.
+//! 4. @b Capacity @b Management: Configurable queue length and space checks.
+//! 5. @b Simple @b API: Easy-to-use functions for initialization, add, and get.
+//!
+//! @section hal_queue_functionality Functionality
+//!
+//! - Initialize a queue with user-provided storage
+//! - Add items to the queue (enqueue)
+//! - Retrieve items from the queue (dequeue)
+//! - Check queue space and data availability
+//! - Support for variable item sizes and queue lengths
+//!
+//! @section hal_queue_usage Usage
+//!
+//! 1. Initialize a queue using am_hal_queue_init()
+//! 2. Add items with am_hal_queue_item_add()
+//! 3. Retrieve items with am_hal_queue_item_get()
+//! 4. Check available space and data as needed
+//!
+//! @section hal_queue_configuration Configuration
+//!
+//! - @b Item @b Size: Set item size during initialization
+//! - @b Capacity: Set queue length during initialization
+//! - @b Storage: Provide memory buffer for queue data
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

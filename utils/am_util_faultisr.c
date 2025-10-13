@@ -2,11 +2,19 @@
 //
 //! @file am_util_faultisr.c
 //!
-//! @brief An extended hard-fault handler.
+//! @brief Fault Interrupt Service Routine Utility Functions
 //!
-//! This module is portable to all Ambiq Apollo products with minimal HAL or BSP
-//! dependencies (SWO output).  It collects the fault information into the sHalFaultData
-//! structure, which it then prints to stdout (typically SWO).
+//! @addtogroup faultisr_utils Fault ISR Utility Functions
+//! @ingroup utils
+//! @{
+//!
+//! Purpose: This module provides fault handling and analysis utilities
+//!          for Ambiq Micro devices. It enables fault detection, logging,
+//!          and recovery mechanisms for handling system faults and exceptions.
+//!          The utilities support detailed fault analysis and debugging
+//!          capabilities for robust system operation.
+//!
+//! @section utils_faultisr_details Details
 //!
 //! By default this handler, when included in the build, overrides the weak binding of
 //! the default hardfault handler.  It allocates 512 bytes of global variable space for
@@ -32,9 +40,35 @@
 //! It is compiler/platform independent enabling it to be used with GCC, Keil,
 //! IAR and easily ported to other tools chains
 //!
-//! @addtogroup faultisr FaultISR - Extended Hard Fault ISR
-//! @ingroup utils
-//! @{
+//! @section utils_faultisr_features Key Features
+//!
+//! 1. @b Fault @b Detection: Comprehensive fault monitoring.
+//! 2. @b Error @b Logging: Detailed fault information capture.
+//! 3. @b Recovery @b Handlers: Fault recovery mechanisms.
+//! 4. @b Debug @b Support: Fault analysis capabilities.
+//! 5. @b System @b Protection: Critical system preservation.
+//!
+//! @section utils_faultisr_functionality Functionality
+//!
+//! - Initialize fault handlers
+//! - Process fault interrupts
+//! - Log fault information
+//! - Support system recovery
+//! - Enable fault analysis
+//!
+//! @section utils_faultisr_usage Usage
+//!
+//! 1. Initialize fault handling with am_util_faultisr_init()
+//! 2. Configure fault responses
+//! 3. Process faults as they occur
+//! 4. Analyze fault data
+//!
+//! @section utils_faultisr_configuration Configuration
+//!
+//! - Set up fault handler options
+//! - Configure logging parameters
+//! - Define recovery actions
+//! - Set debug information level
 //
 //*****************************************************************************
 
@@ -69,7 +103,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for support command queue operations.
 //!
-//! @addtogroup cmdq CMDQ - Command Queue Functionality
+//! @addtogroup cmdq_ap510 CMDQ - Command Queue Functionality
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides support functions for command queue (CMDQ)
+//!          operations on Apollo5 devices. It supports command queue
+//!          initialization, block allocation, status monitoring, and error
+//!          handling for efficient hardware command sequencing.
+//!
+//! @section hal_cmdq_features Key Features
+//!
+//! 1. @b Command @b Queue: Hardware command queue management and sequencing.
+//! 2. @b Block @b Allocation: Dynamic block allocation and release.
+//! 3. @b Status @b Monitoring: Real-time command queue status tracking.
+//! 4. @b Error @b Handling: Robust error detection and recovery.
+//! 5. @b Multi-Module: Support for multiple hardware modules (IOM, MSPI, BLEIF).
+//!
+//! @section hal_cmdq_functionality Functionality
+//!
+//! - Initialize and configure command queue
+//! - Allocate and release command queue blocks
+//! - Monitor command queue status and indices
+//! - Handle command queue errors and recovery
+//! - Support multi-module command queue operations
+//!
+//! @section hal_cmdq_usage Usage
+//!
+//! 1. Initialize CMDQ using am_hal_cmdq_init()
+//! 2. Allocate blocks with am_hal_cmdq_alloc_block()
+//! 3. Post and release blocks as needed
+//! 4. Monitor status and handle errors
+//! 5. Terminate or reset command queue as required
+//!
+//! @section hal_cmdq_configuration Configuration
+//!
+//! - @b Block @b Size: Configure command queue block sizes
+//! - @b Module @b Selection: Set up for IOM, MSPI, or BLEIF modules
+//! - @b Error @b Handling: Configure error detection and recovery
+//! - @b Status @b Monitoring: Set up status tracking parameters
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -220,8 +255,10 @@ static am_hal_cmdq_registers_t gAmHalCmdQReg[AM_HAL_CMDQ_IF_MAX];
 
 //*****************************************************************************
 //
-// Initialize one entry of the CMDQ ram table
-//
+//! @brief Initialize command queue registers for specific hardware interface.
+//!
+//! @param hwIf - Hardware interface type (IOM, MSPI, BLEIF).
+//!
 //*****************************************************************************
 static void am_hal_cmdq_init_register(am_hal_cmdq_if_e hwIf)
 {
@@ -262,10 +299,8 @@ static void am_hal_cmdq_init_register(am_hal_cmdq_if_e hwIf)
 
 //*****************************************************************************
 //
-// Initialize the CMDQ ram table
-//
-// This initializes the gAmHalCmdQReg array
-//
+//! @brief Initialize all command queue registers.
+//!
 //*****************************************************************************
 static void am_hal_cmdq_init_registers(void)
 {
@@ -281,8 +316,10 @@ static void am_hal_cmdq_init_registers(void)
 
 //*****************************************************************************
 //
-// Sync up with the current hardware indices and pointers
-//
+//! @brief Update command queue indices.
+//!
+//! @param pCmdQ - Pointer to command queue structure.
+//!
 //*****************************************************************************
 static void
 update_indices(am_hal_cmdq_t *pCmdQ)
@@ -318,7 +355,8 @@ update_indices(am_hal_cmdq_t *pCmdQ)
 // Initializes the command queue data structure for the given interface
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_init(am_hal_cmdq_if_e hwIf, am_hal_cmdq_cfg_t *pCfg, void **ppHandle)
+uint32_t
+am_hal_cmdq_init(am_hal_cmdq_if_e hwIf, am_hal_cmdq_cfg_t *pCfg, void **ppHandle)
 {
     am_hal_cmdq_t *pCmdQ;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -367,7 +405,8 @@ uint32_t am_hal_cmdq_init(am_hal_cmdq_if_e hwIf, am_hal_cmdq_cfg_t *pCfg, void *
 // Enables the command queue for the given interface
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_enable(void *pHandle)
+uint32_t
+am_hal_cmdq_enable(void *pHandle)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -401,7 +440,8 @@ uint32_t am_hal_cmdq_enable(void *pHandle)
 // Disables the command queue for the given interface
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_disable(void *pHandle)
+uint32_t
+am_hal_cmdq_disable(void *pHandle)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -431,7 +471,8 @@ uint32_t am_hal_cmdq_disable(void *pHandle)
 // to create the desired block. It also takes care of necessary wrap-around
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_alloc_block(void *pHandle, uint32_t numCmd, am_hal_cmdq_entry_t **ppBlock, uint32_t *pIdx)
+uint32_t
+am_hal_cmdq_alloc_block(void *pHandle, uint32_t numCmd, am_hal_cmdq_entry_t **ppBlock, uint32_t *pIdx)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
     am_hal_cmdq_entry_t *pCmdQEntry;
@@ -518,7 +559,8 @@ uint32_t am_hal_cmdq_alloc_block(void *pHandle, uint32_t numCmd, am_hal_cmdq_ent
 // It also takes care of necessary wrap-around
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_release_block(void *pHandle)
+uint32_t
+am_hal_cmdq_release_block(void *pHandle)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -546,7 +588,8 @@ uint32_t am_hal_cmdq_release_block(void *pHandle)
 // Post the  contiguous block of command queue entries previously allocated
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_post_block(void *pHandle, bool bInt)
+uint32_t
+am_hal_cmdq_post_block(void *pHandle, bool bInt)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
     am_hal_cmdq_entry_t *pCmdQEntry;
@@ -587,7 +630,8 @@ uint32_t am_hal_cmdq_post_block(void *pHandle, bool bInt)
 // Get the current state of the Command queue
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_get_status(void *pHandle, am_hal_cmdq_status_t *pStatus)
+uint32_t
+am_hal_cmdq_get_status(void *pHandle, am_hal_cmdq_status_t *pStatus)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
     uint32_t status;
@@ -620,7 +664,8 @@ uint32_t am_hal_cmdq_get_status(void *pHandle, am_hal_cmdq_status_t *pStatus)
 // Terminates the command queue data structure
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_term(void *pHandle, bool bForce)
+uint32_t
+am_hal_cmdq_term(void *pHandle, bool bForce)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -648,7 +693,8 @@ uint32_t am_hal_cmdq_term(void *pHandle, bool bForce)
 // It is the responsibility of the caller to re-enable the CQ
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_error_resume(void *pHandle)
+uint32_t
+am_hal_cmdq_error_resume(void *pHandle)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
     am_hal_cmdq_entry_t *pCQAddr;
@@ -699,7 +745,8 @@ uint32_t am_hal_cmdq_error_resume(void *pHandle)
 // The CQ is in paused state after this function returns, at the beginning of next transaction
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_pause(void *pHandle, uint32_t *pSETCLRAddr, uint32_t ui32CQPauseSETCLR, uint32_t ui32CQUnpauseSETCLR, uint32_t ui32usMaxDelay)
+uint32_t
+am_hal_cmdq_pause(void *pHandle, uint32_t *pSETCLRAddr, uint32_t ui32CQPauseSETCLR, uint32_t ui32CQUnpauseSETCLR, uint32_t ui32usMaxDelay)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
     uint32_t      cqAddr;
@@ -840,7 +887,8 @@ uint32_t am_hal_cmdq_pause(void *pHandle, uint32_t *pSETCLRAddr, uint32_t ui32CQ
 // This also disables the CQ
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_reset(void *pHandle)
+uint32_t
+am_hal_cmdq_reset(void *pHandle)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
 
@@ -881,7 +929,8 @@ uint32_t am_hal_cmdq_reset(void *pHandle)
 // with the additional wrap to start
 //
 //*****************************************************************************
-uint32_t am_hal_cmdq_post_loop_block(void *pHandle, bool bInt)
+uint32_t
+am_hal_cmdq_post_loop_block(void *pHandle, bool bInt)
 {
     am_hal_cmdq_t *pCmdQ = (am_hal_cmdq_t *)pHandle;
     am_hal_cmdq_entry_t *pCmdQEntry;

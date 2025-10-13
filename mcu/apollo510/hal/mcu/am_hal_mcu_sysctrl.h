@@ -2,11 +2,47 @@
 //
 //! @file am_hal_mcu_sysctrl.h
 //!
-//! @brief Functions for interfacing with the M4F system control registers
+//! @brief Functions for interfacing with the M55 system control registers
 //!
-//! @addtogroup sysctrl4 SYSCTRL - System Control
+//! @addtogroup mcu_sysctrl_ap510 MCU SYSCTRL - System Control
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides critical system control functions for the M55
+//!          core, including memory barrier operations, FPU management, and system
+//!          reset capabilities. It ensures proper synchronization of memory
+//!          operations and hardware configuration.
+//!
+//! @section hal_sysctrl_features Key Features
+//!
+//! 1. @b Memory @b Barriers: Strict ordering of memory operations
+//! 2. @b FPU @b Management: Enable/disable floating-point hardware
+//! 3. @b Exception @b Handling: FPU register stacking control
+//! 4. @b System @b Reset: Hardware-level reset control
+//! 5. @b Bus @b Control: Write operation synchronization
+//!
+//! @section hal_sysctrl_functionality Functionality
+//!
+//! - Memory barrier operations for read/write ordering
+//! - FPU enable/disable and context management
+//! - System-wide reset control
+//! - Exception handling configuration
+//! - Bus write synchronization
+//!
+//! @section hal_sysctrl_usage Usage
+//!
+//! 1. Use memory barriers for hardware register access
+//! 2. Configure FPU with am_hal_sysctrl_fpu_enable()
+//! 3. Manage FPU context with stacking functions
+//! 4. Control system reset with am_hal_sysctrl_aircr_reset()
+//! 5. Ensure synchronized writes with am_hal_sysctrl_membarrier()
+//!
+//! @section hal_sysctrl_configuration Configuration
+//!
+//! - FPU stacking modes: Lazy, Full-context, or disabled
+//! - Memory barrier placement for register access
+//! - Exception entry behavior for FPU state
+//! - System reset behavior configuration
 //
 //*****************************************************************************
 
@@ -41,11 +77,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MCU_SYSCTRL_H
 #define AM_HAL_MCU_SYSCTRL_H
+
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C"

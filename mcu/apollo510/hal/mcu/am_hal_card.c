@@ -4,9 +4,45 @@
 //!
 //! @brief Functions for interfacing with the ambiq card host.
 //!
-//! @addtogroup card Card Functionality for SD/MMC/eMMC/SDIO
+//! @addtogroup card_ap510 Card Functionality for SD/MMC/eMMC/SDIO
 //! @ingroup apollo510_hal
 //! @{
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//!          SD/MMC/eMMC/SDIO cards on Apollo5 devices. It supports card
+//!          initialization, block read/write operations, power management,
+//!          and card-specific functionality for various memory card types.
+//!
+//! @section hal_card_features Key Features
+//!
+//! 1. @b Multi-Card @b Support: SD, MMC, eMMC, and SDIO card support.
+//! 2. @b Block @b Operations: Synchronous and asynchronous block read/write.
+//! 3. @b Power @b Management: Card power control and sleep/wakeup.
+//! 4. @b Card @b Detection: Automatic card detection and initialization.
+//! 5. @b Calibration: Card interface calibration for optimal performance.
+//!
+//! @section hal_card_functionality Functionality
+//!
+//! - Initialize and configure various card types
+//! - Handle block read/write operations
+//! - Manage card power states and sleep/wakeup
+//! - Support card detection and initialization
+//! - Provide card-specific functionality and calibration
+//!
+//! @section hal_card_usage Usage
+//!
+//! 1. Initialize card using am_hal_card_init()
+//! 2. Configure card parameters and capabilities
+//! 3. Perform block read/write operations
+//! 4. Manage card power states as needed
+//! 5. Handle card events and status monitoring
+//!
+//! @section hal_card_configuration Configuration
+//!
+//! - @b Card @b Type: Configure for SD, MMC, eMMC, or SDIO cards
+//! - @b Block @b Operations: Set up block read/write parameters
+//! - @b Power @b Management: Configure card power control
+//! - @b Calibration: Set up card interface calibration parameters
 //
 //*****************************************************************************
 
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -57,9 +93,15 @@
 // Private internal functions
 //
 
+//*****************************************************************************
 //
-//! CMD0 - go idle
-//
+//! @brief Send CMD0 to go idle state.
+//!
+//! @param pCard - Pointer to card structure.
+//!
+//! @return Returns card error status.
+//!
+//*****************************************************************************
 static inline uint32_t am_hal_sdmmc_cmd0_go_idle(am_hal_card_t *pCard)
 {
     am_hal_card_cmd_t cmd;
@@ -75,9 +117,15 @@ static inline uint32_t am_hal_sdmmc_cmd0_go_idle(am_hal_card_t *pCard)
     return cmd.eError;
 }
 
+//*****************************************************************************
 //
-//! CMD1 - send operation condition
-//
+//! @brief Send CMD1 to send operation condition.
+//!
+//! @param pCard - Pointer to card structure.
+//!
+//! @return Returns card error status.
+//!
+//*****************************************************************************
 static inline uint32_t am_hal_sdmmc_cmd1_send_op_cond(am_hal_card_t *pCard)
 {
     uint32_t ui32CardOCR = 0;
@@ -113,9 +161,15 @@ static inline uint32_t am_hal_sdmmc_cmd1_send_op_cond(am_hal_card_t *pCard)
     return ui8Tries == 0x0 ? AM_HAL_CMD_ERR_TIMEOUT : cmd.eError;
 }
 
+//*****************************************************************************
 //
-//! CMD2 - send card identification
-//
+//! @brief Send CMD2 to send CID.
+//!
+//! @param pCard - Pointer to card structure.
+//!
+//! @return Returns card error status.
+//!
+//*****************************************************************************
 static inline uint32_t am_hal_sdmmc_cmd2_send_cid(am_hal_card_t *pCard)
 {
     am_hal_card_cmd_t cmd;
@@ -137,9 +191,16 @@ static inline uint32_t am_hal_sdmmc_cmd2_send_cid(am_hal_card_t *pCard)
     return cmd.eError;
 }
 
+//*****************************************************************************
 //
-//! CMD3 - set the relative card address
-//
+//! @brief Send CMD3 to set RCA.
+//!
+//! @param pCard - Pointer to card structure.
+//! @param ui32RCA - Relative card address.
+//!
+//! @return Returns card error status.
+//!
+//*****************************************************************************
 static inline uint32_t am_hal_sdmmc_cmd3_set_rca(am_hal_card_t *pCard, uint32_t ui32RCA)
 {
     am_hal_card_cmd_t cmd;
@@ -176,9 +237,16 @@ static inline uint32_t am_hal_sdmmc_cmd3_set_rca(am_hal_card_t *pCard, uint32_t 
     return cmd.eError;
 }
 
+//*****************************************************************************
 //
-//! CMD5 - Sleep/Awake
-//
+//! @brief Send CMD5 for sleep/wakeup.
+//!
+//! @param pCard - Pointer to card structure.
+//! @param sleep - True for sleep, false for wakeup.
+//!
+//! @return Returns card error status.
+//!
+//*****************************************************************************
 static uint32_t am_hal_sdmmc_cmd5(am_hal_card_t *pCard, bool sleep)
 {
     uint32_t ui32Status;
@@ -216,10 +284,15 @@ static uint32_t am_hal_sdmmc_cmd5(am_hal_card_t *pCard, bool sleep)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
-//! CMD7 - select the card
-//
-
+//! @brief Send CMD7 to select card.
+//!
+//! @param pCard - Pointer to card structure.
+//!
+//! @return Returns card error status.
+//!
+//*****************************************************************************
 static uint32_t am_hal_sdmmc_cmd7_card_select(am_hal_card_t *pCard)
 {
     am_hal_card_cmd_t cmd;
@@ -265,9 +338,15 @@ static uint32_t am_hal_sdmmc_cmd7_card_select(am_hal_card_t *pCard)
     return cmd.eError;
 }
 
+//*****************************************************************************
 //
-//! CMD7 - select/deselect the card
-//
+//! @brief Send CMD7 to deselect card.
+//!
+//! @param pCard - Pointer to card structure.
+//!
+//! @return Returns card error status.
+//!
+//*****************************************************************************
 static uint32_t am_hal_sdmmc_cmd7_card_deselect(am_hal_card_t *pCard)
 {
     uint32_t ui32RCA = pCard->ui32RCA;
@@ -284,9 +363,15 @@ static uint32_t am_hal_sdmmc_cmd7_card_deselect(am_hal_card_t *pCard)
     return ui32Status;
 }
 
+//*****************************************************************************
 //
-//! CMD8 - get the 512 bytes ext csd
-//
+//! @brief Send CMD8 to send extended CSD.
+//!
+//! @param pCard - Pointer to card structure.
+//!
+//! @return Returns card error status.
+//!
+//*****************************************************************************
 static uint32_t am_hal_sdmmc_cmd8_send_ext_csd(am_hal_card_t *pCard)
 {
     am_hal_card_cmd_t cmd;
@@ -316,9 +401,15 @@ static uint32_t am_hal_sdmmc_cmd8_send_ext_csd(am_hal_card_t *pCard)
     return cmd.eError;
 }
 
+//*****************************************************************************
 //
-//! CMD9 - get the CSD
-//
+//! @brief Send CMD9 to send CSD.
+//!
+//! @param pCard - Pointer to card structure.
+//!
+//! @return Returns card error status.
+//!
+//*****************************************************************************
 static inline uint32_t am_hal_sdmmc_cmd9_send_csd(am_hal_card_t *pCard)
 {
     am_hal_card_cmd_t cmd;
@@ -2904,6 +2995,8 @@ am_hal_card_emmc_calibrate(am_hal_host_inst_index_e eIndex,
     uint8_t  ui8RxDelay = 0;
     uint32_t ui32TxResult = 0;
     uint32_t ui32RxResultArray[16] = {0};
+    uint32_t ui32BufAddr = (uint32_t)ui8CalibBuf;
+    am_hal_cachectrl_range_t sRange;
 
 #ifdef AM_DEBUG_PRINTF
     if (eUHSMode == AM_HAL_HOST_UHS_DDR50)
@@ -2964,10 +3057,32 @@ am_hal_card_emmc_calibrate(am_hal_host_inst_index_e eIndex,
                 ui8CalibBuf[i] = i % 256;
             }
 
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             am_hal_card_block_write_sync(&eMMCard, ui32StartBlk, ui32BlkCnt, (uint8_t *)ui8CalibBuf);
 
             memset((void *)ui8CalibBuf, 0x0, len);
+
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             am_hal_card_block_read_sync(&eMMCard, ui32StartBlk, ui32BlkCnt, (uint8_t *)ui8CalibBuf);
+
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_invalidate(&sRange, false);
+            }
 
             for (i = 0; i < len; i++)
             {
@@ -3081,6 +3196,8 @@ am_hal_sd_card_calibrate(am_hal_host_inst_index_e eIndex,
     uint32_t ui32TxResult = 0;
     uint32_t ui32RxResultArray[16] = {0};
     uint32_t ui32RxIndexEnd = SDIO_SCAN_RXDELAY_MAX;
+    uint32_t ui32BufAddr = (uint32_t)ui8CalibBuf;
+    am_hal_cachectrl_range_t sRange;
 
 #ifdef AM_DEBUG_PRINTF
     if (eUHSMode == AM_HAL_HOST_UHS_DDR50)
@@ -3146,9 +3263,32 @@ am_hal_sd_card_calibrate(am_hal_host_inst_index_e eIndex,
                 ui8CalibBuf[i] = i % 256;
             }
 
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             am_hal_sd_card_block_write_sync(&SdCard, ui32StartBlk, ui32BlkCnt, (uint8_t *)ui8CalibBuf);
+
             memset((void *)ui8CalibBuf, 0x0, len);
+
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             am_hal_sd_card_block_read_sync(&SdCard, ui32StartBlk, ui32BlkCnt, (uint8_t *)ui8CalibBuf);
+
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = len;
+                am_hal_cachectrl_dcache_invalidate(&sRange, false);
+            }
 
             for (i = 0; i < len; i++)
             {
@@ -4866,6 +5006,8 @@ am_hal_sdio_card_calibrate(am_hal_host_inst_index_e eIndex,
     uint32_t ui32RxResultArray[16] = {0};
     uint32_t ui32MisMatchCnt = 0;
     uint32_t ui32WrErrCnt = 0;
+    uint32_t ui32BufAddr = (uint32_t)ui8CalibBuf;
+    am_hal_cachectrl_range_t sRange;
 
 #ifdef AM_DEBUG_PRINTF
     if (eUHSMode == AM_HAL_HOST_UHS_DDR50)
@@ -4981,6 +5123,13 @@ am_hal_sdio_card_calibrate(am_hal_host_inst_index_e eIndex,
                 ui8CalibBuf[i] = i % 256;
             }
 
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = ui32BufLength;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             ui32Status = am_hal_sdio_card_multi_bytes_write_sync(&SdioCard, ui32FuncNum, ui32StartAddr, (uint8_t *)ui8CalibBuf, ui32BlockCnt, ui32BlkSize, true);
             if ( (ui32Status & 0xffff) != AM_HAL_STATUS_SUCCESS )
             {
@@ -4991,12 +5140,26 @@ am_hal_sdio_card_calibrate(am_hal_host_inst_index_e eIndex,
 
             memset((void *)ui8CalibBuf, 0x0, ui32BufLength);
 
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = ui32BufLength;
+                am_hal_cachectrl_dcache_clean(&sRange);
+            }
+
             ui32Status = am_hal_sdio_card_multi_bytes_read_sync(&SdioCard, ui32FuncNum, ui32StartAddr, (uint8_t *)ui8CalibBuf, ui32BlockCnt, ui32BlkSize, true);
             if ( (ui32Status & 0xffff)  != AM_HAL_STATUS_SUCCESS )
             {
                 ui32WrErrCnt ++;
                 AM_HAL_CARD_DEBUG("Sdio Card calibration read fail. Status=0x%x\n", ui32Status & 0xffff);
                 continue;
+            }
+
+            if (ui32BufAddr >= SSRAM_BASEADDR)
+            {
+                sRange.ui32StartAddr = (uint32_t)ui8CalibBuf;
+                sRange.ui32Size = ui32BufLength;
+                am_hal_cachectrl_dcache_invalidate(&sRange, false);
             }
 
             for (i = 0; i < ui32BufLength; i++)
