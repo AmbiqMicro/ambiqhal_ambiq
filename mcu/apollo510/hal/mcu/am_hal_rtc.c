@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for interfacing with the Real-Time Clock (RTC).
 //!
-//! @addtogroup rtc4 RTC - Real-Time Clock
+//! @addtogroup rtc4_ap510 RTC - Real-Time Clock
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides comprehensive functions for interfacing with
+//!          the Real-Time Clock (RTC) peripheral on Apollo5 devices. It supports
+//!          time keeping, alarm functionality, date/time validation, and interrupt
+//!          handling for precise real-time clock operations and scheduling.
+//!
+//! @section hal_rtc_features Key Features
+//!
+//! 1. @b Time @b Keeping: Accurate real-time clock functionality.
+//! 2. @b Alarm @b Support: Configurable alarm and interval functionality.
+//! 3. @b Date/Time @b Validation: Comprehensive date and time validation.
+//! 4. @b Interrupt @b Handling: Interrupt support for time and alarm events.
+//! 5. @b Oscillator @b Control: Flexible oscillator selection and control.
+//!
+//! @section hal_rtc_functionality Functionality
+//!
+//! - Initialize and configure RTC peripheral
+//! - Set and get current time and date
+//! - Configure alarm functionality and intervals
+//! - Handle RTC interrupts and status monitoring
+//! - Support oscillator selection and control
+//!
+//! @section hal_rtc_usage Usage
+//!
+//! 1. Configure RTC using am_hal_rtc_config()
+//! 2. Set current time with am_hal_rtc_time_set()
+//! 3. Configure alarms and intervals as needed
+//! 4. Handle RTC interrupts and time events
+//! 5. Monitor RTC status and time updates
+//!
+//! @section hal_rtc_configuration Configuration
+//!
+//! - @b Time @b Format: Configure time format and validation
+//! - @b Alarm @b Settings: Set up alarm intervals and repeat modes
+//! - @b Oscillator: Select RTC oscillator source
+//! - @b Interrupts: Configure interrupt sources and handlers
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -69,8 +104,12 @@
 
 //*****************************************************************************
 //
-//! Converts a Binary Coded Decimal (BCD) byte to its Decimal form.
-//
+//! @brief Convert a Binary Coded Decimal (BCD) byte to its Decimal form.
+//!
+//! @param ui8BCDByte - BCD byte to convert.
+//!
+//! @return Returns the decimal value.
+//!
 //*****************************************************************************
 static uint8_t
 bcd_to_dec(uint8_t ui8BCDByte)
@@ -80,8 +119,12 @@ bcd_to_dec(uint8_t ui8BCDByte)
 
 //*****************************************************************************
 //
-//! Converts a Decimal byte to its Binary Coded Decimal (BCD) form.
-//
+//! @brief Convert a Decimal byte to its Binary Coded Decimal (BCD) form.
+//!
+//! @param ui8DecimalByte - Decimal byte to convert.
+//!
+//! @return Returns the BCD value.
+//!
 //*****************************************************************************
 static uint8_t
 dec_to_bcd(uint8_t ui8DecimalByte)
@@ -91,14 +134,12 @@ dec_to_bcd(uint8_t ui8DecimalByte)
 
 //*****************************************************************************
 //
-//! @brief Validates the user defined date & time
+//! @brief Validate time input values for RTC.
 //!
-//! @param *pTime - A pointer to the time structure.
+//! @param pTime - Pointer to time structure to validate.
 //!
-//! Validates the input required to have the time set to a specific period
+//! @return Returns true if the time values are within valid range.
 //!
-//! @return returns true if the pTime structure input values are with in range
-//
 //*****************************************************************************
 static bool
 time_input_validate(am_hal_rtc_time_t *pTime)
@@ -231,6 +272,11 @@ am_hal_rtc_osc_disable(void)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// Clear the RTC counter registers
+//
+//*****************************************************************************
 void
 am_hal_rtc_counter_clear(void)
 {
@@ -307,8 +353,11 @@ am_hal_rtc_time_set(am_hal_rtc_time_t *pTime)
 
 //*****************************************************************************
 //
-// Poll the RTC source clock's edge and wait before register read
-//
+//! @brief Poll RTC clock source edge and wait for stable reading.
+//!
+//! This function polls the RTC clock source edge and waits for a stable
+//! reading to avoid CDC (Clock Domain Crossing) issues.
+//!
 //*****************************************************************************
 static inline void
 poll_rtc_clksrc_edge_and_wait()

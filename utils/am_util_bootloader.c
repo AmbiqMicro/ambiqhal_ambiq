@@ -2,12 +2,56 @@
 //
 //! @file am_util_bootloader.c
 //!
-//! @brief Bootloader Utility
+//! @brief Bootloader Utility Functions
 //!
-//! @addtogroup bootl Bootloader Utility
+//! @addtogroup bootl_utils Bootloader Utility
 //! @ingroup utils
 //! @{
-//
+//!
+//! Purpose: This module provides a bootloader utility library
+//! for managing firmware images, flash operations, and system initialization
+//! across Ambiq Micro devices. It enables secure firmware updates, image
+//! validation, CRC-32 verification, and flash programming operations for
+//! embedded applications requiring reliable boot processes. The utilities
+//! support encrypted and clear image handling, flag page management, and
+//! features like partial CRC calculation and image structure
+//! validation for optimal system reliability and firmware deployment.
+//!
+//! @section bootl_features Key Features
+//!
+//! 1. @b Image @b Validation: Comprehensive firmware image integrity checking.
+//! 2. @b CRC-32 @b Verification: Fast and efficient CRC-32 calculation for data integrity.
+//! 3. @b Flash @b Operations: Secure flash programming, erasing, and management.
+//! 4. @b Encrypted @b Support: Handling of both encrypted and clear firmware images.
+//! 5. @b GPIO @b Override: Manual override capabilities for testing and debugging.
+//! 6. @b Flag @b Page @b Management: Bootloader flag page operations and updates.
+//!
+//! @section bootl_functionality Functionality
+//!
+//! - Validate firmware images for safe execution
+//! - Perform CRC-32 calculations on image data
+//! - Manage flash memory operations (erase, program, write)
+//! - Handle encrypted and clear image formats
+//! - Support GPIO override for manual testing
+//! - Update bootloader flag pages with new image references
+//! - Execute validated firmware images
+//! - Validate information structure integrity
+//!
+//! @section bootl_usage Usage
+//!
+//! 1. Initialize bootloader utilities for target device
+//! 2. Validate firmware image using am_util_bootloader_image_check()
+//! 3. Update flag page with am_util_bootloader_flag_page_update()
+//! 4. Program flash using am_util_bootloader_program_flash_page()
+//! 5. Execute validated image with am_util_bootloader_image_run()
+//!
+//! @section bootl_configuration Configuration
+//!
+//! - @b BOOTLOADER_DEBUG: Enable/disable debug output and GPIO indicators
+//! - @b Device @b Support: Apollo3, Apollo3P, Apollo4, Apollo4B, Apollo4L, Apollo4P, Apollo510
+//! - @b Flash @b Memory: Support for different flash memory types and sizes
+//! - @b CRC @b Polynomial: CRC-32C polynomial (0x1EDC6F41) for error detection
+//! - @b GPIO @b Configuration: Override pin configuration for manual testing
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +85,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -1118,10 +1162,10 @@ am_util_bootloader_clear_image_run(am_util_bootloader_image_t *psImage)
 }
 #endif
 
+
 //*****************************************************************************
 //
 // End Doxygen group.
 //! @}
 //
 //*****************************************************************************
-

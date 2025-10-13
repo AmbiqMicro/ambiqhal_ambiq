@@ -2,20 +2,46 @@
 //
 //! @file am_util_pmu.c
 //!
-//! @brief The Performance Monitors Extension describes an optional non-invasive
-//! component that allows performance events to be identified and countered.
-//! This enables software to get information about events that are taking place
-//! in the processor and can be used for performance analysis and system debug.
+//! @brief Power Management Unit Utility Functions
 //!
-//! The PMU supports eight 16-bit event counters and one 32-bit cycle counter.
-//! The PMU also supports a chain function which allows the PMU to cascade two
-//! of the 16-bit counters into one 32-bit counter.only odd event counter support
-//! the chain feature. That means by chaining counters in pairs, the counter
-//! range can be increased by halving the number of counters.
-//!
-//! @addtogroup pmu PMU Functionality
+//! @addtogroup pmu_utils PMU Utility Functions
 //! @ingroup utils
 //! @{
+//!
+//! Purpose: This module provides power management utilities for
+//!          Ambiq Micro devices. It enables efficient power state control,
+//!          voltage regulation, and energy optimization for embedded
+//!          applications requiring sophisticated power management.
+//!
+//! @section utils_pmu_features Key Features
+//!
+//! 1. @b Power @b States: Multiple power mode support.
+//! 2. @b Voltage @b Control: Dynamic voltage regulation.
+//! 3. @b Energy @b Optimization: Power consumption management.
+//! 4. @b Mode @b Transitions: Smooth power state changes.
+//! 5. @b Monitoring: Power status tracking.
+//!
+//! @section utils_pmu_functionality Functionality
+//!
+//! - Control power states
+//! - Manage voltage levels
+//! - Optimize energy usage
+//! - Handle mode transitions
+//! - Monitor power status
+//!
+//! @section utils_pmu_usage Usage
+//!
+//! 1. Initialize PMU settings
+//! 2. Configure power modes
+//! 3. Manage state transitions
+//! 4. Monitor power conditions
+//!
+//! @section utils_pmu_configuration Configuration
+//!
+//! - Set up power modes
+//! - Configure voltage levels
+//! - Define transition behavior
+//! - Set monitoring parameters
 //
 //*****************************************************************************
 
@@ -50,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>

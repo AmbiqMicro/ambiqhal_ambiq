@@ -2,19 +2,47 @@
 //
 //! @file am_util_multi_boot.c
 //!
-//! @brief Bootloader implementation accepting multiple host protocols.
+//! @brief Multiple Boot Support Utility Functions
 //!
-//! This is a bootloader program that supports flash programming over UART,
-//! SPI, and I2C. The correct protocol is selected automatically at boot time.
-//!
-//! SWO is configured in 1M baud, 8-n-1 mode.
-//!
-//! @addtogroup multi_boot Multi-Boot Protocol
+//! @addtogroup multi_boot_utils Multi-Boot Utility Functions
 //! @ingroup utils
 //! @{
+//!
+//! Purpose: This module provides utilities for managing multiple boot
+//!          configurations on Ambiq Micro devices. It enables secure boot
+//!          selection, image validation, and boot sequence control for
+//!          systems requiring multiple firmware images or boot options.
+//!
+//! @section utils_multi_boot_features Key Features
+//!
+//! 1. @b Image @b Management: Multiple firmware image support.
+//! 2. @b Boot @b Selection: Configurable boot sequence control.
+//! 3. @b Security: Secure boot process validation.
+//! 4. @b Recovery: Failsafe boot mechanisms.
+//! 5. @b Configuration: Flexible boot options.
+//!
+//! @section utils_multi_boot_functionality Functionality
+//!
+//! - Manage multiple boot images
+//! - Control boot sequence
+//! - Validate boot security
+//! - Handle recovery operations
+//! - Configure boot options
+//!
+//! @section utils_multi_boot_usage Usage
+//!
+//! 1. Configure boot options
+//! 2. Manage boot images
+//! 3. Handle boot selection
+//! 4. Monitor boot process
+//!
+//! @section utils_multi_boot_configuration Configuration
+//!
+//! - Set up boot sequences
+//! - Configure security options
+//! - Define recovery behavior
+//! - Set validation parameters
 //
-//*****************************************************************************
-
 //*****************************************************************************
 //
 // Copyright (c) 2025, Ambiq Micro, Inc.
@@ -46,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <string.h>

@@ -4,10 +4,45 @@
 //!
 //! @brief This file controls peripheral access in Apollo5.
 //!
-//! @addtogroup access Access - Peripheral Access
+//! @addtogroup access_ap510 Access - Peripheral Access
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for managing peripheral access
+//! control in Apollo5 devices, including claiming and releasing peripherals for
+//! exclusive use by different cores (MCU, DSP0, DSP1). It ensures proper
+//! resource management and prevents conflicts in multi-core environments.
+//!
+//! @section hal_access_features Key Features
+//!
+//! 1. @b Multi-Core @b Support: Manage peripheral access across MCU, DSP0, and DSP1.
+//! 2. @b Resource @b Arbitration: Prevent conflicts when multiple cores request the same peripheral.
+//! 3. @b Timeout @b Handling: Configurable timeout mechanisms for access requests.
+//! 4. @b Status @b Monitoring: Check peripheral availability and access rights.
+//! 5. @b Shared @b Access: Support for peripherals that can be shared between cores.
+//!
+//! @section hal_access_functionality Functionality
+//!
+//! - Initialize and configure peripheral access control
+//! - Claim and release peripherals for exclusive use
+//! - Check peripheral availability and access rights
+//! - Handle timeout scenarios and error conditions
+//! - Support for shared peripheral access patterns
+//!
+//! @section hal_access_usage Usage
+//!
+//! 1. Initialize access control using am_hal_access_initialize()
+//! 2. Configure global access settings with am_hal_access_config()
+//! 3. Check peripheral availability before use
+//! 4. Claim peripherals when needed for exclusive access
+//! 5. Release peripherals when no longer needed
+//!
+//! @section hal_access_configuration Configuration
+//!
+//! - @b Timeout @b Values: Configure timeout periods for access requests
+//! - @b Access @b Rights: Set up peripheral access permissions for each core
+//! - @b Shared @b Peripherals: Configure peripherals that can be shared
+//! - @b Arbitration @b Policies: Define conflict resolution strategies
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -127,7 +162,9 @@ get_access_mutex(void)
 
 //*****************************************************************************
 //
-// Future function for managing peripheral access.
+//! @brief Release the access mutex for peripheral management.
+//!
+//! @return Returns 1 on success.
 //
 //*****************************************************************************
 static uint32_t

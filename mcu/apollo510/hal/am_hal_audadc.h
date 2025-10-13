@@ -2,9 +2,9 @@
 //
 //! @file am_hal_audadc.h
 //!
-//! @brief Functions for interfacing with the Analog to Digital Converter
+//! @brief Functions for interfacing with the Analog to Digital Converter.
 //!
-//! @addtogroup audadc4 AUDADC - Analog-to-Digital Converter
+//! @addtogroup audadc4_ap510 AUDADC - Analog-to-Digital Converter
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_AUDADC_H
@@ -761,8 +761,7 @@ extern uint32_t am_hal_audadc_configure_slot(void *pHandle,
 //! @return status      - generic or interface specific status.
 //
 //*****************************************************************************
-uint32_t
-am_hal_audadc_slot_dc_offset_calculate(void *pHandle,
+extern uint32_t am_hal_audadc_slot_dc_offset_calculate(void *pHandle,
                              uint32_t ui32SlotTotalNumber,
                              am_hal_offset_cal_coeffs_array_t *pSlotCalib);
 
@@ -792,8 +791,16 @@ extern uint32_t am_hal_audadc_configure_irtt(void *pHandle,
 //! @return status      - generic or interface specific status.
 //
 //*****************************************************************************
-uint32_t
-am_hal_audadc_irtt_enable(void *pHandle);
+//*****************************************************************************
+//
+//! @brief Enable AUDADC internal repeat trigger timer.
+//!
+//! @param pHandle - Handle for the AUDADC instance.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//
+//*****************************************************************************
+extern uint32_t am_hal_audadc_irtt_enable(void *pHandle);
 
 //*****************************************************************************
 //
@@ -806,8 +813,7 @@ am_hal_audadc_irtt_enable(void *pHandle);
 //! @return status      - generic or interface specific status.
 //
 //*****************************************************************************
-uint32_t
-am_hal_audadc_irtt_disable(void *pHandle);
+extern uint32_t am_hal_audadc_irtt_disable(void *pHandle);
 
 //*****************************************************************************
 //
@@ -903,7 +909,7 @@ extern uint32_t am_hal_audadc_disable(void *pHandle);
 //
 //*****************************************************************************
 extern uint32_t am_hal_audadc_status_get(void *pHandle,
-                                         am_hal_audadc_status_t *pStatus );
+                                         am_hal_audadc_status_t *pStatus);
 
 //*****************************************************************************
 //

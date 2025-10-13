@@ -4,10 +4,45 @@
 //!
 //! @brief HAL implementation for the PDM module.
 //!
-//! @addtogroup pdm PDM - Pulse Density Modulation
+//! @addtogroup pdm_ap510 PDM - Pulse Density Modulation
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides an API for configuring, controlling, and
+//! managing the Pulse Density Modulation (PDM) peripheral on Apollo5 devices.
+//! It supports audio data acquisition, gain control, DMA, and interrupt
+//! handling for digital microphone and audio applications.
+//!
+//! @section hal_pdm_features Key Features
+//!
+//! 1. @b Digital @b Microphone @b Support: Interface with PDM microphones.
+//! 2. @b DMA @b Transfer: High-speed data transfer using DMA.
+//! 3. @b FIFO @b Management: Handle PDM FIFO operations and thresholds.
+//! 4. @b Clock @b Configuration: Flexible clock source selection and configuration.
+//! 5. @b Power @b Management: Low-power operation and power state control.
+//!
+//! @section hal_pdm_functionality Functionality
+//!
+//! - Initialize and configure the PDM peripheral
+//! - Set up DMA for PDM data transfer
+//! - Manage FIFO operations and data reading
+//! - Handle PDM interrupts and status monitoring
+//! - Support for power management and clock configuration
+//!
+//! @section hal_pdm_usage Usage
+//!
+//! 1. Initialize the PDM using am_hal_pdm_initialize()
+//! 2. Configure the PDM with am_hal_pdm_configure()
+//! 3. Set up DMA for data transfer
+//! 4. Enable the PDM and start data acquisition
+//! 5. Handle PDM data and interrupts
+//!
+//! @section hal_pdm_configuration Configuration
+//!
+//! - @b USE_PDM_TWO_STAGE_DMA: Enable/disable two-stage DMA pipeline
+//! - @b Clock @b Selection: Configure PDM clock sources and frequencies
+//! - @b FIFO @b Thresholds: Set up FIFO threshold levels
+//! - @b DMA: Configure DMA for PDM data transfer
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -172,9 +207,9 @@ typedef struct
     //
     am_hal_pdm_clkspd_e eClkSource;
 
-    #ifdef CLEAR_DMACPL_SAFELY
+#ifdef CLEAR_DMACPL_SAFELY
     bool                bNeedtoClearDmacpl;
-    #endif
+#endif
 }
 am_hal_pdm_state_t;
 
@@ -185,6 +220,15 @@ am_hal_pdm_state_t;
 //*****************************************************************************
 am_hal_pdm_state_t g_PDMhandles[AM_REG_PDM_NUM_MODULES];
 
+//*****************************************************************************
+//
+//! @brief Get clock manager clock ID for PDM clock selection.
+//!
+//! @param clksel - PDM clock selection value.
+//!
+//! @return Returns the corresponding clock manager clock ID.
+//
+//*****************************************************************************
 static am_hal_clkmgr_clock_id_e
 pdm_clksrc_get(am_hal_pdm_clkspd_e clksel)
 {
@@ -215,7 +259,10 @@ pdm_clksrc_get(am_hal_pdm_clkspd_e clksel)
 
 //*****************************************************************************
 //
-// Set PDM LLMux with Mux Switcing Delay
+//! @brief Set PDM LLMux with mux switching delay.
+//!
+//! @param ui32Module - PDM module number.
+//! @param targetLLMux - Target LLMux value.
 //
 //*****************************************************************************
 static inline void
@@ -243,7 +290,10 @@ pdm_set_llmux_with_delay(uint32_t ui32Module, uint32_t targetLLMux)
 
 //*****************************************************************************
 //
-// Set PDM clock by selecting the LL mux and the CLKGEN mux.
+//! @brief Set PDM clock by selecting the LL mux and the CLKGEN mux.
+//!
+//! @param ui32Module - PDM module number.
+//! @param targetClk - Target clock selection.
 //
 //*****************************************************************************
 static void
@@ -352,7 +402,7 @@ pdm_clock_set(uint32_t ui32Module, am_hal_pdm_clkspd_e targetClk)
 
 //*****************************************************************************
 //
-// am_hal_pdm_initialize
+// Initialize the PDM module.
 //
 //*****************************************************************************
 uint32_t
@@ -389,9 +439,9 @@ am_hal_pdm_initialize(uint32_t ui32Module, void **ppHandle)
     g_PDMhandles[ui32Module].prefix.s.magic = AM_HAL_MAGIC_PDM;
     g_PDMhandles[ui32Module].ui32Module = ui32Module;
     g_PDMhandles[ui32Module].sRegState.bValid = false;
-    #ifdef CLEAR_DMACPL_SAFELY
+#ifdef CLEAR_DMACPL_SAFELY
     g_PDMhandles[ui32Module].bNeedtoClearDmacpl = false;
-    #endif
+#endif
 
     //
     // Return the handle.
@@ -406,7 +456,7 @@ am_hal_pdm_initialize(uint32_t ui32Module, void **ppHandle)
 
 //*****************************************************************************
 //
-// De-Initialization function.
+// Deinitialize the PDM module.
 //
 //*****************************************************************************
 uint32_t
@@ -434,7 +484,7 @@ am_hal_pdm_deinitialize(void *pHandle)
 
 //*****************************************************************************
 //
-// Power control function.
+// Control power state of the PDM module.
 //
 //*****************************************************************************
 uint32_t
@@ -519,7 +569,7 @@ am_hal_pdm_power_control(void *pHandle,
 
 //*****************************************************************************
 //
-// Configure the PDM.
+// Configure the PDM module.
 //
 //*****************************************************************************
 uint32_t
@@ -538,12 +588,16 @@ am_hal_pdm_configure(void *pHandle, am_hal_pdm_config_t *psConfig)
     //
     PDMn(ui32Module)->CORECFG0_b.LRSWAP = psConfig->bLRSwap;
     PDMn(ui32Module)->CORECFG0_b.SOFTMUTE = psConfig->bSoftMute;
+    //
     // Set number of PDMA_CKO cycles during gain setting changes or soft mute
+    //
     PDMn(ui32Module)->CORECFG0_b.SCYCLES = psConfig->ui32GainChangeDelay;
 
     PDMn(ui32Module)->CORECFG0_b.HPGAIN = psConfig->ui32HighPassCutoff;
     PDMn(ui32Module)->CORECFG0_b.ADCHPD = psConfig->bHighPassEnable;
+    //
     // PDMA_CKO frequency divisor. Fpdma_cko = Fmclk_l/(MCLKDIV+1)
+    //
     PDMn(ui32Module)->CORECFG0_b.MCLKDIV = psConfig->ePDMAClkOutDivder;
     PDMn(ui32Module)->CORECFG0_b.SINCRATE = psConfig->ui32DecimationRate;
 
@@ -554,11 +608,17 @@ am_hal_pdm_configure(void *pHandle, am_hal_pdm_config_t *psConfig)
     // Program the "CORECFG1_b" registers.
     //
     PDMn(ui32Module)->CORECFG1_b.PCMCHSET = psConfig->ePCMChannels;
+    //
     // Divide down ratio for generating internal master MCLKQ.
+    //
     PDMn(ui32Module)->CORECFG1_b.DIVMCLKQ = psConfig->eClkDivider;
+    //
     // PDMA_CKO clock phase delay in terms of PDMCLK period to internal sampler
+    //
     PDMn(ui32Module)->CORECFG1_b.CKODLY = psConfig->bPDMSampleDelay;
+    //
     // Fine grain step size for smooth PGA or Softmute attenuation transition
+    //
     PDMn(ui32Module)->CORECFG1_b.SELSTEP = psConfig->eStepSize;
 
     //
@@ -584,7 +644,7 @@ am_hal_pdm_configure(void *pHandle, am_hal_pdm_config_t *psConfig)
 
 //*****************************************************************************
 //
-// Enable the PDM.
+// Enable the PDM module.
 //
 //*****************************************************************************
 uint32_t
@@ -646,7 +706,7 @@ am_hal_pdm_enable(void *pHandle)
 
 //*****************************************************************************
 //
-// Reset the PDM.
+// Reset the PDM module.
 //
 //*****************************************************************************
 uint32_t
@@ -667,7 +727,7 @@ am_hal_pdm_reset(void *pHandle)
 
 //*****************************************************************************
 //
-// Disable the PDM.
+// Disable the PDM module.
 //
 //*****************************************************************************
 uint32_t
@@ -701,8 +761,11 @@ am_hal_pdm_disable(void *pHandle)
 
 //*****************************************************************************
 //
-// Given the total number of bytes in a DMA transaction, find a reasonable
-// threshold setting.
+//! @brief Find DMA threshold for given total count.
+//!
+//! @param ui32TotalCount - Total number of bytes in DMA transaction.
+//!
+//! @return Returns appropriate threshold value or 0 if none found.
 //
 //*****************************************************************************
 static uint32_t
@@ -743,7 +806,7 @@ find_dma_threshold(uint32_t ui32TotalCount)
 
 //*****************************************************************************
 //
-// Starts a DMA transaction from the PDM directly to SRAM
+// Start DMA transaction from PDM to SRAM.
 //
 //*****************************************************************************
 uint32_t
@@ -789,9 +852,9 @@ am_hal_pdm_dma_start(void *pHandle, am_hal_pdm_transfer_t *pTransferCfg)
     // Reset DMA status.
     //
     PDMn(ui32Module)->DMASTAT = 0;
-    #ifdef CLEAR_DMACPL_SAFELY
+#ifdef CLEAR_DMACPL_SAFELY
     pState->bNeedtoClearDmacpl = false;
-    #endif
+#endif
 
     //
     // Enable DMA
@@ -810,7 +873,7 @@ am_hal_pdm_dma_start(void *pHandle, am_hal_pdm_transfer_t *pTransferCfg)
     // Note: automatic loading occurs only when the DMAEN bit is set to 1 and
     // the DMAENNEXTCTRL bit is not equal to 0.
     //
-    #ifdef USE_PDM_TWO_STAGE_DMA
+#ifdef USE_PDM_TWO_STAGE_DMA
     PDMn(ui32Module)->DMACFG_b.NEXTDMAEN = 1;
     PDMn(ui32Module)->DMATARGADDRNEXT = pState->ui32BufferPing;
     PDMn(ui32Module)->DMATOTCOUNTNEXT = pState->ui32BufferSizeBytes;
@@ -837,10 +900,10 @@ am_hal_pdm_dma_start(void *pHandle, am_hal_pdm_transfer_t *pTransferCfg)
             return AM_HAL_STATUS_HW_ERR;
         }
     }
-    #else
+#else
     PDMn(ui32Module)->DMATARGADDR = pState->ui32BufferPing;
     PDMn(ui32Module)->DMATOTCOUNT = pState->ui32BufferSizeBytes;
-    #endif
+#endif
 
     return AM_HAL_STATUS_SUCCESS;
 }
@@ -869,28 +932,28 @@ am_hal_pdm_dma_stop(void *pHandle)
     //
     // Clear TOTCOUNT register.
     //
-    #ifdef USE_PDM_TWO_STAGE_DMA
+#ifdef USE_PDM_TWO_STAGE_DMA
     PDMn(ui32Module)->DMATOTCOUNTNEXT = 0;
     PDMn(ui32Module)->DMATOTCOUNT     = 0;
-    #else
+#else
     PDMn(ui32Module)->DMATOTCOUNT     = 0;
-    #endif
+#endif
 
     //
     // Disable and clear FIFOTHR interrupt.
     //
-    #ifdef CLEAR_DMACPL_SAFELY
+#ifdef CLEAR_DMACPL_SAFELY
     pState->bNeedtoClearDmacpl = false;
     PDMn(ui32Module)->INTEN &= ~(AM_HAL_PDM_INT_THR);
     PDMn(ui32Module)->INTCLR = AM_HAL_PDM_INT_THR;
-    #endif
+#endif
 
     return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************
 //
-// Flush the PDM FIFO
+// Flush the PDM FIFO.
 //
 //*****************************************************************************
 uint32_t
@@ -911,10 +974,9 @@ am_hal_pdm_fifo_flush(void *pHandle)
 
 //*****************************************************************************
 //
-// set the PDM FIFO Threshold value
+// Set the PDM FIFO threshold value.
 //
 //*****************************************************************************
-
 uint32_t
 am_hal_pdm_fifo_threshold_setup(void *pHandle, uint32_t value)
 {
@@ -933,10 +995,11 @@ am_hal_pdm_fifo_threshold_setup(void *pHandle, uint32_t value)
 
 //*****************************************************************************
 //
-// PDM interrupt service routine
+// PDM interrupt service routine.
 //
 //*****************************************************************************
-uint32_t am_hal_pdm_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_hal_pdm_transfer_t *pTransferCfg)
+uint32_t
+am_hal_pdm_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_hal_pdm_transfer_t *pTransferCfg)
 {
     am_hal_pdm_state_t *pState = (am_hal_pdm_state_t *) pHandle;
     uint32_t ui32Module = pState->ui32Module;
@@ -948,7 +1011,7 @@ uint32_t am_hal_pdm_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_ha
 
     if (ui32IntMask & AM_HAL_PDM_INT_DCMP)
     {
-        #ifdef CLEAR_DMACPL_SAFELY
+#ifdef CLEAR_DMACPL_SAFELY
         if (PDMn(ui32Module)->DMASTAT_b.DMATIP == 1)
         {
             //
@@ -967,13 +1030,13 @@ uint32_t am_hal_pdm_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_ha
             pState->bNeedtoClearDmacpl = true;
             am_hal_sysctrl_sysbus_write_flush();
         }
-        #else // !CLEAR_DMACPL_SAFELY
+#else // !CLEAR_DMACPL_SAFELY
         PDMn(ui32Module)->DMASTAT_b.DMACPL = 0;
-        #endif // !CLEAR_DMACPL_SAFELY
+#endif // !CLEAR_DMACPL_SAFELY
 
         if (pState->ui32BufferPong != 0xFFFFFFFF)
         {
-            #ifdef USE_PDM_TWO_STAGE_DMA
+#ifdef USE_PDM_TWO_STAGE_DMA
             if (PDMn(ui32Module)->DMAENNEXTCTRL == 0)
             {
                 PDMn(ui32Module)->DMATARGADDRNEXT = pState->ui32BufferPtr = (pState->ui32BufferPtr == pState->ui32BufferPong) ? pState->ui32BufferPing : pState->ui32BufferPong;
@@ -984,16 +1047,16 @@ uint32_t am_hal_pdm_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_ha
             {
                 return AM_HAL_STATUS_HW_ERR;
             }
-            #else // !USE_PDM_TWO_STAGE_DMA
+#else // !USE_PDM_TWO_STAGE_DMA
             PDMn(ui32Module)->DMATARGADDR = pState->ui32BufferPtr = (pState->ui32BufferPtr == pState->ui32BufferPong) ? pState->ui32BufferPing : pState->ui32BufferPong;
             PDMn(ui32Module)->DMATOTCOUNT = pState->ui32BufferSizeBytes;
-            #endif // !USE_PDM_TWO_STAGE_DMA
+#endif // !USE_PDM_TWO_STAGE_DMA
         }
     }
 
     if (((ui32IntMask & AM_HAL_PDM_INT_THR) != 0) && ((ui32IntMask & AM_HAL_PDM_INT_DCMP) == 0))
     {
-        #ifdef CLEAR_DMACPL_SAFELY
+#ifdef CLEAR_DMACPL_SAFELY
         if (pState->bNeedtoClearDmacpl)
         {
             // assert((ui32IntMask & AM_HAL_PDM_INT_DCMP) == 0);
@@ -1003,7 +1066,7 @@ uint32_t am_hal_pdm_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_ha
             PDMn(ui32Module)->DMASTAT_b.DMACPL = 0;
             pState->bNeedtoClearDmacpl = false;
         }
-        #endif
+#endif
     }
 
     return AM_HAL_STATUS_SUCCESS;
@@ -1032,7 +1095,7 @@ am_hal_pdm_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
 
 //*****************************************************************************
 //
-// Interrupt disable.
+// Disable PDM interrupts.
 //
 //*****************************************************************************
 uint32_t
@@ -1053,7 +1116,7 @@ am_hal_pdm_interrupt_disable(void *pHandle, uint32_t ui32IntMask)
 
 //*****************************************************************************
 //
-// Interrupt clear.
+// Clear PDM interrupts.
 //
 //*****************************************************************************
 uint32_t
@@ -1074,7 +1137,7 @@ am_hal_pdm_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
 
 //*****************************************************************************
 //
-// Returns the interrupt status.
+// Get PDM interrupt status.
 //
 //*****************************************************************************
 uint32_t
@@ -1106,7 +1169,7 @@ am_hal_pdm_interrupt_status_get(void *pHandle, uint32_t *pui32Status, bool bEnab
 
 //*****************************************************************************
 //
-// Get the DMA Bufffer.
+// Get the DMA buffer.
 //
 //*****************************************************************************
 uint32_t
@@ -1124,11 +1187,11 @@ am_hal_pdm_dma_get_buffer(void *pHandle)
     }
     else
     {
-        #ifdef USE_PDM_TWO_STAGE_DMA
+#ifdef USE_PDM_TWO_STAGE_DMA
         ui32BufferPtr = pState->ui32BufferPtr;
-        #else
+#else
         ui32BufferPtr = (pState->ui32BufferPtr == pState->ui32BufferPong) ? pState->ui32BufferPing : pState->ui32BufferPong;
-        #endif
+#endif
     }
 
     return ui32BufferPtr;
@@ -1136,7 +1199,7 @@ am_hal_pdm_dma_get_buffer(void *pHandle)
 
 //*****************************************************************************
 //
-// Read the FIFO.
+// Read data from the PDM FIFO.
 //
 //*****************************************************************************
 uint32_t
@@ -1150,10 +1213,11 @@ am_hal_pdm_fifo_data_read(void *pHandle)
 
 //*****************************************************************************
 //
-// Read the FIFOs.
+// Read multiple samples from the PDM FIFO.
 //
 //*****************************************************************************
-uint32_t am_hal_pdm_fifo_data_reads(void *pHandle, uint8_t* buffer, uint32_t size)
+uint32_t
+am_hal_pdm_fifo_data_reads(void *pHandle, uint8_t *buffer, uint32_t size)
 {
     am_hal_pdm_state_t *pState = (am_hal_pdm_state_t *) pHandle;
     uint32_t ui32Module = pState->ui32Module;
@@ -1174,10 +1238,11 @@ uint32_t am_hal_pdm_fifo_data_reads(void *pHandle, uint8_t* buffer, uint32_t siz
 
 //*****************************************************************************
 //
-// am_hal_pdm_fifo_count_get
+// Get the PDM FIFO count.
 //
 //*****************************************************************************
-uint32_t am_hal_pdm_fifo_count_get(void *pHandle)
+uint32_t
+am_hal_pdm_fifo_count_get(void *pHandle)
 {
     am_hal_pdm_state_t *pState = (am_hal_pdm_state_t *) pHandle;
     uint32_t ui32Module = pState->ui32Module;
@@ -1187,10 +1252,11 @@ uint32_t am_hal_pdm_fifo_count_get(void *pHandle)
 
 //*****************************************************************************
 //
-// am_hal_pdm_dma_state
+// Get the PDM DMA state.
 //
 //*****************************************************************************
-uint32_t am_hal_pdm_dma_state(void *pHandle)
+uint32_t
+am_hal_pdm_dma_state(void *pHandle)
 {
     am_hal_pdm_state_t *pState = (am_hal_pdm_state_t *) pHandle;
     uint32_t ui32Module = pState->ui32Module;
@@ -1200,7 +1266,7 @@ uint32_t am_hal_pdm_dma_state(void *pHandle)
 
 //*****************************************************************************
 //
-// am_hal_pdm_dma_transfer_continue
+// Continue PDM DMA transfer.
 //
 //*****************************************************************************
 uint32_t
@@ -1217,7 +1283,7 @@ am_hal_pdm_dma_transfer_continue(void *pHandle, am_hal_pdm_transfer_t *pTransfer
         return AM_HAL_STATUS_INVALID_OPERATION;
     }
 
-    #ifdef USE_PDM_TWO_STAGE_DMA
+#ifdef USE_PDM_TWO_STAGE_DMA
     if (PDMn(ui32Module)->DMAENNEXTCTRL == 0)
     {
         PDMn(ui32Module)->DMATARGADDRNEXT = pState->ui32BufferPtr       = pTransferCfg->ui32TargetAddr;
@@ -1228,10 +1294,10 @@ am_hal_pdm_dma_transfer_continue(void *pHandle, am_hal_pdm_transfer_t *pTransfer
     {
         return AM_HAL_STATUS_HW_ERR;
     }
-    #else // !USE_PDM_TWO_STAGE_DMA
+#else // !USE_PDM_TWO_STAGE_DMA
     PDMn(ui32Module)->DMATARGADDR = pState->ui32BufferPtr       = pTransferCfg->ui32TargetAddr;
     PDMn(ui32Module)->DMATOTCOUNT = pState->ui32BufferSizeBytes = pTransferCfg->ui32TotalCount;
-    #endif // !USE_PDM_TWO_STAGE_DMA
+#endif // !USE_PDM_TWO_STAGE_DMA
 
     return AM_HAL_STATUS_SUCCESS;
 }

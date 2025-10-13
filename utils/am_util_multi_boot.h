@@ -2,14 +2,9 @@
 //
 //! @file am_util_multi_boot.h
 //!
-//! @brief Bootloader implementation accepting multiple host protocols.
+//! @brief Multiple Boot Support Utility Functions
 //!
-//! This is a bootloader program that supports flash programming over UART,
-//! SPI, and I2C. The correct protocol is selected automatically at boot time.
-//!
-//! SWO is configured in 1M baud, 8-n-1 mode.
-//!
-//! @addtogroup multi_boot Multi-Boot Protocol
+//! @addtogroup multi_boot_utils Multi-Boot Utility Functions
 //! @ingroup utils
 //! @{
 //
@@ -46,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

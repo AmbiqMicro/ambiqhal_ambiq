@@ -4,10 +4,47 @@
 //!
 //! @brief Functions for interfacing with the system timer (STIMER).
 //!
-//! @addtogroup stimer5 STIMER - System Timer
+//! @addtogroup stimer5_ap510 STIMER - System Timer
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides system timer functionality for Apollo5
+//! devices, supporting precise timing, compare operations, capture
+//! functionality, and interrupt generation. It enables accurate system
+//! timing and event synchronization for applications requiring
+//! deterministic timing behavior.
+//!
+//! @section hal_stimer_features Key Features
+//!
+//! 1. @b Flexible @b Clock @b Sources: Support for multiple clock sources and frequencies.
+//! 2. @b Compare @b Events: Multiple compare channels for precise timing control.
+//! 3. @b Capture @b Functionality: Input capture for measuring external signals.
+//! 4. @b Interrupt @b Support: Comprehensive interrupt handling for timer events.
+//! 5. @b NVRAM @b Storage: Non-volatile storage for timer configuration persistence.
+//!
+//! @section hal_stimer_functionality Functionality
+//!
+//! - Configure timer clock sources and operational modes
+//! - Start, stop, and restart timer operations
+//! - Read timer counter values and clear counters
+//! - Set up compare events and delta timing
+//! - Configure input capture for external signal measurement
+//! - Handle timer interrupts and status monitoring
+//!
+//! @section hal_stimer_usage Usage
+//!
+//! 1. Configure the timer using am_hal_stimer_config()
+//! 2. Start the timer with am_hal_stimer_start()
+//! 3. Set up compare events or capture functionality as needed
+//! 4. Handle timer interrupts and monitor status
+//! 5. Stop or restart the timer as required
+//!
+//! @section hal_stimer_configuration Configuration
+//!
+//! - @b Clock @b Sources: Select from HFRC, XTAL, or LFRC clock sources
+//! - @b Compare @b Channels: Configure up to 8 compare channels
+//! - @b Capture @b Channels: Set up input capture for external signals
+//! - @b Interrupts: Configure interrupt sources and handlers
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +78,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -52,17 +89,26 @@
 //
 //! Timer Currently Configured
 //
-static bool bStimerConfigured = false;
+static bool g_bStimerConfigured = false;
 
 //
 //! Time at which last delta was set
 //
-static uint32_t g_lastStimer[8] =
+static uint32_t g_ui32LastStimer[8] =
 {
     0xFFFFFFFE, 0xFFFFFFFE, 0xFFFFFFFE, 0xFFFFFFFE,
     0xFFFFFFFE, 0xFFFFFFFE, 0xFFFFFFFE, 0xFFFFFFFE
 };
 
+//*****************************************************************************
+//
+//! @brief Get clock source for STIMER configuration.
+//!
+//! @param clk - STIMER clock selection value.
+//!
+//! @return Returns the corresponding clock manager clock ID.
+//
+//*****************************************************************************
 static am_hal_clkmgr_clock_id_e
 am_hal_stimer_clksrc_get(uint32_t clk)
 {
@@ -100,6 +146,7 @@ am_hal_stimer_config(uint32_t ui32STimerConfig)
     uint32_t ui32CfgClkSrc, ui32PreClkSrc;
     bool bCfgClkRequest;
     bool bPreClkRelease;
+
     //
     // Read the current config
     //
@@ -139,7 +186,9 @@ am_hal_stimer_config(uint32_t ui32STimerConfig)
 
     if ( bCfgClkRequest )
     {
-        //Request a clock
+        //
+        // Request a clock
+        //
         if ( STIMER_STCFG_CLKSEL_HFRC_6MHZ <= ui32CfgClkSel && ui32CfgClkSel <= STIMER_STCFG_CLKSEL_LFRC_NOMINAL )
         {
             am_hal_clkmgr_clock_request((am_hal_clkmgr_clock_id_e)ui32CfgClkSrc, AM_HAL_CLKMGR_USER_ID_STIMER);
@@ -153,7 +202,9 @@ am_hal_stimer_config(uint32_t ui32STimerConfig)
 
     if ( bPreClkRelease )
     {
-        //Release the previous clock source
+        //
+        // Release the previous clock source
+        //
         if ( STIMER_STCFG_CLKSEL_HFRC_6MHZ <= ui32PreClkSel && ui32PreClkSel <= STIMER_STCFG_CLKSEL_LFRC_NOMINAL )
         {
             am_hal_clkmgr_clock_release((am_hal_clkmgr_clock_id_e)ui32PreClkSrc, AM_HAL_CLKMGR_USER_ID_STIMER);
@@ -163,7 +214,7 @@ am_hal_stimer_config(uint32_t ui32STimerConfig)
     //
     // Indication that the STIMER has been configured.
     //
-    bStimerConfigured = true;
+    g_bStimerConfigured = true;
 
     return ui32CurrVal;
 }
@@ -179,14 +230,23 @@ am_hal_stimer_config(uint32_t ui32STimerConfig)
 bool
 am_hal_stimer_is_running(void)
 {
-  //
-  // Check the STIMER has been configured and is currently counting
-  //
-  return (bStimerConfigured &&
-      (STIMER_STCFG_CLKSEL_NOCLK != STIMER->STCFG_b.CLKSEL) &&
-      (STIMER_STCFG_FREEZE_THAW == STIMER->STCFG_b.FREEZE) &&
-      (STIMER_STCFG_CLEAR_RUN == STIMER->STCFG_b.CLEAR));
+    bool bRetVal;
+
+    AM_CRITICAL_BEGIN
+
+    //
+    // Check the STIMER has been configured and is currently counting
+    //
+    bRetVal = g_bStimerConfigured &&
+      ((STIMER->STCFG &
+       (STIMER_STCFG_CLKSEL_NOCLK | STIMER_STCFG_FREEZE_THAW | STIMER_STCFG_CLEAR_RUN)) ==
+       (STIMER_STCFG_FREEZE_THAW | STIMER_STCFG_CLEAR_RUN));
+
+    AM_CRITICAL_END
+
+    return bRetVal;
 }
+
 //*****************************************************************************
 //
 // Reset the current stimer block to power-up state.
@@ -197,6 +257,7 @@ am_hal_stimer_reset_config(void)
 {
     bool bClkRelease = false;
     uint32_t ui32ClkSel = 0;
+
     if ( am_hal_stimer_is_running() )
     {
         ui32ClkSel = STIMER->STCFG_b.CLKSEL;
@@ -205,6 +266,7 @@ am_hal_stimer_reset_config(void)
             bClkRelease = true;
         }
     }
+
     STIMER->STCFG       = _VAL2FLD(STIMER_STCFG_FREEZE, 1);
     STIMER->SCAPCTRL0   = _VAL2FLD(STIMER_SCAPCTRL0_STSEL0, 0xFF);
     STIMER->SCAPCTRL1   = _VAL2FLD(STIMER_SCAPCTRL1_STSEL1, 0xFF);
@@ -282,6 +344,11 @@ void
 am_hal_stimer_counter_clear(void)
 {
     //
+    // Start a critical section to ensure atomic operation
+    //
+    AM_CRITICAL_BEGIN
+
+    //
     // Set the clear bit
     //
     STIMER->STCFG |= STIMER_STCFG_CLEAR_Msk;
@@ -290,6 +357,11 @@ am_hal_stimer_counter_clear(void)
     // Reset the clear bit
     //
     STIMER->STCFG &= ~STIMER_STCFG_CLEAR_Msk;
+
+    //
+    // End the critical section
+    //
+    AM_CRITICAL_END
 }
 
 //*****************************************************************************
@@ -300,19 +372,25 @@ am_hal_stimer_counter_clear(void)
 bool
 am_hal_stimer_check_compare_delta_set(uint32_t ui32CmprInstance)
 {
-    uint32_t curTimer;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( ui32CmprInstance > 7 )
     {
         return AM_HAL_STATUS_OUT_OF_RANGE;
     }
 #endif
+    uint32_t curTimer;
+
+    //
     // Take a snapshot of STIMER
+    //
     curTimer = am_hal_stimer_counter_get();
+
+    //
     // We cannot set COMPARE back to back
     // Need to wait for previous write to complete, which takes 2 cycles
-    if ((curTimer != g_lastStimer[ui32CmprInstance]) &&
-        (curTimer != (g_lastStimer[ui32CmprInstance] + 1)))
+    //
+    if ((curTimer != g_ui32LastStimer[ui32CmprInstance]) &&
+        (curTimer != (g_ui32LastStimer[ui32CmprInstance] + 1)))
     {
         return true;
     }
@@ -330,18 +408,20 @@ am_hal_stimer_check_compare_delta_set(uint32_t ui32CmprInstance)
 uint32_t
 am_hal_stimer_compare_delta_set(uint32_t ui32CmprInstance, uint32_t ui32Delta)
 {
-    uint32_t curTimer, curTimer0;
-    uint32_t ui32Ret = AM_HAL_STATUS_SUCCESS;
-
-    // Take a snapshot of STIMER at the beginning of the function
-    curTimer = curTimer0 = am_hal_stimer_counter_get();
-
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( ui32CmprInstance > 7 )
     {
         return AM_HAL_STATUS_OUT_OF_RANGE;
     }
 #endif
+    uint32_t curTimer, curTimer0;
+    uint32_t ui32Ret = AM_HAL_STATUS_SUCCESS;
+
+    //
+    // Take a snapshot of STIMER at the beginning of the function
+    //
+    curTimer = curTimer0 = am_hal_stimer_counter_get();
+
     //
     //! @note Due to latency in write to COMPARE register to take effect, it is
     //!  possible that the application could get a stale interrupt even after
@@ -354,14 +434,16 @@ am_hal_stimer_compare_delta_set(uint32_t ui32CmprInstance, uint32_t ui32Delta)
     {
         // We cannot set COMPARE back to back
         // Need to wait for previous write to complete, which takes 2 cycles
-        if ((curTimer != g_lastStimer[ui32CmprInstance]) &&
-            (curTimer != (g_lastStimer[ui32CmprInstance] + 1)))
+        if ((curTimer != g_ui32LastStimer[ui32CmprInstance]) &&
+            (curTimer != (g_ui32LastStimer[ui32CmprInstance] + 1)))
         {
             //
             // Start a critical section.
             //
             AM_CRITICAL_BEGIN
+
             curTimer = am_hal_stimer_counter_get();
+
             // Adjust Delta
             // It takes 2 STIMER clock cycles for writes to COMPARE to be effective
             // Also the interrupt itself is delayed by a cycle
@@ -373,18 +455,23 @@ am_hal_stimer_compare_delta_set(uint32_t ui32CmprInstance, uint32_t ui32Delta)
             }
             else
             {
+                //
                 // Need to floor delta to 1
+                //
                 ui32Delta = 1;
                 ui32Ret = AM_HAL_STIMER_DELTA_TOO_SMALL;
             }
+
             //
             // Set the delta
             //
             AM_REGVAL(AM_REG_STIMER_COMPARE(0, ui32CmprInstance)) = ui32Delta;
+
             //
             // Get a snapshot when we set COMPARE
             //
-            g_lastStimer[ui32CmprInstance] = am_hal_stimer_counter_get();
+            g_ui32LastStimer[ui32CmprInstance] = am_hal_stimer_counter_get();
+
             //
             // End the critical section.
             //
@@ -407,13 +494,14 @@ am_hal_stimer_compare_delta_set(uint32_t ui32CmprInstance, uint32_t ui32Delta)
 uint32_t
 am_hal_stimer_compare_get(uint32_t ui32CmprInstance)
 {
-    uint32_t curTimer;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( ui32CmprInstance > 7 )
     {
-        return 0;
+        return AM_HAL_STATUS_OUT_OF_RANGE;
     }
 #endif
+    uint32_t curTimer;
+
     //
     // Need to wait at least 3 cycle after setting the compare to read it
     // reliably
@@ -421,9 +509,9 @@ am_hal_stimer_compare_get(uint32_t ui32CmprInstance)
     do
     {
         curTimer = am_hal_stimer_counter_get();
-        if ((curTimer != g_lastStimer[ui32CmprInstance]) &&
-            (curTimer != (g_lastStimer[ui32CmprInstance] + 1)) &&
-            (curTimer != (g_lastStimer[ui32CmprInstance] + 2)))
+        if ((curTimer != g_ui32LastStimer[ui32CmprInstance]) &&
+            (curTimer != (g_ui32LastStimer[ui32CmprInstance] + 1)) &&
+            (curTimer != (g_ui32LastStimer[ui32CmprInstance] + 2)))
         {
             return AM_REGVAL(AM_REG_STIMER_COMPARE(0, ui32CmprInstance));
         }
@@ -443,7 +531,12 @@ am_hal_stimer_capture_start(uint32_t ui32CaptureNum,
                             bool bPolarity)
 {
 #ifndef AM_HAL_DISABLE_API_VALIDATION
-    if ( ui32GPIONumber > (AM_HAL_GPIO_MAX_PADS-1) )
+    if ( ui32CaptureNum > 3 )
+    {
+        return;
+    }
+
+    if (ui32GPIONumber > (AM_HAL_GPIO_MAX_PADS-1))
     {
         return;
     }
@@ -475,14 +568,23 @@ am_hal_stimer_capture_start(uint32_t ui32CaptureNum,
             STIMER->SCAPCTRL3_b.CAPTURE3 = STIMER_SCAPCTRL3_CAPTURE3_ENABLE;
             break;
          default:
-            return;     // error concealment.
+            return;
     }
+
+    //
+    // Start a critical section.
+    //
+    AM_CRITICAL_BEGIN
 
     //
     // Set TIMER Global Enable for GPIO inputs.
     //
     TIMER->GLOBEN_b.ENABLEALLINPUTS = 1;
 
+    //
+    // End the critical section.
+    //
+    AM_CRITICAL_END
 }
 
 //*****************************************************************************
@@ -495,25 +597,28 @@ am_hal_stimer_capture_start(uint32_t ui32CaptureNum,
 void
 am_hal_stimer_capture_stop(uint32_t ui32CaptureNum)
 {
-    //
-    // Disable it in the STIMER block.
-    //
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    if ( ui32CaptureNum > 3 )
+    {
+        return;
+    }
+#endif
     switch (ui32CaptureNum)
     {
-         case 0:
-             STIMER->SCAPCTRL0_b.CAPTURE0 = STIMER_SCAPCTRL0_CAPTURE0_DISABLE;
+        case 0:
+            STIMER->SCAPCTRL0_b.CAPTURE0 = STIMER_SCAPCTRL0_CAPTURE0_DISABLE;
             break;
-         case 1:
-             STIMER->SCAPCTRL1_b.CAPTURE1 = STIMER_SCAPCTRL1_CAPTURE1_DISABLE;
+        case 1:
+            STIMER->SCAPCTRL1_b.CAPTURE1 = STIMER_SCAPCTRL1_CAPTURE1_DISABLE;
             break;
-         case 2:
-             STIMER->SCAPCTRL2_b.CAPTURE2 = STIMER_SCAPCTRL2_CAPTURE2_DISABLE;
+        case 2:
+            STIMER->SCAPCTRL2_b.CAPTURE2 = STIMER_SCAPCTRL2_CAPTURE2_DISABLE;
             break;
-         case 3:
-             STIMER->SCAPCTRL3_b.CAPTURE3 = STIMER_SCAPCTRL3_CAPTURE3_DISABLE;
+        case 3:
+            STIMER->SCAPCTRL3_b.CAPTURE3 = STIMER_SCAPCTRL3_CAPTURE3_DISABLE;
             break;
-         default:
-            return;     // error concealment.
+        default:
+            return;
     }
 
     //
@@ -532,6 +637,9 @@ am_hal_stimer_capture_stop(uint32_t ui32CaptureNum)
         TIMER->GLOBEN_b.ENABLEALLINPUTS = 0;
     }
 
+    //
+    // End the critical section.
+    //
     AM_CRITICAL_END
 }
 
@@ -586,9 +694,10 @@ uint32_t am_hal_stimer_capture_get(uint32_t ui32CaptureNum)
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( ui32CaptureNum > 3 )
     {
-        return 0;
+        return AM_HAL_STATUS_OUT_OF_RANGE;
     }
 #endif
+
 
     return AM_REGVAL(AM_REG_STIMER_CAPTURE(0, ui32CaptureNum));
 }
@@ -608,9 +717,19 @@ void
 am_hal_stimer_int_enable(uint32_t ui32Interrupt)
 {
     //
+    // Start a critical section to ensure atomic operation
+    //
+    AM_CRITICAL_BEGIN
+
+    //
     // Enable the interrupt at the module level.
     //
     STIMER->STMINTEN |= ui32Interrupt;
+
+    //
+    // End the critical section
+    //
+    AM_CRITICAL_END
 }
 
 //*****************************************************************************
@@ -642,9 +761,19 @@ void
 am_hal_stimer_int_disable(uint32_t ui32Interrupt)
 {
     //
+    // Start a critical section
+    //
+    AM_CRITICAL_BEGIN
+
+    //
     // Disable the interrupt at the module level.
     //
     STIMER->STMINTEN &= ~ui32Interrupt;
+
+    //
+    // End the critical section
+    //
+    AM_CRITICAL_END
 }
 
 //*****************************************************************************
@@ -659,9 +788,19 @@ void
 am_hal_stimer_int_set(uint32_t ui32Interrupt)
 {
     //
+    // Start a critical section
+    //
+    AM_CRITICAL_BEGIN
+
+    //
     // Set the interrupts.
     //
     STIMER->STMINTSET = ui32Interrupt;
+
+    //
+    // End the critical section
+    //
+    AM_CRITICAL_END
 }
 
 //*****************************************************************************
@@ -676,11 +815,24 @@ void
 am_hal_stimer_int_clear(uint32_t ui32Interrupt)
 {
     //
-    // Disable the interrupt at the module level.
+    // Start a critical section
+    //
+    AM_CRITICAL_BEGIN
+
+    //
+    // Clear the interrupts.
     //
     STIMER->STMINTCLR = ui32Interrupt;
 
-    *(volatile uint32_t*)(&STIMER->STMINTSTAT);
+    //
+    // Memory barrier to ensure the clear operation completes
+    //
+    AM_REGVAL(&STIMER->STMINTSTAT);
+
+    //
+    // End the critical section
+    //
+    AM_CRITICAL_END
 }
 
 //*****************************************************************************
@@ -693,17 +845,30 @@ am_hal_stimer_int_clear(uint32_t ui32Interrupt)
 uint32_t
 am_hal_stimer_int_status_get(bool bEnabledOnly)
 {
-    //
-    // Return the desired status.
-    //
-    uint32_t ui32RetVal = STIMER->STMINTSTAT;
-
     if ( bEnabledOnly )
     {
-        ui32RetVal &= STIMER->STMINTEN;
-    }
+        uint32_t ui32RetVal;
 
-    return ui32RetVal;
+        //
+        // Start a critical section
+        //
+        AM_CRITICAL_BEGIN
+
+
+        ui32RetVal = STIMER->STMINTSTAT;
+        ui32RetVal &= STIMER->STMINTEN;
+
+        //
+        // End the critical section
+        //
+        AM_CRITICAL_END
+
+        return ui32RetVal;
+    }
+    else
+    {
+        return STIMER->STMINTSTAT;
+    }
 }
 
 //*****************************************************************************

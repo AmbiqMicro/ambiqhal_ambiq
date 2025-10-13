@@ -2,9 +2,9 @@
 //
 //! @file am_util_pp.h
 //!
-//! @brief Functions to aid power profiling and debugging
+//! @brief Pin Programming Utility Functions
 //!
-//! @addtogroup ppf Power Profiling Functionality
+//! @addtogroup pp_utils Pin Programming Utility Functions
 //! @ingroup utils
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

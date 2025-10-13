@@ -26,9 +26,6 @@
 // contributors may be used to endorse or promote products derived from this
 // software without specific prior written permission.
 //
-// Third party software included in this distribution is subject to the
-// additional license terms as defined in the /docs/licenses directory.
-//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -41,7 +38,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 //! @cond SYSCTRL_TON_CONFIG
@@ -70,11 +67,12 @@ typedef enum
     SYSCTRL_TON_LEVEL_NA = 0,
     SYSCTRL_TON_LEVEL_LOW,
     SYSCTRL_TON_LEVEL_HIGH,
-} am_hal_sysctrl_ton_levels_t;
+}
+am_hal_sysctrl_ton_levels_t;
 
 //*****************************************************************************
 //
-//! Definition of CPU/GPU Power State enumeration for SIMOBUCK TON control
+//! Definition of GPU Power State enumeration for SIMOBUCK TON control
 //
 //*****************************************************************************
 typedef enum
@@ -83,15 +81,22 @@ typedef enum
     SYSCTRL_GPU_TON_POWER_STATE_LP,
     SYSCTRL_GPU_TON_POWER_STATE_HP,
     SYSCTRL_GPU_TON_POWER_STATE_MAX,
-} am_hal_sysctrl_gpu_ton_power_state;
+}
+am_hal_sysctrl_gpu_ton_power_state;
 
+//*****************************************************************************
+//
+//! Definition of CPU Power State enumeration for SIMOBUCK TON control
+//
+//*****************************************************************************
 typedef enum
 {
     SYSCTRL_CPU_TON_POWER_STATE_OFF = 0,
     SYSCTRL_CPU_TON_POWER_STATE_LP,
     SYSCTRL_CPU_TON_POWER_STATE_HP,
     SYSCTRL_CPU_TON_POWER_STATE_MAX,
-} am_hal_sysctrl_cpu_ton_power_state;
+}
+am_hal_sysctrl_cpu_ton_power_state;
 
 #ifdef __cplusplus
 }

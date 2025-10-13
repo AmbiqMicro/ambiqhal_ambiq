@@ -2,14 +2,47 @@
 //
 //! @file am_util_id.c
 //!
-//! @brief Identification of the Ambiq Micro device.
+//! @brief Device Identification Utility Functions
 //!
-//! This module contains functions for run time identification of Ambiq Micro
-//! devices.
-//!
-//! @addtogroup id ID - Identification
+//! @addtogroup id_utils ID Utility Functions
 //! @ingroup utils
 //! @{
+//!
+//! Purpose: This module provides device identification utilities for
+//!          Ambiq Micro devices. It enables chip ID reading, version
+//!          identification, and feature detection for system configuration
+//!          and compatibility checking. The utilities support detailed
+//!          device information retrieval and verification.
+//!
+//! @section utils_id_features Key Features
+//!
+//! 1. @b Chip @b ID: Device identification capabilities.
+//! 2. @b Version @b Check: Silicon revision detection.
+//! 3. @b Feature @b Detection: Available feature identification.
+//! 4. @b Compatibility: System compatibility checking.
+//! 5. @b Security @b Info: Device security status retrieval.
+//!
+//! @section utils_id_functionality Functionality
+//!
+//! - Read device identification
+//! - Check silicon revisions
+//! - Detect available features
+//! - Verify system compatibility
+//! - Access security information
+//!
+//! @section utils_id_usage Usage
+//!
+//! 1. Get device ID with am_util_id_device()
+//! 2. Check silicon revision
+//! 3. Verify feature availability
+//! 4. Validate compatibility
+//!
+//! @section utils_id_configuration Configuration
+//!
+//! - Define ID check parameters
+//! - Configure feature detection
+//! - Set compatibility requirements
+//! - Enable security checks
 //
 //*****************************************************************************
 
@@ -44,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -183,6 +216,7 @@ am_util_id_device(am_util_id_t *psIDDevice)
     //
     ui32PN = psIDDevice->sMcuCtrlDevice.ui32ChipPN  &
              AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_PN_M;
+
 #if !defined(AM_ID_APOLLO) && !defined(AM_ID_APOLLO2)
     ui32ChipRev = psIDDevice->sMcuCtrlDevice.ui32ChipRev;
 #endif

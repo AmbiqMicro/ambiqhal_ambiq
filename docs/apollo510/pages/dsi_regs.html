@@ -25,7 +25,7 @@
                             <img alt="Logo" src="../resources/am_logo.png" />
                         </td>
                         <td style="padding-left: 0.5em;">
-                            <div id="projectname">Apollo510  Register Documentation &#160;<span id="projectnumber">release_sdk5p0p0-5f68a8286b</span></div>
+                            <div id="projectname">Apollo510  Register Documentation &#160;<span id="projectnumber">release_sdk5p1p0-7063330c5e</span></div>
                         </td>
                     </tr>
                 </tbody>
@@ -262,7 +262,7 @@
                         </td>
                         <td class="entry">
                             <span style="width:32px;display:inline-block;">&#160;</span>
-                            <a class="el" href="#PLLLOCKCNT" target="_self">PLLLOCKCNT - Arasan DPHY register</a>
+                            <a class="el" href="#PLLLOCKCNT" target="_self">PLLLOCKCNT - PLL lock count register</a>
                         </td>
                     </tr>
 
@@ -890,7 +890,7 @@
                             <td>15</td>
                             <td>TXCHECKSUM</td>
                             <td>RW</td>
-                            <td>(RW1C) Txchecksum error; Set to 1 if the computed CRC differs from the received CRC value during the reception of packets by Arasan_DSI host<br><br>
+                            <td>(RW1C) Txchecksum error; Set to 1 if the computed CRC differs from the received CRC value during the reception of packets by DSI host<br><br>
                                 </td>
                         </tr>
 
@@ -898,7 +898,7 @@
                             <td>14</td>
                             <td>TXECCM</td>
                             <td>RW</td>
-                            <td>(RW1C) Set to 1 if there is no ECC correction for the packet or there are more than 2 bit errors in the packet received by Arasan_DSI_host.<br><br>
+                            <td>(RW1C) Set to 1 if there is no ECC correction for the packet or there are more than 2 bit errors in the packet received by DSI_host.<br><br>
                                 </td>
                         </tr>
 
@@ -906,7 +906,7 @@
                             <td>13</td>
                             <td>TXECCS</td>
                             <td>RW</td>
-                            <td>(RW1C) Set to 1 if ECC syndrome was computed and is corrected for one bit error during the reception of packets by the Arasan_DSI_host.<br><br>
+                            <td>(RW1C) Set to 1 if ECC syndrome was computed and is corrected for one bit error during the reception of packets by the DSI_host.<br><br>
                                 </td>
                         </tr>
 
@@ -914,7 +914,7 @@
                             <td>12</td>
                             <td>TXFALSECNTRL</td>
                             <td>RW</td>
-                            <td>(RW1C) TxFalse Control Error; Set to 1 if a control error is observed on the lanes by the Arasan_DSI_host<br><br>
+                            <td>(RW1C) TxFalse Control Error; Set to 1 if a control error is observed on the lanes by the DSI_host<br><br>
                                 </td>
                         </tr>
 
@@ -1332,7 +1332,7 @@
                             <td>14</td>
                             <td>TxECCM</td>
                             <td>RW</td>
-                            <td>TxECC multibit; Set to enable the interrupt if there is no ECC correction for the packet or there are more than 2 bit errors in the packet received by Arasan DSI host<br><br>
+                            <td>TxECC multibit; Set to enable the interrupt if there is no ECC correction for the packet or there are more than 2 bit errors in the packet received by DSI host<br><br>
                                 </td>
                         </tr>
 
@@ -1340,7 +1340,7 @@
                             <td>13</td>
                             <td>TxECCS</td>
                             <td>RW</td>
-                            <td>TxECC single bit; Set to enable the interrupt if ECC syndrome was computed and is corrected for one bit error during the reception of packets by the Arasan DSI Host<br><br>
+                            <td>TxECC single bit; Set to enable the interrupt if ECC syndrome was computed and is corrected for one bit error during the reception of packets by the DSI Host<br><br>
                                 </td>
                         </tr>
 
@@ -1348,7 +1348,7 @@
                             <td>12</td>
                             <td>TxFalseCntrl</td>
                             <td>RW</td>
-                            <td>TxFalse Control; Set to enable the interrupt for the control error observed on the lanes by the Arasan_DSI_host<br><br>
+                            <td>TxFalse Control; Set to enable the interrupt for the control error observed on the lanes by the DSI_host<br><br>
                                 </td>
                         </tr>
 
@@ -3111,7 +3111,7 @@
 
         <div class="panel panel-default">
             <div class="panel-heading">
-                <h3 id="PLLLOCKCNT" class="panel-title">PLLLOCKCNT - Arasan DPHY register</h3>
+                <h3 id="PLLLOCKCNT" class="panel-title">PLLLOCKCNT - PLL lock count register</h3>
             </div>
             <div class="panel-body">
                 <h3>Address:</h3>

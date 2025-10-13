@@ -4,10 +4,10 @@
 //!
 //! @brief Functions for accessing and configuring MCU specific HAL modules
 //!
-//! @addtogroup mcu MCU Hal Modules
+//! @addtogroup mcu_ap510 MCU Hal Modules
 //! @ingroup apollo510_hal
 //! @{
-
+//
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

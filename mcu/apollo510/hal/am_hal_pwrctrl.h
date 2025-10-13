@@ -4,10 +4,10 @@
 //!
 //! @brief Functions for enabling and disabling power domains.
 //!
-//! @addtogroup pwrctrl4 PWRCTRL - Power Control
+//! @addtogroup pwrctrl4_ap510 PWRCTRL - Power Control
 //! @ingroup apollo510_hal
 //! @{
-
+//
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -52,18 +52,6 @@
 extern "C"
 {
 #endif
-
-//*****************************************************************************
-//
-//! @name Delays (in uS) required for VDDF/VDDC trim enhancements.
-//! @{
-//
-//*****************************************************************************
-#define AM_HAL_PWRCTRL_VDDF_BOOST_DELAY     20
-#define AM_HAL_PWRCTRL_MEMLDO_BOOST_DELAY   20
-#define AM_HAL_PWRCTRL_VDDC_BOOST_DELAY     20
-#define AM_HAL_PWRCTRL_GOTOLDO_DELAY        20
-//! @}
 
 //*****************************************************************************
 //
@@ -82,29 +70,6 @@ extern "C"
 #error Apollo510 requires AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL.
 #endif
 
-//*****************************************************************************
-//
-//! Option to assist VDDC by activating LDOs when disabling SIMOBUCK.
-//!  AM_HAL_PWRCTRL_LDOS_FOR_VDDC
-//!      0 = Do not assist VDDC.
-//!      1 = Activate LDOs in parallel when disabling SIMOBUCK.
-//!  Default: 1
-//
-//*****************************************************************************
-#define AM_HAL_PWRCTRL_LDOS_FOR_VDDC                    0
-#if ( (AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL == 0) && (AM_HAL_PWRCTRL_LDOS_FOR_VDDC != 0) )
-#warning AM_HAL_PWRCTRL_LDOS_FOR_VDDC requires AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL.
-#endif
-
-//*****************************************************************************
-//
-//! Option to connect MCU core to VDDC_LV for increased power efficiency. Ambiq
-//! recommends this option be enabled for all new applications
-//
-//
-//! Default: 1 for RevC
-//*****************************************************************************
-#define AM_HAL_PWRCTRL_CORE_PWR_OPTIMAL_EFFICIENCY      0
 
 //*****************************************************************************
 //
@@ -119,9 +84,13 @@ extern "C"
 
 //*****************************************************************************
 //
+//! For PCM2.0 snd previous versions:
 //! If the application wants to suspend tempsensing during deeplseep, it is a
 //! must to set NO_TEMPSENSE_IN_DEEPSLEEP to true to restore VDDC and VDDF
 //! settings before deepsleep. This MACRO is set to false by default.
+//!
+//! For PCM2.1 and later versions:
+//! NO_TEMPSENSE_IN_DEEPSLEEP must be set to false.
 //
 //*****************************************************************************
 #define NO_TEMPSENSE_IN_DEEPSLEEP                       false
@@ -136,23 +105,27 @@ extern "C"
 //*****************************************************************************
 //*****************************************************************************
 //
-//! Enable VDDC TempCo
+//! Enable VDDC TempCo. This MACRO only applies to PCM2.0 and PCM1.1 and PCM1.0.
 //! VDDC Tempco was found to created elevated current under room temperature,
-//! and hence is disabled by default currently.
+//! and hence is disabled by default currently. We do not recommend customers
+//! changing the default settings of AM_HAL_ENABLE_TEMPCO_VDDC.
 //
 //*****************************************************************************
 #define AM_HAL_ENABLE_TEMPCO_VDDC                       false
 
 //*****************************************************************************
 //
-//! Enable VDDD TempCo
+//! Enable VDDD TempCo. This MACRO only applies to PCM2.0 and PCM1.1 and PCM1.0.
+//! We do not recommend customers changing the default settings of
+//! AM_HAL_ENABLE_TEMPCO_VDDF.
 //
 //*****************************************************************************
 #define AM_HAL_ENABLE_TEMPCO_VDDF                       true
 
 //*****************************************************************************
 //
-//! Compile switch for boosting VDDF for SDIO, it is false by default
+//! Compile switch for boosting VDDF for SDIO, it is false by default.
+//! SDIO boost only applies to PCM1.0 and PCM1.1 and PCM2.0 unscreened parts.
 //
 //*****************************************************************************
 #define BOOST_VDDF_FOR_SDIO                             false
@@ -178,6 +151,11 @@ extern "C"
 //! error.
 //
 #define AM_HAL_PWRCTRL_PERF_SWITCH_WAIT_US  20
+
+//
+//! Maximum time to wait for the simobuck to stabilize.
+//
+#define AM_HAL_PWRCTRL_MAX_WAIT_SIMOBUCK_ACT_US     (100)
 
 //
 //! When waking up from deepsleep to HP mode, CPU will wake up even if not operating on HP mode
@@ -226,6 +204,7 @@ typedef enum
     AM_HAL_PWRCTRL_MCU_MODE_LOW_POWER        = PWRCTRL_MCUPERFREQ_MCUPERFSTATUS_LP, // 96 MHz
     AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE = PWRCTRL_MCUPERFREQ_MCUPERFSTATUS_HP, // 192 MHz or 250 MHz
 } am_hal_pwrctrl_mcu_mode_e;
+#define AM_HAL_PWRCTRL_MCU_MODE_HPMAX   AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE  // Define for max high performance
 
 //
 //! Peripheral GPU Mode power enum.
@@ -260,8 +239,6 @@ typedef enum
 typedef enum
 {
     AM_HAL_PWRCTRL_PERIPH_IOS0,
-    AM_HAL_PWRCTRL_PERIPH_IOSFD0,
-    AM_HAL_PWRCTRL_PERIPH_IOSFD1,
     AM_HAL_PWRCTRL_PERIPH_IOM0,
     AM_HAL_PWRCTRL_PERIPH_IOM1,
     AM_HAL_PWRCTRL_PERIPH_IOM2,
@@ -289,6 +266,8 @@ typedef enum
     AM_HAL_PWRCTRL_PERIPH_USBPHY,
     AM_HAL_PWRCTRL_PERIPH_DEBUG,
     AM_HAL_PWRCTRL_PERIPH_OTP,
+    AM_HAL_PWRCTRL_PERIPH_IOSFD0,
+    AM_HAL_PWRCTRL_PERIPH_IOSFD1,
     AM_HAL_PWRCTRL_PERIPH_PDM0,
     AM_HAL_PWRCTRL_PERIPH_I2S0,
     AM_HAL_PWRCTRL_PERIPH_I2S1,
@@ -655,6 +634,7 @@ extern const am_hal_pwrctrl_sram_memcfg_t            g_DefaultSRAMCfg;
 // ****************************************************************************
 extern bool     g_bOrigTrimsStored;
 extern uint32_t g_ui32TrimVer;
+extern uint32_t g_ui32MinorTrimVer;
 extern am_hal_pwrctrl_mcu_mode_e g_eCurMcuPwrMode;
 extern am_hal_pwrctrl_gpu_mode_e g_eCurGpuPwrMode;
 //! @}
@@ -882,12 +862,44 @@ extern uint32_t am_hal_pwrctrl_control(am_hal_pwrctrl_control_e eControl, void *
 
 //*****************************************************************************
 //
-//! @brief Restore original Power settings
+//! @brief Restore original Power state
 //!
-//! This function restores default power trims reverting relative
-//! changes done as part of low_power_init and SIMOBUCK init.
-//! User needs to make sure device is running in Low Power mode before calling
-//! this function.
+//! This function no longer restores MCU to its boot state; instead, it prepares
+//! MCU for the next image to start in the correct state.
+//!
+//! For PCM2.1 and later versions,
+//! this function switches MCU to power state 20 (safe power state).
+//!
+//! For PCM2.2 and later versions,
+//! this function switches MCU to default power state 7.
+//!
+//! For PCM2.0 and previous versions,
+//! this function only checks CPU and GPU status.
+//!
+//! Important:
+//!
+//! - For PCM2.1 and later trim versions, this function must be called before
+//!   transition to a new application, such as the case of a secondary bootloader
+//!   transitioning to an application. Before calling this function, users
+//!   should switch CPU to LP if it is in HP mode, and turn off GPU if it was
+//!   turned on, turn off SDIO if it was turned on.
+//!
+//! - For PCM2.0 and previous versions, it is not a must to call this function.
+//!   But users should guarantee the following:
+//!     1. GPU and SDIO are never turned on and am_hal_pwrctrl_temp_update is
+//!        never called, if am_bsp_low_power_init is called in customers bootloader.
+//!     2. If deepsleep is called in bootloader,
+//!        am_hal_sysctrl_force_buck_active_in_deepsleep(true) should be called
+//!        before calling deepsleep.
+//!
+//! - For all trim versions,
+//!   before calling this function, in order to release all clocks when exiting
+//!   second boot loader, we suggest users to disable peripherals which are used
+//!   in second bootloader and already requested clocks through clkmgr. Users
+//!   should disable peripherals by calling the separated API for peripheral
+//!   disable/deinit/powerdown, but not by writing to the power enable registers
+//!   directly. This function must be called before leaving the current image
+//!   regardless of whether MCU is running at LDO mode or SIMOBUCK mode.
 //!
 //! @return AM_HAL_STATUS_SUCCESS or applicable PWRCTRL errors
 //
@@ -919,7 +931,8 @@ extern void am_hal_pwrctrl_pwrmodctl_cpdlp_get(am_hal_pwrctrl_pwrmodctl_cpdlp_t 
 
 // ****************************************************************************
 //
-//! @brief A function for temperature compensation for power.
+//! @brief A function for temperature compensation for power. Active temperature
+//!        sensing is needed for PCM 1.0 onwards.
 //!
 //! @param fCurTemp     - Current temperature in Celsius.
 //! @param psTempThresh - This API returns this structure for notifying of thresholds

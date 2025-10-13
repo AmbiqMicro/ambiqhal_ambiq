@@ -2,13 +2,9 @@
 //
 //! @file am_util_debug.h
 //!
-//! @brief Useful functions for debugging.
+//! @brief Debug and Diagnostic Utility Functions
 //!
-//! These functions and macros were created to assist with debugging. They are
-//! intended to be as unintrusive as possible and designed to be removed from
-//! the compilation of a project when they are no longer needed.
-//!
-//! @addtogroup debug Debug Utility
+//! @addtogroup debug_utils Debug Utility Functions
 //! @ingroup utils
 //! @{
 //
@@ -45,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_DEBUG_H

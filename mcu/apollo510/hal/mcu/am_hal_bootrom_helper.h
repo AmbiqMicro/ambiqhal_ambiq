@@ -4,7 +4,7 @@
 //!
 //! @brief BootROM Helper Function Table
 //!
-//! @addtogroup bootrom4 Bootrom Functionality
+//! @addtogroup bootrom4_ap510 Bootrom Functionality
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_BOOTROM_HELPER_H
@@ -112,74 +112,63 @@ typedef struct am_hal_bootrom_helper_struct
 //*****************************************************************************
 extern const am_hal_bootrom_helper_t g_am_hal_bootrom_helper;
 
-/******************************************************************************
- *
- * @brief entry point for programming the INFO0(customer) block NVRAM
- *
- * Calling this function programs multiple words in the INFO0 block on one nv instance
- *
- * @param value         customer info key
- * @param pSrc          pointer to word aligned array of data to program into the NV INFO block
- * @param Offset        word offset in to info block (0x01 means the second 32 bit word)
- *                      NOTE Offset == 0 --> first word in INFO0.
- * @param NumberOfWords number of words to program
- *
- * @return       0 for success, non-zero for failure
- *               1 Invalid Key
- *               2 Invalid destination start address
- *               3 Invalid destination end address
- *               4 Invalid source buffer start address
- *               5 Invalid source buffer end address
- *               6 Hardware error
- *               7 Reserved
- *               8 Hardware error
- *               9 OTP interrupts detected
- *              10 Memory not powered on
- *              11 Area is write protected
- *              12 Area is copy protected
- *              13 Internal error
- *
- *****************************************************************************/
-int
-nv_program_info_area(uint32_t  value,
+//*****************************************************************************
+//
+//! @brief Program INFO0 (customer) block NVRAM.
+//!
+//! @param value - Customer info key.
+//! @param pSrc - Pointer to word-aligned array of data to program.
+//! @param Offset - Word offset into info block (0x01 means second 32-bit word).
+//! @param NumberOfWords - Number of words to program.
+//!
+//! @return       0 for success, non-zero for failure<br>
+//!               1 Invalid Key<br>
+//!               2 Invalid destination start address<br>
+//!               3 Invalid destination end address<br>
+//!               4 Invalid source buffer start address<br>
+//!               5 Invalid source buffer end address<br>
+//!               6 Hardware error<br>
+//!               7 Reserved<br>
+//!               8 Hardware error<br>
+//!               9 OTP interrupts detected<br>
+//!              10 Memory not powered on<br>
+//!              11 Area is write protected<br>
+//!              12 Area is copy protected<br>
+//!              13 Internal error<br>
+//
+//*****************************************************************************
+extern int nv_program_info_area(uint32_t  value,
                      uint32_t *pSrc,
                      uint32_t  Offset,
                      uint32_t  NumberOfWords);
 
-/******************************************************************************
- *
- * @brief Enhanced version of nv_program_main which passes through more of
- * the features of nv_program.
- *
- * Calling this function programs up to N words of the MAIN block of NVRAM
- *
- * @param value         customer program key
- * @param Program_nWipe boolean option: 1 = Addr_WipeData is the source address (pointer)
- *                                          (pSrc can not point back in to NVRAM itself)
- *                                      0 = Addr_WipeData is data word to write repeatedly during wipe
- * @param Addr_WipeData if Program_nWipe is 0, then single word value to write repeatedly to NVRAM
- *                      if Program_nWipe is 1, then 32-bit start byte address of region to write to NVRAM
- * @param WordOffset    word offset from the start of NVRAM to program
- * @param NumberOfWords number of 32-bit words to program
- *
- * @return       0 for success, non-zero for failure
- *               1 Invalid Key
- *               2 Invalid destination start address
- *               3 Invalid destination end address
- *               4 Invalid source buffer start address
- *               5 Invalid source buffer end address
- *               6 Hardware error
- *               7 Reserved
- *               8 Hardware error
- *               9 OTP interrupts detected
- *              10 Memory not powered on
- *              11 Area is write protected
- *              12 Area is copy protected
- *              13 Internal error
- *
- *****************************************************************************/
-int
-nv_program_main2(uint32_t  value,
+//*****************************************************************************
+//
+//! @brief Program main NVRAM area.
+//!
+//! @param value - Programming value.
+//! @param Program_nWipe - Program or wipe flag.
+//! @param Addr_WipeData - Address for wipe data.
+//! @param WordOffset - Word offset in the area.
+//! @param NumberOfWords - Number of words to program.
+//!
+//! @return       0 for success, non-zero for failure<br>
+//!               1 Invalid Key<br>
+//!               2 Invalid destination start address<br>
+//!               3 Invalid destination end address<br>
+//!               4 Invalid source buffer start address<br>
+//!               5 Invalid source buffer end address<br>
+//!               6 Hardware error<br>
+//!               7 Reserved<br>
+//!               8 Hardware error<br>
+//!               9 OTP interrupts detected<br>
+//!              10 Memory not powered on<br>
+//!              11 Area is write protected<br>
+//!              12 Area is copy protected<br>
+//!              13 Internal error<br>
+//
+//*****************************************************************************
+extern int nv_program_main2(uint32_t  value,
                  uint32_t  Program_nWipe,
                  uint32_t  Addr_WipeData,
                  uint32_t  WordOffset,

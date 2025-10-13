@@ -4,10 +4,10 @@
 //!
 //! @brief Functions for interfacing with IO Master serial (SPI/I2C) modules.
 //!
-//! @addtogroup iom4 IOM - IO Master (SPI/I2C)
+//! @addtogroup iom4_ap510 IOM - IO Master (SPI/I2C)
 //! @ingroup apollo510_hal
 //! @{
-
+//
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -127,6 +127,20 @@ typedef enum
     AM_HAL_IOM_ERR_I2C_NAK,
 } am_hal_iom_err_e;
 
+
+
+typedef enum
+{
+    AM_HAL_IOM_PREFER_SYMMETRICAL_DC  = 0,  //!< Prefer 50% duty cycle if available; otherwise fall back to best frequency match
+    AM_HAL_IOM_BALANCED_SELECTION     = 1,  //!< Minimize total score: freq error + duty cycle deviation
+    AM_HAL_IOM_PREFER_FREQ_MATCH      = 2,  //!< Prioritize frequency accuracy; tolerate non-50% duty
+    AM_HAL_IOM_FORCE_SYMMETRICAL_DC   = 3,  //!< Must generate exactly 50% duty cycle (TOTPER must be odd when divEN is true)
+    AM_HAL_IOM_CLOCK_SEL_PRIO_MAX,
+
+}
+am_hal_iom_clock_sel_priority_e;
+
+
 //*****************************************************************************
 //
 //! @name General defines
@@ -201,28 +215,36 @@ typedef void (*am_hal_iom_callback_t)(void *pCallbackCtxt, uint32_t transactionS
 //*****************************************************************************
 typedef struct
 {
-  //
-  //! Select the interface mode, SPI or I2C
-  //
-  am_hal_iom_mode_e eInterfaceMode;
 
-  //
-  //! Select the interface clock frequency
-  //
-  uint32_t ui32ClockFreq;
+    //
+    //! Select the interface clock frequency
+    //
+    uint32_t ui32ClockFreq;
 
-  //
-  //! Select the SPI clock mode (polarity/phase). Ignored for I2C operation.
-  //
-  am_hal_iom_spi_mode_e eSpiMode;
 
-  //
-  //! Non-Blocking transaction memory configuration
-  //! Set length and pointer to Transfer Control Buffer.
-  //! Length is in 4 byte multiples
-  //
-  uint32_t *pNBTxnBuf;
-  uint32_t ui32NBTxnBufLength;
+    //
+    //! Non-Blocking transaction memory configuration
+    //! Set length and pointer to Transfer Control Buffer.
+    //! Length is in 4 byte multiples
+    //
+    uint32_t *pNBTxnBuf;
+    uint32_t ui32NBTxnBufLength;
+
+    //
+    //! Select the interface mode, SPI or I2C
+    //
+    am_hal_iom_mode_e eInterfaceMode;
+    //
+    //! Select the SPI clock mode (polarity/phase). Ignored for I2C operation.
+    //
+    am_hal_iom_spi_mode_e eSpiMode;
+
+    //
+    //! Clock computation priority/preference
+    //
+    am_hal_iom_clock_sel_priority_e    eClockSelPriority;
+
+    uint8_t align;
 }
 am_hal_iom_config_t;
 

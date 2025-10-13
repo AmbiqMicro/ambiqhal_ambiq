@@ -2,12 +2,47 @@
 //
 //! @file am_hal_card_host.c
 //!
-//! @brief Functions for interfacing with the SDHC or SPI SD/MMC/SDIO card host.
+//! @brief Functions for interfacing with the SDHC or SPI SD/MMC/eMMC/SDIO card host.
 //!
-//! @addtogroup card_host Card Host for SD/MMC/eMMC/SDIO
+//! @addtogroup card_host_ap510 Card Host for SD/MMC/eMMC/SDIO
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for interfacing with the SDHC or SPI
+//!          SD/MMC/SDIO card host on Apollo5 devices. It supports card host
+//!          initialization, power management, command execution, and host
+//!          configuration for SD/MMC/eMMC/SDIO card operations.
+//!
+//! @section hal_card_host_features Key Features
+//!
+//! 1. @b SDHC @b Host: SD Host Controller interface support.
+//! 2. @b SPI @b Host: SPI-based card host interface.
+//! 3. @b Power @b Management: Card host power control and management.
+//! 4. @b Command @b Execution: Host command execution and response handling.
+//! 5. @b Multi-Card: Support for SD, MMC, eMMC, and SDIO card types.
+//!
+//! @section hal_card_host_functionality Functionality
+//!
+//! - Initialize and configure card host interfaces
+//! - Handle card host power management
+//! - Execute host commands and handle responses
+//! - Support multiple card host types (SDHC/SPI)
+//! - Manage card host capabilities and configuration
+//!
+//! @section hal_card_host_usage Usage
+//!
+//! 1. Initialize card host using am_hal_get_card_host()
+//! 2. Configure host parameters and capabilities
+//! 3. Execute host commands as needed
+//! 4. Manage host power states
+//! 5. Handle host events and responses
+//!
+//! @section hal_card_host_configuration Configuration
+//!
+//! - @b Host @b Type: Configure SDHC or SPI host interface
+//! - @b Power @b Management: Set up host power control parameters
+//! - @b Command @b Interface: Configure command execution interface
+//! - @b Multi-Card: Set up support for different card types
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -63,9 +98,12 @@
 
 //*****************************************************************************
 //
-// Initialize the SDHC as a Host
-// Sets up the power, clock, and capabilities
-//
+//! @brief Initialize SDHC host interface.
+//!
+//! @param pHost - Pointer to card host structure.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 static uint32_t am_hal_sdhc_host_init(am_hal_card_host_t *pHost)
 {
@@ -123,9 +161,12 @@ static uint32_t am_hal_sdhc_host_init(am_hal_card_host_t *pHost)
 
 //*****************************************************************************
 //
-// Denitializes the SDHC as a Host
-// Disables the SDHC and power capabilities
-//
+//! @brief Deinitialize SDHC host interface.
+//!
+//! @param pHandle - Host handle.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 static uint32_t am_hal_sdhc_host_deinit(void *pHandle)
 {
@@ -149,8 +190,14 @@ static uint32_t am_hal_sdhc_host_deinit(void *pHandle)
 
 //*****************************************************************************
 //
-// A wrapper for the retries of the am_hal_sdhc_execute_cmd function
-//
+//! @brief Execute command on SDHC host.
+//!
+//! @param pHandle - Host handle.
+//! @param pCmd - Pointer to command structure.
+//! @param pCmdData - Pointer to command data structure.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 static uint32_t am_hal_sdhc_host_execute_cmd(void *pHandle, am_hal_card_cmd_t *pCmd, am_hal_card_cmd_data_t *pCmdData)
 {
@@ -173,8 +220,13 @@ static uint32_t am_hal_sdhc_host_execute_cmd(void *pHandle, am_hal_card_cmd_t *p
 
 //*****************************************************************************
 //
-// A wrapper for the am_hal_sdhc_power_control function
-//
+//! @brief Control card host power state.
+//!
+//! @param pHandle - Host handle.
+//! @param bOnOff - True to power on, false to power off.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
+//!
 //*****************************************************************************
 static uint32_t am_hal_card_host_power_control(void *pHandle, bool bOnOff)
 {
@@ -229,11 +281,14 @@ static am_hal_card_host_t *g_CardHosts[AM_HAL_CARD_HOST_NUM] =
 // Public functions
 //
 
+//*****************************************************************************
 //
 // Initialize the card host instance and return it if it can be initialized
 // successfully.
 //
-am_hal_card_host_t *am_hal_get_card_host(am_hal_host_inst_index_e eIndex, bool bReInit)
+//*****************************************************************************
+am_hal_card_host_t*
+am_hal_get_card_host(am_hal_host_inst_index_e eIndex, bool bReInit)
 {
     am_hal_card_host_t *pHost;
 
@@ -264,16 +319,25 @@ am_hal_card_host_t *am_hal_get_card_host(am_hal_host_inst_index_e eIndex, bool b
     return pHost;
 }
 
+//*****************************************************************************
 //
-// Set the default transfer mode of the SDHC host controller. if command's transfer type is not
-// specified, it will be used.
+// Set the default transfer mode of the SDHC host controller. if command's
+// transfer type is not specified, it will be used.
 //
-void am_hal_card_host_set_xfer_mode(am_hal_card_host_t *pHost, am_hal_host_xfer_mode_e eXferMode)
+//*****************************************************************************
+void
+am_hal_card_host_set_xfer_mode(am_hal_card_host_t *pHost, am_hal_host_xfer_mode_e eXferMode)
 {
     pHost->eXferMode = eXferMode;
 }
 
-void am_hal_card_host_set_txrx_delay(am_hal_card_host_t *pHost, uint8_t ui8TxRxDelays[2])
+//*****************************************************************************
+//
+// Set the T/R delay of the SDHC host controller.
+//
+//*****************************************************************************
+void
+am_hal_card_host_set_txrx_delay(am_hal_card_host_t *pHost, uint8_t ui8TxRxDelays[2])
 {
     if (pHost != NULL && pHost->bInited && pHost->ops->set_txrx_delay)
     {

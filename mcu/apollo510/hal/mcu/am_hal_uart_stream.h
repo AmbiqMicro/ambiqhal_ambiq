@@ -4,7 +4,7 @@
 //!
 //! @brief UART streaming mode Hardware abstraction
 //!
-//! @addtogroup uart_stream UART Stream Functionality
+//! @addtogroup uart_stream_ap510 UART Stream Functionality
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_UART_STREAM_H
@@ -50,7 +50,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "am_mcu_apollo.h"
-
 
 #ifdef __cplusplus
 extern "C"
@@ -63,6 +62,9 @@ extern "C"
 //
 //*****************************************************************************
 #define UARTn(n)    ((UART0_Type*)(UART0_BASE + (n * (UART1_BASE - UART0_BASE))))
+
+#define AM_HAL_UART_FIFO_MAX 32
+
 
 //
 //! Contains computed values from uart config.
@@ -111,15 +113,14 @@ am_hal_uart_streaming_dma_mode_e;
 typedef enum
 {
     AM_HAL_UART_STREAM_STATUS_SUCCESS            = 0,
-    AM_HAL_UART_STREAM_STATUS_RX_QUEUE_FULL      = 0x0001,
-    AM_HAL_UART_STREAM_STATUS_RX_DATA_AVAIL      = 0x0002,
-    AM_HAL_UART_STREAM_STATUS_TX_QUEUE_FULL      = 0x0004,
-    AM_HAL_UART_STREAM_STATUS_TX_COMPLETE        = 0x0008,
-    AM_HAL_UART_STREAM_STATUS_TX_BUSY            = 0x0010,
-    AM_HAL_UART_STREAM_STATUS_TX_DMA_BUSY        = 0x0020,
-    AM_HAL_UART_STREAM_STATUS_TX_DMA_COMPLETE    = 0x0020,
-    AM_HAL_UART_STREAM_STATUS_DMA_ERROR          = 0x0040,
-    AM_HAL_UART_STREAM_STATUS_INTERNAL_DMA_ERROR = 0x0080,
+    AM_HAL_UART_STREAM_STATUS_RX_QUEUE_FULL      = 0x000001,
+    AM_HAL_UART_STREAM_STATUS_RX_DATA_AVAIL      = 0x000002,
+    AM_HAL_UART_STREAM_STATUS_TX_QUEUE_FULL      = 0x000004,
+    AM_HAL_UART_STREAM_STATUS_TX_COMPLETE        = 0x000008,
+    AM_HAL_UART_STREAM_STATUS_TX_BUSY            = 0x000010,
+    AM_HAL_UART_STREAM_STATUS_TX_DMA_BUSY        = 0x000020,
+    AM_HAL_UART_STREAM_STATUS_TX_DMA_COMPLETE    = 0x000040,
+    AM_HAL_UART_STREAM_STATUS_DMA_ERROR          = 0x000080,
     AM_HAL_UART_STREAM_STATUS_FRM_ERROR          = UART0_DR_FEDATA_Msk,  // 0x0100 <-> 0x0800 are reserved for hardware outputs
     AM_HAL_UART_STREAM_STATUS_PRTY_ERROR         = UART0_DR_PEDATA_Msk,
     AM_HAL_UART_STREAM_STATUS_BRK_ERROR          = UART0_DR_BEDATA_Msk,
@@ -128,14 +129,15 @@ typedef enum
                                                    | AM_HAL_UART_STREAM_STATUS_OVRN_ERROR
                                                    | AM_HAL_UART_STREAM_STATUS_PRTY_ERROR
                                                    | AM_HAL_UART_STREAM_STATUS_BRK_ERROR),
-    AM_HAL_UART_RX_DMA_ERROR                     = 0x01000,
-    AM_HAL_UART_RX_DMA_COMPLETE                  = 0x02000,
-    AM_HAL_UART_RX_DMA_BUSY                      = 0x04000,
-    AM_HAL_UART_RX_DMA_TIMEOUT                   = 0x08000,
-    AM_HAL_UART_RX_DMA_OVERFLOW                  = 0x10000,
-    AM_HAL_UART_STREAM_DMA_CFG_ERROR             = 0x20000,
-    AM_HAL_UART_STREAM_STATUS_BUSY_WAIT_CMPL     = 0x40000,
-    AM_HAL_UART_INVALID_HANDLE                   = 0x80000,
+    AM_HAL_UART_STREAM_STATUS_INTERNAL_DMA_ERROR = 0x001000,
+    AM_HAL_UART_RX_DMA_ERROR                     = 0x002000,
+    AM_HAL_UART_RX_DMA_COMPLETE                  = 0x004000,
+    AM_HAL_UART_RX_DMA_BUSY                      = 0x008000,
+    AM_HAL_UART_RX_DMA_TIMEOUT                   = 0x010000,
+    AM_HAL_UART_RX_DMA_OVERFLOW                  = 0x020000,
+    AM_HAL_UART_STREAM_DMA_CFG_ERROR             = 0x040000,
+    AM_HAL_UART_STREAM_STATUS_BUSY_WAIT_CMPL     = 0x080000,
+    AM_HAL_UART_INVALID_HANDLE                   = 0x100000,
     AM_HAL_UART_STREAM_STATUS_x32                = 0x7F000000,  // force all compilers to use 32bit
 }
 am_hal_uart_stream_status_t;
@@ -301,6 +303,8 @@ am_hal_uart_stream_rx_config_t;
 //! for DMA transmissions in the streaming functions
 //! This is part of the stream state struct
 //
+
+#define RX_DMA_TIMEOUT_BUFF_SIZE (AM_HAL_UART_FIFO_MAX + 4) //!< Allow for a few bytes to arrive when reading fifo
 typedef struct
 {
     //
@@ -331,6 +335,8 @@ typedef struct
     //
     am_hal_uart_stream_dma_rx_descriptor_entry_t tDescriptor[AM_HAL_DMA_RX_QUEUE_MAX_ENTRIES];
     am_hal_uart_stream_dma_rx_descriptor_entry_t *activeDmaRxDesc;      //!< active dma queue, 0 when no DMA ongoing
+
+    uint8_t rxdmaTimoutFifoBuffer[RX_DMA_TIMEOUT_BUFF_SIZE];          //!< used to save fifo data after rxtime partial buffer timeout
 
     uint32_t                              ui32RxTimeoutmSec;     //!< Specify timeout in milliseconds, reserved
     bool                                  bDmaQueueInited;       //!< true when data in this struct is inited
@@ -392,6 +398,21 @@ typedef struct
     uint8_t align[2];
 }
 am_hal_uart_stream_tx_config_t;
+
+
+//
+//! Used to pass parameters into function am_hal_uart_stream_enable_rxDmaParms
+//
+typedef struct
+{
+    bool bEnableRxDMA;              //!< enable rx DMA
+    bool bClearFifo;                //!< Clear rx fifo before starting DMA
+    bool bEnableRxTimeout;          //!< Enable the RX timeout interrupt
+    bool bForceDmaRestart;          //!< Force DMA to restart if busy
+}
+am_hal_uart_rxdma_params_t;
+
+
 
 //
 //!
@@ -558,6 +579,29 @@ extern am_hal_uart_errors_t am_hal_uart_stream_configure_tx(void *pUartHandle,
 extern am_hal_uart_errors_t am_hal_uart_stream_configure_rx(void *pUartHandle,
                                                           const am_hal_uart_stream_rx_config_t *pRxConfig);
 
+
+//*****************************************************************************
+//
+//! @brief Enables or disables RX DMA streaming for a specified UART module.
+//!
+//! This function configures the RX DMA settings of a UART module to enable or disable
+//! RX DMA streaming.
+//!  It clears the UART FIFO buffer if requested,
+//!  It sets up DMA buffers, and initializes RX DMA if enabled.
+//!
+//! @param pUartHandle Pointer to the UART streaming state structure
+//!                (am_hal_uart_stream_state_t). This structure contains the state
+//!                of the UART streaming and DMA configurations.
+//! @param pRxDmaParams pointer to struct containing configuration info
+//!
+//! @return AM_HAL_UART_STATUS_SUCCESS if the RX DMA is successfully enabled or disabled.
+//!         Other UART-specific error codes (am_hal_uart_errors_t) in case of a failure,
+//!
+//
+//*****************************************************************************
+extern am_hal_uart_errors_t am_hal_uart_stream_enable_rxDmaParms(void *pUartHandle,
+                                                                 const am_hal_uart_rxdma_params_t *pRxDmaParams);
+
 //*****************************************************************************
 //
 //! @brief Enables or disables RX DMA streaming for a specified UART module.
@@ -581,7 +625,8 @@ extern am_hal_uart_errors_t am_hal_uart_stream_configure_rx(void *pUartHandle,
 //
 //*****************************************************************************
  extern am_hal_uart_errors_t  am_hal_uart_stream_enable_rxDma(void *pUartHandle,
-                bool bEnableRxDMA, bool bClearFifo);
+                                                              bool bEnableRxDMA,
+                                                              bool bClearFifo);
 
 //*****************************************************************************
 //

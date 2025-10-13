@@ -4,10 +4,44 @@
 //!
 //! @brief General Purpose Input Output Functionality
 //!
-//! @addtogroup gpio GPIO - General Purpose Input Output
+//! @addtogroup gpio_ap510 GPIO - General Purpose Input Output
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides a comprehensive hardware abstraction layer for
+//! General Purpose Input/Output (GPIO) pins on Apollo5 devices. It enables pin
+//! configuration, state reading/writing, interrupt handling, and various GPIO
+//! modes for flexible digital I/O control.
+//!
+//! @section hal_gpio_features Key Features
+//!
+//! 1. @b Pin @b Configuration: Configure pins as input, output, or special functions.
+//! 2. @b State @b Control: Read and write pin states with various options.
+//! 3. @b Interrupt @b Support: Comprehensive interrupt handling for GPIO events.
+//! 4. @b Function @b Selection: Support for multiple pin functions and modes.
+//! 5. @b Power @b Management: Efficient pin state management for low-power operation.
+//!
+//! @section hal_gpio_functionality Functionality
+//!
+//! - Configure GPIO pins for various modes and functions
+//! - Read and write pin states with different options
+//! - Set up and handle GPIO interrupts
+//! - Manage pin configurations and overrides
+//! - Support for multiple GPIO channels and interrupt sources
+//!
+//! @section hal_gpio_usage Usage
+//!
+//! 1. Configure pins using am_hal_gpio_pinconfig() or related functions
+//! 2. Read/write pin states as needed
+//! 3. Set up interrupts if required
+//! 4. Handle GPIO events in interrupt service routines
+//!
+//! @section hal_gpio_configuration Configuration
+//!
+//! - @b Pin @b Modes: Input, output, tristate, open-drain, disabled
+//! - @b Pull-up/Pull-down: Configure internal pull resistors
+//! - @b Interrupts: Set up interrupt channels and masks
+//! - @b Function @b Selection: Choose pin functions and modes
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +75,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -85,9 +119,14 @@ static void *gpio_pppvIrqArgs[GPIO_NUM_IRQS][32];
 
 //*****************************************************************************
 //
-// Returns the actual function select number that corresponds to the requested
-// feature on the requested pin.
-//
+//! @brief Find the GPIO function select value for a GPIO pin and function.
+//!
+//! @param ui32GpioNum - GPIO pin number.
+//! @param ui32FunctionEnum - Function enum value to find.
+//! @param ui32Fsel - Pointer to store the function select value.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success, AM_HAL_GPIO_PIN_FUNCTION_DOES_NOT_EXIST if not found.
+//!
 //*****************************************************************************
 static uint32_t
 gpio_funcsel_find(uint32_t ui32GpioNum, uint32_t ui32FunctionEnum,
@@ -129,9 +168,17 @@ gpio_funcsel_find(uint32_t ui32GpioNum, uint32_t ui32FunctionEnum,
 }
 
 
+//*****************************************************************************
 //
-// This function computes common GPIO interrupt register offsets.
+//! @brief Compute GPIO interrupt register offsets.
+//!
+//! @param ui32Gpionum - GPIO pin number.
+//! @param pui32RegIdx - Pointer to store register index.
+//! @param pui32Msk - Pointer to store bit mask.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success.
 //
+//*****************************************************************************
 static uint32_t
 gpionum_intreg_index_get(uint32_t ui32Gpionum,
                          uint32_t *pui32RegIdx,
@@ -148,7 +195,6 @@ gpionum_intreg_index_get(uint32_t ui32Gpionum,
 // Return the current configuration of a pin.
 //
 //*****************************************************************************
-
 uint32_t
 am_hal_gpio_pinconfig_get(uint32_t ui32GpioNum, am_hal_gpio_pincfg_t* psGpioCfg)
 {
@@ -214,6 +260,11 @@ g_ui32DSpintbl[((AM_HAL_PIN_VIRTUAL_FIRST - 1) + 32) / 32] =
 };
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
+//*****************************************************************************
+//
+// Configure GPIO pin function
+//
+//*****************************************************************************
 uint32_t
 am_hal_gpio_pinconfig(uint32_t ui32GpioNum, const am_hal_gpio_pincfg_t sGpioCfg)
 {

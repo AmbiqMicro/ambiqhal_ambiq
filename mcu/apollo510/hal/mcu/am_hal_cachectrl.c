@@ -4,10 +4,45 @@
 //!
 //! @brief Functions for interfacing with the CACHE controller.
 //!
-//! @addtogroup cachectrl4 CACHE - Cache Control
+//! @addtogroup cachectrl4_ap510 CACHE - Cache Control
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for interfacing with the Cache
+//!          Controller on Apollo5 devices. It supports instruction and data
+//!          cache control, cache invalidation, power management, and
+//!          prefetch configuration for optimal memory performance.
+//!
+//! @section hal_cachectrl_features Key Features
+//!
+//! 1. @b Instruction @b Cache: Control instruction cache enable/disable.
+//! 2. @b Data @b Cache: Control data cache enable/disable and cleaning.
+//! 3. @b Cache @b Invalidation: Invalidate cache ranges and regions.
+//! 4. @b Power @b Management: Cache power control and management.
+//! 5. @b Prefetch @b Configuration: Configure cache prefetch parameters.
+//!
+//! @section hal_cachectrl_functionality Functionality
+//!
+//! - Enable and disable instruction and data caches
+//! - Invalidate cache ranges and regions
+//! - Clean data cache for memory consistency
+//! - Manage cache power states
+//! - Configure cache prefetch parameters
+//!
+//! @section hal_cachectrl_usage Usage
+//!
+//! 1. Enable caches using am_hal_cachectrl_icache_enable() and am_hal_cachectrl_dcache_enable()
+//! 2. Invalidate caches as needed with am_hal_cachectrl_icache_invalidate()
+//! 3. Clean data cache with am_hal_cachectrl_dcache_clean()
+//! 4. Manage cache power states
+//! 5. Configure prefetch parameters as required
+//!
+//! @section hal_cachectrl_configuration Configuration
+//!
+//! - @b Cache @b Enable: Configure instruction and data cache enable/disable
+//! - @b Invalidation: Set up cache invalidation ranges and parameters
+//! - @b Power @b States: Configure cache power management
+//! - @b Prefetch: Set up cache prefetch configuration
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -60,6 +95,39 @@ am_hal_cachectrl_prefetch_t    g_PrefetchConfig =
     .ui8MaxLookAhead                = 6,
     .ui8MinLookAhead                = 4
 };
+
+//
+// Power up or power down the caches
+//
+uint32_t
+am_hal_cachectrl_caches_power_control(bool bPowerup)
+{
+    if ( bPowerup )
+    {
+        MEMSYSCTL->MSCR |= (uint32_t)(MEMSYSCTL_MSCR_ICACTIVE_Msk | MEMSYSCTL_MSCR_DCACTIVE_Msk);
+    }
+    else
+    {
+        //
+        // Check whether caches were disabled, if not, return error.
+        //
+        if ((SCB->CCR & SCB_CCR_IC_Msk) || (SCB->CCR & SCB_CCR_DC_Msk))
+        {
+            return AM_HAL_STATUS_FAIL;
+        }
+
+        //
+        // Check whether CPDLPSTATE.RLPSTATE was set to OFF state(0b11), if not, return error.
+        //
+        if ((PWRMODCTL->CPDLPSTATE & PWRMODCTL_CPDLPSTATE_RLPSTATE_Msk) != PWRMODCTL_CPDLPSTATE_RLPSTATE_Msk)
+        {
+            return AM_HAL_STATUS_FAIL;
+        }
+        MEMSYSCTL->MSCR &= ~(uint32_t)(MEMSYSCTL_MSCR_ICACTIVE_Msk | MEMSYSCTL_MSCR_DCACTIVE_Msk);
+    }
+
+    return AM_HAL_STATUS_SUCCESS;
+}
 
 //Enable the Instruction cache for operation.
 uint32_t

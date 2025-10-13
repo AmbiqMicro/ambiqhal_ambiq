@@ -5,11 +5,46 @@
 //! @brief Clock manager functions that manage system clocks and minimize
 //!        power consumption by powering down clocks when possible.
 //!
-//! @addtogroup clkmgr5b CLKMGR - Clock Manager
+//! @addtogroup clkmgr_ap510 CLKMGR - Clock Manager
 //! @ingroup apollo510_hal
 //! @{
-//
-// ****************************************************************************
+//!
+//! Purpose: This module provides comprehensive clock management functions for
+//! Apollo5 devices, handling system clocks including HFRC, HFRC2, SYSPLL,
+//! XTAL_HS, XTAL_LS, and LFRC. It manages clock requests, releases,
+//! configuration, and power management to minimize power consumption.
+//!
+//! @section hal_clkmgr_features Key Features
+//!
+//! 1. @b Multi-Clock @b Support: Manage HFRC, HFRC2, SYSPLL, XTAL_HS, XTAL_LS, LFRC.
+//! 2. @b Power @b Management: Automatic clock gating and power-down for efficiency.
+//! 3. @b User @b Tracking: Track multiple users requesting the same clock.
+//! 4. @b Clock @b Stabilization: Handle clock startup and stabilization timing.
+//! 5. @b Configuration @b Management: Dynamic clock configuration and frequency control.
+//!
+//! @section hal_clkmgr_functionality Functionality
+//!
+//! - Request and release system clocks with user tracking
+//! - Configure clock frequencies and parameters
+//! - Handle clock stabilization and startup timing
+//! - Manage power states and automatic clock gating
+//! - Support for board-specific clock configurations
+//!
+//! @section hal_clkmgr_usage Usage
+//!
+//! 1. Request clocks using am_hal_clkmgr_clock_request()
+//! 2. Configure clock parameters as needed
+//! 3. Monitor clock status and user counts
+//! 4. Release clocks when no longer needed
+//! 5. Use board info functions for custom configurations
+//!
+//! @section hal_clkmgr_configuration Configuration
+//!
+//! - @b Board @b Info: Configure board-specific clock parameters
+//! - @b User @b IDs: Track clock usage by different modules
+//! - @b Stabilization @b Timing: Set up clock startup delays
+//! - @b Power @b States: Configure automatic power management
+//****************************************************************************
 
 // ****************************************************************************
 //
@@ -42,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -54,10 +89,12 @@
 
 #define AM_HAL_CLKMGR_HFRC2_ADJ_WAIT_TIME_US            (500)
 #define AM_HAL_CLKMGR_HFRC_ADJ_WAIT_TIME_US             (10000)
+#define AM_HAL_CLKMGR_EXTREFCLK_WAIT_TIME_US            (1500)
 #define AM_HAL_CLKMGR_XTAL_HS_STARTUP_WAIT_TIME_US      (1500)
 #define AM_HAL_CLKMGR_CLOCK_STABILIZING_LOOP_US         (10)
 #define AM_HAL_CLKMGR_HFRC2_ADJ_WAIT_LOOP_CNT           (AM_HAL_CLKMGR_HFRC2_ADJ_WAIT_TIME_US / AM_HAL_CLKMGR_CLOCK_STABILIZING_LOOP_US)
 #define AM_HAL_CLKMGR_HFRC_ADJ_WAIT_LOOP_CNT            (AM_HAL_CLKMGR_HFRC_ADJ_WAIT_TIME_US / AM_HAL_CLKMGR_CLOCK_STABILIZING_LOOP_US)
+#define AM_HAL_CLKMGR_EXTREFCLK_WAIT_LOOP_CNT           (AM_HAL_CLKMGR_EXTREFCLK_WAIT_TIME_US / AM_HAL_CLKMGR_CLOCK_STABILIZING_LOOP_US)
 #define AM_HAL_CLKMGR_XTAL_HS_STARTUP_WAIT_LOOP_CNT     (AM_HAL_CLKMGR_XTAL_HS_STARTUP_WAIT_TIME_US / AM_HAL_CLKMGR_CLOCK_STABILIZING_LOOP_US)
 
 #define AM_HAL_CLKMGR_USERID_DWORD_CNT ((AM_HAL_CLKMGR_USER_ID_MAX + 31) >> 5)
@@ -70,6 +107,7 @@ static am_hal_clkmgr_board_info_t g_sClkMgrBoardInfo =
     .sXtalLs.eXtalLsMode    = AM_HAL_CLKMGR_DEFAULT_XTAL_LS_MODE,
     .sXtalLs.ui32XtalLsFreq = AM_HAL_CLKMGR_DEFAULT_XTAL_LS_FREQ_HZ,
     .ui32ExtRefClkFreq      = AM_HAL_CLKMGR_DEFAULT_EXTREF_CLK_FREQ_HZ,
+    .bIsSipEnabled          = false
 };
 
 // Bitmap array to store user request status for each clock
@@ -98,14 +136,19 @@ static void *g_pSyspllHandle = NULL;
 static bool      g_bClkStabilizing_XTAL_HS              = false;
 static bool      g_bClkStabilizing_HFRC_ADJ             = false;
 static bool      g_bClkStabilizing_HFRC2_ADJ            = false;
+static bool      g_bClkStabilizing_EXTREFCLK            = false;
 static bool      g_bClkStablized_HFRC_ADJ               = false;
 static uint32_t *g_pui32ClkStabilizingCounter_XTAL_HS   = NULL;
 static uint32_t *g_pui32ClkStabilizingCounter_HFRC_ADJ  = NULL;
 static uint32_t *g_pui32ClkStabilizingCounter_HFRC2_ADJ = NULL;
+static uint32_t *g_pui32ClkStabilizingCounter_EXTREFCLK = NULL;
 
 // Flags for clock start pending
 static bool g_bHFRC2StartPending  = false;
 static bool g_bSYSPLLStartPending = false;
+
+// Flags for HFADJ behaviour on full released
+static bool g_bDisableHfadjOnFullReleased = false;
 
 //-----------------------------------------------------------------------------
 // Static function prototypes
@@ -117,11 +160,11 @@ static uint32_t am_hal_clkmgr_release_XTAL_HS(am_hal_clkmgr_user_id_e eUserId);
 
 //*****************************************************************************
 //
-//! @brief Utiltiy function to calculate bit set in a uint32_t
+//! @brief Calculate the number of bits set in a 32-bit value.
 //!
-//! @param ui32Val - variable where bits set is to be counted
+//! @param val - 32-bit value to count bits in.
 //!
-//! @return numbers of bit set in ui32Val
+//! @return Returns the number of bits set.
 //
 //*****************************************************************************
 static inline uint8_t calculate_bit_set(uint32_t val)
@@ -269,6 +312,18 @@ static inline void am_hal_clkmgr_clock_stabilize_wait(bool *pbStabilizingFlag, u
 
 //*****************************************************************************
 //
+//! @brief Helper function to clear all status flags used for stabilizing
+//
+//*****************************************************************************
+static inline void am_hal_clkmgr_clear_stablizing_status(void)
+{
+    g_bClkStabilizing_HFRC_ADJ = false;
+    g_pui32ClkStabilizingCounter_HFRC_ADJ = NULL;
+    g_bClkStablized_HFRC_ADJ = false;
+}
+
+//*****************************************************************************
+//
 //! @brief Handles clock config for HFRC clock soruce
 //!
 //! @param ui32RequestedClk - Frequency HFRC clock is to be configured to
@@ -357,8 +412,7 @@ static uint32_t am_hal_clkmgr_config_HFRC(uint32_t ui32RequestedClk, am_hal_clkm
             // No active user and requested frequency is different from
             // current selected frequency, disable HFADJ.
             am_hal_clkgen_private_hfadj_disable();
-            g_bClkStabilizing_HFRC_ADJ = false;
-            g_pui32ClkStabilizingCounter_HFRC_ADJ = NULL;
+            am_hal_clkmgr_clear_stablizing_status();
         }
 
         //
@@ -712,7 +766,7 @@ static uint32_t am_hal_clkmgr_request_XTAL_LS(am_hal_clkmgr_user_id_e eUserId)
 
     AM_CRITICAL_BEGIN
 
-    #ifdef AM_HAL_CLKMGR_MANAGE_XTAL_LS
+#ifdef AM_HAL_CLKMGR_MANAGE_XTAL_LS
     //
     // Get current status for XTAL_LS
     //
@@ -746,7 +800,7 @@ static uint32_t am_hal_clkmgr_request_XTAL_LS(am_hal_clkmgr_user_id_e eUserId)
         // Current XTAL_HS mode is XTAL, but requested is external clock. Mark clock busy.
         ui32Status = AM_HAL_STATUS_IN_USE;
     }
-    #endif
+#endif
 
     if ( ui32Status == AM_HAL_STATUS_SUCCESS )
     {
@@ -786,7 +840,7 @@ static uint32_t am_hal_clkmgr_release_XTAL_LS(am_hal_clkmgr_user_id_e eUserId)
     //
     am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_XTAL_LS, eUserId, false);
 
-    #ifdef AM_HAL_CLKMGR_MANAGE_XTAL_LS
+#ifdef AM_HAL_CLKMGR_MANAGE_XTAL_LS
     //
     // Check whether the clock is still requested by any user, and turn off
     // the clock if there isn't any left.
@@ -795,10 +849,33 @@ static uint32_t am_hal_clkmgr_release_XTAL_LS(am_hal_clkmgr_user_id_e eUserId)
     {
         am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_DISABLE, NULL);
     }
-    #endif
+#endif
     AM_CRITICAL_END
 
     return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+//! @brief Wait for EXTREFCLK to be stabilized
+//!
+//! @param  pui32StabilizingCounter - pointer to timeout counter for the clock.
+//
+//*****************************************************************************
+static inline void am_hal_clkmgr_wait_EXTREFCLK_stabilize(uint32_t *pui32StabilizingCounter)
+{
+    //
+    // If EXTREFCLK has just been enabled, wait for it to stabilize
+    //
+    if (g_bClkStabilizing_EXTREFCLK)
+    {
+        am_hal_clkmgr_clock_stabilize_wait(&g_bClkStabilizing_EXTREFCLK, pui32StabilizingCounter);
+
+        AM_CRITICAL_BEGIN
+        g_bClkStabilizing_EXTREFCLK = false;
+        g_pui32ClkStabilizingCounter_EXTREFCLK = NULL;
+        AM_CRITICAL_END
+    }
 }
 
 //*****************************************************************************
@@ -815,6 +892,7 @@ static uint32_t am_hal_clkmgr_request_EXTREF_CLK(am_hal_clkmgr_user_id_e eUserId
 {
     am_hal_gpio_pincfg_t sExtRefClkPinCfg = AM_HAL_GPIO_PINCFG_DISABLED;
     sExtRefClkPinCfg.GP.cfg_b.uFuncSel = AM_HAL_PIN_15_REFCLK_EXT;
+    uint32_t ui32StabilizingCounter = AM_HAL_CLKMGR_EXTREFCLK_WAIT_LOOP_CNT;
 
     //
     // Check whether EXTREFCLK is configured for the device
@@ -825,14 +903,51 @@ static uint32_t am_hal_clkmgr_request_EXTREF_CLK(am_hal_clkmgr_user_id_e eUserId
     }
 
     //
-    // Return success immediately if it has already been requested
+    // If EXTREFCLK has already been requested and device is SIP,
+    // wait for stabilizing count to complete and return SUCCESS
     //
     if ( am_hal_clkmgr_is_requested_by_user(AM_HAL_CLKMGR_CLK_ID_EXTREF_CLK, eUserId) )
     {
+        if (g_sClkMgrBoardInfo.bIsSipEnabled)
+        {
+            AM_CRITICAL_BEGIN
+            if (g_bClkStabilizing_EXTREFCLK)
+            {
+                ui32StabilizingCounter = *g_pui32ClkStabilizingCounter_EXTREFCLK;
+            }
+            g_pui32ClkStabilizingCounter_EXTREFCLK = &ui32StabilizingCounter;
+            AM_CRITICAL_END
+            am_hal_clkmgr_wait_EXTREFCLK_stabilize(&ui32StabilizingCounter);
+        }
         return AM_HAL_STATUS_SUCCESS;
     }
 
     AM_CRITICAL_BEGIN
+    //
+    // If device is SIP (Apollo510 Blue) and it is enabled, then configure GPIO 136 to enable the
+    // clock gate to the 12MHz clock generated by the BLE controler. Pin 136 should be preconfigured
+    // by the BSP already
+    //
+    if (g_sClkMgrBoardInfo.bIsSipEnabled)
+    {
+        //
+        // Update Clock Stabilizing counter
+        //
+        if (g_bClkStabilizing_EXTREFCLK)
+        {
+            ui32StabilizingCounter = *g_pui32ClkStabilizingCounter_EXTREFCLK;
+        }
+        am_hal_gpio_output_set(136);
+
+        //
+        // Begin clock stabilizing
+        //
+        if ( !g_bClkStabilizing_EXTREFCLK )
+        {
+            g_bClkStabilizing_EXTREFCLK = true;
+        }
+    }
+
     //
     // If GPIO is not configured as EXTREF_CLK, configure it as EXTREF_CLK
     //
@@ -842,7 +957,23 @@ static uint32_t am_hal_clkmgr_request_EXTREF_CLK(am_hal_clkmgr_user_id_e eUserId
     // Set User Flag for EXTREF_CLK clock
     //
     am_hal_clkmgr_user_set(AM_HAL_CLKMGR_CLK_ID_EXTREF_CLK, eUserId, true);
+
+    //
+    // Check and update clock stabilizing variables if it is SIP device
+    //
+    if (g_sClkMgrBoardInfo.bIsSipEnabled)
+    {
+        if (g_bClkStabilizing_EXTREFCLK)
+        {
+            g_pui32ClkStabilizingCounter_EXTREFCLK = &ui32StabilizingCounter;
+        }
+    }
     AM_CRITICAL_END
+
+    if (g_sClkMgrBoardInfo.bIsSipEnabled)
+    {
+        am_hal_clkmgr_wait_EXTREFCLK_stabilize(&ui32StabilizingCounter);
+    }
 
     return AM_HAL_STATUS_SUCCESS;
 }
@@ -879,8 +1010,18 @@ static uint32_t am_hal_clkmgr_release_EXTREF_CLK(am_hal_clkmgr_user_id_e eUserId
     //
     if (!am_hal_clkmgr_is_requested(AM_HAL_CLKMGR_CLK_ID_EXTREF_CLK))
     {
+        //
+        // If device is SIP (Apollo510 Blue) and it is enabled, then turn off
+        // the 12MHz clock generated by BLE controller via pin 136
+        //
+        if (g_sClkMgrBoardInfo.bIsSipEnabled)
+        {
+            am_hal_gpio_output_clear(136);
+        }
         am_hal_gpio_pincfg_t sExtRefClkPinCfg = AM_HAL_GPIO_PINCFG_DISABLED;
         am_hal_gpio_pinconfig(15, sExtRefClkPinCfg);
+        g_bClkStabilizing_EXTREFCLK = false;
+        g_pui32ClkStabilizingCounter_EXTREFCLK = NULL;
     }
     AM_CRITICAL_END
 
@@ -935,7 +1076,8 @@ static uint32_t am_hal_clkmgr_request_XTAL_HS(am_hal_clkmgr_user_id_e eUserId)
     }
 
     //
-    // Return success immediately if it has already been requested
+    // If XTAL_HS has already been requested, wait for stabilizing count to
+    // complete and return SUCCESS
     //
     if ( am_hal_clkmgr_is_requested_by_user(AM_HAL_CLKMGR_CLK_ID_XTAL_HS, eUserId) )
     {
@@ -1214,6 +1356,11 @@ static uint32_t am_hal_clkmgr_release_HFRC(am_hal_clkmgr_user_id_e eUserId)
     //
     if (!am_hal_clkmgr_is_requested(AM_HAL_CLKMGR_CLK_ID_HFRC))
     {
+        if ( g_bDisableHfadjOnFullReleased )
+        {
+            am_hal_clkgen_private_hfadj_disable();
+            am_hal_clkmgr_clear_stablizing_status();
+        }
         am_hal_clkgen_private_hfrc_force_on(false);
     }
     AM_CRITICAL_END
@@ -1922,6 +2069,38 @@ uint32_t am_hal_clkmgr_board_info_get(am_hal_clkmgr_board_info_t *psBoardInfo)
     memcpy(psBoardInfo, &g_sClkMgrBoardInfo, sizeof(am_hal_clkmgr_board_info_t));
 
     return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+// am_hal_clkmgr_control
+// Apply various specific commands/controls on the CLKMGR module.
+//
+//*****************************************************************************
+uint32_t am_hal_clkmgr_control(am_hal_clkmgr_control_e eControl, void *pArgs)
+{
+    uint32_t retVal;
+    switch(eControl)
+    {
+        case AM_HAL_CLKMGR_DISABLE_HFADJ_ON_FULL_RELEASE:
+            //
+            // Configuration to disable HFADJ on full release (No more active
+            // users for the HFRC clock)
+            //
+            if ( pArgs != NULL )
+            {
+                g_bDisableHfadjOnFullReleased = (*((bool *)pArgs) == true);
+                retVal = AM_HAL_STATUS_SUCCESS;
+            }
+            else
+            {
+                retVal = AM_HAL_STATUS_INVALID_ARG;
+            }
+            break;
+        default:
+            retVal = AM_HAL_STATUS_INVALID_ARG;
+    }
+    return retVal;
 }
 
 //! @cond CLKMGR_PRIVATE_FUNC

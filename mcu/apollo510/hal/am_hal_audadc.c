@@ -4,10 +4,46 @@
 //!
 //! @brief Functions for interfacing with the Analog to Digital Converter.
 //!
-//! @addtogroup audadc4 AUDADC - Analog-to-Digital Converter
+//! @addtogroup audadc4_ap510 AUDADC - Analog-to-Digital Converter
 //! @ingroup apollo510_hal
 //! @{
-//
+//!
+//! Purpose: This module provides functions for configuring, controlling, and
+//! reading from the Audio Analog-to-Digital Converter (AUDADC) peripheral on
+//! Apollo5 devices. It supports audio sampling, DMA transfers,
+//! gain control, and various audio-specific features for audio
+//! applications.
+//!
+//! @section hal_audadc_features Key Features
+//!
+//! 1. @b Audio: Audio sampling and processing.
+//! 2. @b DMA @b Support: High-speed audio data transfer using DMA.
+//! 3. @b Gain @b Control: Configurable gain settings for audio input channels.
+//! 4. @b Calibration: Temperature and offset calibration for accurate measurements.
+//! 5. @b Power @b Management: Low-power operation and power state management.
+//!
+//! @section hal_audadc_functionality Functionality
+//!
+//! - Initialize and configure the AUDADC peripheral
+//! - Set up DMA for high-speed audio data transfer
+//! - Configure gain settings and calibration parameters
+//! - Handle audio sampling and data processing
+//! - Manage power states and interrupt handling
+//!
+//! @section hal_audadc_usage Usage
+//!
+//! 1. Initialize the AUDADC using am_hal_audadc_initialize()
+//! 2. Configure the AUDADC with am_hal_audadc_configure() and related functions
+//! 3. Set up DMA for audio data transfer
+//! 4. Enable the AUDADC and start audio sampling
+//! 5. Process audio data and handle interrupts
+//!
+//! @section hal_audadc_configuration Configuration
+//!
+//! - @b USE_AUDADC_TWO_STAGE_DMA: Enable/disable two-stage DMA pipeline
+//! - @b Calibration @b Coefficients: Temperature and offset calibration values
+//! - @b Gain @b Settings: Configure audio input gain levels
+//! - @b DMA: Set up DMA for audio data transfer
 //*****************************************************************************
 
 //*****************************************************************************
@@ -41,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -155,9 +191,9 @@ typedef struct
     //
     am_hal_audadc_clksel_e eClkSource;
 
-    #ifdef CLEAR_DMACPL_SAFELY
+#ifdef CLEAR_DMACPL_SAFELY
     bool                bNeedtoClearDmacpl;
-    #endif
+#endif
 } am_hal_audadc_state_t;
 
 //*****************************************************************************
@@ -217,7 +253,11 @@ uint32_t                        g_AUDADCPgaChConfigured;
 //! @cond SYSCTRL_CLK_MUX_RESET
 //*****************************************************************************
 //
-// Convert AUDADC clksel value to ClkMuxRst clock source bitmap
+//! @brief Convert AUDADC clksel value to ClkMuxRst clock source bitmap
+//!
+//! @param clksel - AUDADC clock selection value.
+//!
+//! @return Returns the corresponding clock manager bitmap.
 //
 //*****************************************************************************
 static inline uint8_t
@@ -245,6 +285,15 @@ am_hal_audadc_clksel_to_clkmuxrstclk(AUDADC_CFG_CLKSEL_Enum clksel)
 }
 //! @endcond SYSCTRL_CLK_MUX_RESET
 
+//*****************************************************************************
+//
+//! @brief Get clock manager clock ID for AUDADC clock selection.
+//!
+//! @param clksel - AUDADC clock selection value.
+//!
+//! @return Returns the corresponding clock manager clock ID.
+//
+//*****************************************************************************
 static am_hal_clkmgr_clock_id_e
 audadc_clksrc_get(am_hal_audadc_clksel_e clksel)
 {
@@ -274,7 +323,13 @@ audadc_clksrc_get(am_hal_audadc_clksel_e clksel)
 
 //*****************************************************************************
 //
-// Set AUDADC ClkGen Mux with Mux Switcing Delay
+//! @brief Set AUDADC ClkGen Mux with mux switching delay.
+//!
+//! @param ui32Module - AUDADC module number.
+//! @param eClksel - Target clock selection.
+//!
+//! This function sets the AUDADC ClkGen mux with proper switching delays
+//! to avoid clock glitches during transitions.
 //
 //*****************************************************************************
 static inline void
@@ -316,7 +371,13 @@ audadc_set_clkgen_mux_with_delay(uint32_t ui32Module, AUDADC_CFG_CLKSEL_Enum eCl
 
 //*****************************************************************************
 //
-// Set AUDADC LLMux with Mux Switcing Delay
+//! @brief Set AUDADC LLMux with mux switching delay.
+//!
+//! @param ui32Module - AUDADC module number.
+//! @param targetLLMux - Target LLMux value.
+//!
+//! This function sets the AUDADC LLMux with proper switching delays
+//! to avoid clock glitches during transitions.
 //
 //*****************************************************************************
 static inline void
@@ -344,7 +405,13 @@ audadc_set_llmux_with_delay(uint32_t ui32Module, uint32_t targetLLMux)
 
 //*****************************************************************************
 //
-// Set AUDADC clock by selecting the LL mux and the CLKGEN mux.
+//! @brief Set AUDADC clock by selecting the LL mux and the CLKGEN mux.
+//!
+//! @param ui32Module - AUDADC module number.
+//! @param targetClk - Target clock selection.
+//!
+//! This function sets the AUDADC clock by configuring both the LL mux
+//! and CLKGEN mux with proper switching delays to avoid glitches.
 //
 //*****************************************************************************
 static void
@@ -435,19 +502,7 @@ audadc_clock_set(uint32_t ui32Module, am_hal_audadc_clksel_e targetClk)
 
 //*****************************************************************************
 //
-//! @brief AUDADC initialization function
-//!
-//! @param ui32Module - module instance.
-//! @param ppHandle   - returns the handle for the module instance.
-//!
-//! This function accepts a module instance, allocates the interface and then
-//! returns a handle to be used by the remaining interface functions.
-//!
-//! @return status    - generic or interface specific status.
-//!
-//! @note A return of AM_HAL_STATUS_SUCCESS does not infer that the
-//! temperature calibrations are valid. The caller must check the bMeasured
-//! structure element in order to determine that.
+// Initialize the AUDADC peripheral.
 //
 //*****************************************************************************
 uint32_t
@@ -487,9 +542,9 @@ am_hal_audadc_initialize(uint32_t ui32Module, void **ppHandle)
     g_AUDADCState[ui32Module].prefix.s.bInit = true;
     g_AUDADCState[ui32Module].prefix.s.magic = AM_HAL_MAGIC_AUDADC;
     g_AUDADCState[ui32Module].ui32Module = ui32Module;
-    #ifdef CLEAR_DMACPL_SAFELY
+#ifdef CLEAR_DMACPL_SAFELY
     g_AUDADCState[ui32Module].bNeedtoClearDmacpl = false;
-    #endif
+#endif
 
     //
     // Initialize the number of slots configured.
@@ -553,14 +608,7 @@ am_hal_audadc_initialize(uint32_t ui32Module, void **ppHandle)
 
 //*****************************************************************************
 //
-//! @brief AUDADC deinitialization function
-//!
-//! @param pHandle       - returns the handle for the module instance.
-//!
-//! This function accepts a handle to an instance and de-initializes the
-//! interface.
-//!
-//! @return status      - generic or interface specific status.
+// Deinitialize the AUDADC module.
 //
 //*****************************************************************************
 uint32_t
@@ -591,14 +639,7 @@ am_hal_audadc_deinitialize(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief AUDADC configuration function
-//!
-//! @param pHandle   - handle for the module instance.
-//! @param psConfig  - pointer to the configuration structure.
-//!
-//! This function configures the AUDADC for operation.
-//!
-//! @return status      - generic or interface specific status.
+// Configure the AUDADC module.
 //
 //*****************************************************************************
 uint32_t
@@ -714,15 +755,7 @@ am_hal_audadc_configure(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief AUDADC slot configuration function
-//!
-//! @param pHandle - handle for the module instance.
-//! @param ui32SlotNumber - AUDADC Slot Number
-//! @param pSlotConfig    - pointer to the configuration structure.
-//!
-//! This function configures the AUDADC slot for operation.
-//!
-//! @return status      - generic or interface specific status.
+// This function configures the AUDADC slot for operation.
 //
 //*****************************************************************************
 uint32_t
@@ -1169,9 +1202,9 @@ am_hal_audadc_configure_dma(void *pHandle,
     // Reset DMA status.
     //
     AUDADCn(ui32Module)->DMASTAT = 0;
-    #ifdef CLEAR_DMACPL_SAFELY
+#ifdef CLEAR_DMACPL_SAFELY
     pAUDADCState->bNeedtoClearDmacpl = false;
-    #endif
+#endif
 
     //
     // Configure the DMA complete power-off.
@@ -1211,23 +1244,23 @@ am_hal_audadc_configure_dma(void *pHandle,
     //
     ui32Config |= _VAL2FLD(AUDADC_DMACFG_DMAEN, AUDADC_DMACFG_DMAEN_EN);
 
-    #ifdef USE_AUDADC_TWO_STAGE_DMA
+#ifdef USE_AUDADC_TWO_STAGE_DMA
     ui32Config |= _VAL2FLD(AUDADC_DMACFG_NEXTDMAEN, 1);
-    #endif
+#endif
 
     //
     // Set the DMA configuration.
     //
     AUDADCn(ui32Module)->DMACFG = ui32Config;
 
-    #ifdef USE_AUDADC_TWO_STAGE_DMA
+#ifdef USE_AUDADC_TWO_STAGE_DMA
     AUDADCn(ui32Module)->DMATARGADDRNEXT = pAUDADCState->ui32BufferPtr;
     AUDADCn(ui32Module)->DMATOTCOUNTNEXT = pAUDADCState->ui32BufferSizeBytes;
     AUDADCn(ui32Module)->DMAENNEXTCTRL = 1;
-    #else
+#else
     AUDADCn(ui32Module)->DMATARGADDR = pAUDADCState->ui32BufferPtr;
     AUDADCn(ui32Module)->DMATOTCOUNT = pAUDADCState->ui32BufferSizeBytes;
-    #endif
+#endif
 
     //
     // Set the DMA trigger on FIFO 75% full.
@@ -1263,11 +1296,11 @@ am_hal_audadc_dma_get_buffer(void *pHandle)
     }
     else
     {
-        #ifdef USE_AUDADC_TWO_STAGE_DMA
+#ifdef USE_AUDADC_TWO_STAGE_DMA
         ui32BufferPtr = pState->ui32BufferPtr;
-        #else
+#else
         ui32BufferPtr = (pState->ui32BufferPtr == pState->ui32BufferPong) ? pState->ui32BufferPing : pState->ui32BufferPong;
-        #endif
+#endif
     }
 
     return ui32BufferPtr;
@@ -1290,9 +1323,10 @@ am_hal_audadc_dma_get_buffer(void *pHandle)
 //! @return status      - generic or interface specific status.
 //
 //*****************************************************************************
-uint32_t am_hal_audadc_control(void *pHandle,
-                               am_hal_audadc_request_e eRequest,
-                               void *pArgs)
+uint32_t
+am_hal_audadc_control(void *pHandle,
+                      am_hal_audadc_request_e eRequest,
+                      void *pArgs)
 {
     uint32_t    ui32Module = ((am_hal_audadc_state_t *)pHandle)->ui32Module;
 
@@ -1809,20 +1843,20 @@ am_hal_audadc_interrupt_service(void *pHandle, uint32_t ui32IntMask)
 
     if (((ui32IntMask & AUDADC_INTSTAT_FIFOOVR1_Msk) != 0) && ((ui32IntMask & AUDADC_INTSTAT_DCMP_Msk) == 0))
     {
-        #ifdef CLEAR_DMACPL_SAFELY
+#ifdef CLEAR_DMACPL_SAFELY
         if (pAUDADCState->bNeedtoClearDmacpl)
         {
             am_hal_audadc_interrupt_disable(pHandle, AM_HAL_AUDADC_INT_FIFOOVR1);
             AUDADCn(ui32Module)->DMASTAT_b.DMACPL = 0;
             pAUDADCState->bNeedtoClearDmacpl = false;
         }
-        #endif
+#endif
     }
 
     if ((ui32IntMask & AUDADC_INTSTAT_DCMP_Msk) && (pAUDADCState->ui32BufferPong != 0xFFFFFFFF))
     {
-        #ifdef USE_AUDADC_TWO_STAGE_DMA
-        #ifdef CLEAR_DMACPL_SAFELY
+#ifdef USE_AUDADC_TWO_STAGE_DMA
+#ifdef CLEAR_DMACPL_SAFELY
         // assert(AUDADCn(ui32Module)->DMASTAT_b.DMACPL == 1);
         if (AUDADCn(ui32Module)->DMASTAT_b.DMATIP == 1)
         {
@@ -1840,9 +1874,9 @@ am_hal_audadc_interrupt_service(void *pHandle, uint32_t ui32IntMask)
             pAUDADCState->bNeedtoClearDmacpl = true;
             am_hal_sysctrl_sysbus_write_flush();
         }
-        #else // !CLEAR_DMACPL_SAFELY
+#else // !CLEAR_DMACPL_SAFELY
         AUDADCn(ui32Module)->DMASTAT_b.DMACPL = 0;
-        #endif // !CLEAR_DMACPL_SAFELY
+#endif // !CLEAR_DMACPL_SAFELY
 
         if (AUDADCn(ui32Module)->DMAENNEXTCTRL == 0)
         {
@@ -1856,11 +1890,11 @@ am_hal_audadc_interrupt_service(void *pHandle, uint32_t ui32IntMask)
             return AM_HAL_STATUS_HW_ERR;
         }
 
-        #else
+#else
         pAUDADCState->ui32BufferPtr = (pAUDADCState->ui32BufferPtr == pAUDADCState->ui32BufferPong) ? pAUDADCState->ui32BufferPing : pAUDADCState->ui32BufferPong;
         AUDADCn(ui32Module)->DMATARGADDR = pAUDADCState->ui32BufferPtr;
         AUDADCn(ui32Module)->DMATOTCOUNT = pAUDADCState->ui32BufferSizeBytes;
-        #endif
+#endif
     }
 
     //
@@ -1877,12 +1911,13 @@ am_hal_audadc_interrupt_service(void *pHandle, uint32_t ui32IntMask)
 // returned by a DMA operation, and calibrates the samples.
 //
 //*****************************************************************************
-uint32_t am_hal_audadc_samples_read(void *pHandle,
-                                    uint32_t *pui32InSampleBuffer,
-                                    uint32_t *pui32InOutNumberSamples,
-                                    bool bLowSample, am_hal_audadc_sample_t *pui32LGOutBuffer,
-                                    bool bHighSample, am_hal_audadc_sample_t *pui32HGOutBuffer,
-                                    am_hal_offset_cal_coeffs_array_t *pSlotCalib)
+uint32_t
+am_hal_audadc_samples_read(void *pHandle,
+                           uint32_t *pui32InSampleBuffer,
+                           uint32_t *pui32InOutNumberSamples,
+                           bool bLowSample, am_hal_audadc_sample_t *pui32LGOutBuffer,
+                           bool bHighSample, am_hal_audadc_sample_t *pui32HGOutBuffer,
+                           am_hal_offset_cal_coeffs_array_t *pSlotCalib)
 {
     uint32_t      ui32Sample;
     uint32_t      ui32RequestedSamples = *pui32InOutNumberSamples;
@@ -2122,7 +2157,7 @@ am_hal_audadc_dma_transfer_start(void *pHandle)
     //
     AUDADCn(ui32Module)->SWT = 0x37;
 
-    #ifdef USE_AUDADC_TWO_STAGE_DMA
+#ifdef USE_AUDADC_TWO_STAGE_DMA
     if (pState->ui32BufferPong != 0xFFFFFFFF)
     {
         am_hal_delay_us(100);
@@ -2138,7 +2173,7 @@ am_hal_audadc_dma_transfer_start(void *pHandle)
             return AM_HAL_STATUS_HW_ERR;
         }
     }
-    #endif
+#endif
 
     //
     // Return the status.
@@ -2596,7 +2631,8 @@ am_hal_audadc_pga_powerdown(uint32_t ui32ChanNum)
 //! This function sets output of the mic bias voltage.
 //!
 //*****************************************************************************
-void am_hal_audadc_micbias_powerup(uint32_t ui32VolTrim)
+void
+am_hal_audadc_micbias_powerup(uint32_t ui32VolTrim)
 {
     MCUCTRL->AUDIO1 = ((MCUCTRL->AUDIO1 & ~MCUCTRL_AUDIO1_MICBIASVOLTAGETRIM_Msk) | _VAL2FLD(MCUCTRL_AUDIO1_MICBIASVOLTAGETRIM, ui32VolTrim & 0x3f));
     MCUCTRL->AUDIO1 = ((MCUCTRL->AUDIO1 & ~MCUCTRL_AUDIO1_MICBIASPDNB_Msk) | _VAL2FLD(MCUCTRL_AUDIO1_MICBIASPDNB, 1));
@@ -2613,7 +2649,8 @@ void am_hal_audadc_micbias_powerup(uint32_t ui32VolTrim)
 //! This function turns off the mic bias voltage.
 //!
 //*****************************************************************************
-void am_hal_audadc_micbias_powerdown(void)
+void
+am_hal_audadc_micbias_powerdown(void)
 {
     MCUCTRL->AUDIO1 = ((MCUCTRL->AUDIO1 & ~MCUCTRL_AUDIO1_MICBIASPDNB_Msk) | _VAL2FLD(MCUCTRL_AUDIO1_MICBIASPDNB, 0));
 }
@@ -2630,7 +2667,8 @@ void am_hal_audadc_micbias_powerdown(void)
 //! @return status          - generic or interface specific status.
 //!
 //*****************************************************************************
-uint32_t am_hal_audadc_internal_pga_config(void *pHandle, am_hal_audadc_gain_config_t* psGainConfig)
+uint32_t
+am_hal_audadc_internal_pga_config(void *pHandle, am_hal_audadc_gain_config_t* psGainConfig)
 {
     am_hal_audadc_state_t  *pAUDADCState = (am_hal_audadc_state_t *)pHandle;
     uint32_t ui32Module = pAUDADCState->ui32Module;
@@ -2676,7 +2714,8 @@ uint32_t am_hal_audadc_internal_pga_config(void *pHandle, am_hal_audadc_gain_con
 //! @return status          - generic or interface specific status.
 //!
 //*****************************************************************************
-uint32_t am_hal_audadc_saturation_config(void *pHandle, am_hal_audadc_sat_config_t* psSATConfig)
+uint32_t
+am_hal_audadc_saturation_config(void *pHandle, am_hal_audadc_sat_config_t* psSATConfig)
 {
     am_hal_audadc_state_t  *pAUDADCState = (am_hal_audadc_state_t *)pHandle;
     uint32_t ui32Module = pAUDADCState->ui32Module;
