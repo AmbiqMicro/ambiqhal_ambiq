@@ -254,6 +254,27 @@ wait_dbi_idle(uint32_t ui32Mask, uint32_t ui32Value)
 
 //*****************************************************************************
 //
+//! @brief reset JDI used parameters
+//!
+//! Please confirm the transmission has completed before executing functions
+//! nemadc_set_mode() and nemadc_set_mip_panel_parameters().
+//!
+//! @return AM_HAL_STATUS_SUCCESS.
+//
+//*****************************************************************************
+uint32_t
+nemadc_reset_mip_parameters(void)
+{
+    //
+    // Recover parameters before the next transmission.
+    //
+    nemadc_set_mode(0);
+    nemadc_set_mip_panel_parameters(&sMiPConfig);
+    return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
 // DC power control function
 //
 //*****************************************************************************
