@@ -13,6 +13,7 @@ zephyr_include_directories(headers/include/tsi/NemaGFX)
 zephyr_include_directories(headers/include/tsi/NemaVG)
 zephyr_include_directories(headers/NemaDC)
 zephyr_include_directories(headers/NemaGFX/Nema)
+zephyr_include_directories(extensions)
 
 # Include all used C sources.
 zephyr_library_sources(
@@ -22,3 +23,4 @@ zephyr_library_sources(
 
 # Include the library in project
 zephyr_link_libraries(${CMAKE_CURRENT_SOURCE_DIR}/libraries/lib_nema_${CONFIG_SOC_SERIES}_nemagfx.a)
+zephyr_link_libraries(${CMAKE_CURRENT_SOURCE_DIR}/extensions/gpu_patch.a)
