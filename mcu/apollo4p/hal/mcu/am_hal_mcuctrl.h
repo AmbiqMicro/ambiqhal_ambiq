@@ -47,10 +47,7 @@
 #ifndef AM_HAL_MCUCTRL_H
 #define AM_HAL_MCUCTRL_H
 
-#include <stdint.h>
-#include <stdbool.h>
 #include "am_mcu_apollo.h"
-
 
 #ifdef __cplusplus
 extern "C"
