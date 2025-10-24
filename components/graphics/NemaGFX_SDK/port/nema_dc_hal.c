@@ -55,17 +55,17 @@
  *  connection with the software or the use or other dealings in the software.
  ******************************************************************************/
 #include "stdint.h"
+#include "math.h"
+
 #include "nema_dc_regs.h"
 #include "nema_dc_hal.h"
 #include "nema_dc_mipi.h"
 #include "nema_dc_intern.h"
 #include "nema_dc.h"
 #include "nema_dc_dsi.h"
-#include "nema_ringbuffer.h"
 #include "nema_sys_defs.h"
 #include "am_mcu_apollo.h"
 #include "nema_dc_jdi.h"
-#include "nema_math.h"
 
 #if defined(AM_PART_APOLLO510)
 #include "apollo510.h"
@@ -450,7 +450,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
             // Calculated the present clock source frequency.
             //
             fPLLCLKFreq = 3 * (2 << CLKGEN->DISPCLKCTRL_b.DISPCLKSEL);
-            i32PreDivider = nema_ceil(fPLLCLKFreq / psDCConfig->fCLKMaxFreq);
+            i32PreDivider = ceilf(fPLLCLKFreq / psDCConfig->fCLKMaxFreq);
 
             //
             // The value of the predivider should be less than 128 on Apollo510.
@@ -483,7 +483,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
         //
         // SDR frequency
         //
-        i32PreDivider = nema_ceil(fPLLCLKFreq / 2 / psDCConfig->fCLKMaxFreq);
+        i32PreDivider = ceilf(fPLLCLKFreq / 2 / psDCConfig->fCLKMaxFreq);
         //
         // The value of the primary divider should be less than 128 on Apollo510.
         //
@@ -517,7 +517,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
             //
             // Calculate the primary divider,to make BCK frequency less than panel limitation.
             //
-            i32PrimaryDivider = nema_ceil(fPLLCLKFreq / (4 * psDCConfig->fHCKBCKMaxFreq));
+            i32PrimaryDivider = ceilf(fPLLCLKFreq / (4 * psDCConfig->fHCKBCKMaxFreq));
             //
             // The minimum of primary divider is 2 to enable the divider swap feature.
             //
@@ -546,7 +546,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
             //
             // Calculate predivider to assure the frequency of BCK less than its maximum supported.
             //
-            i32PreDivider = nema_ceil(fPLLCLKFreq / (4 * psDCConfig->fHCKBCKMaxFreq * i32PrimaryDivider));
+            i32PreDivider = ceilf(fPLLCLKFreq / (4 * psDCConfig->fHCKBCKMaxFreq * i32PrimaryDivider));
         }
 
         nemadc_clkdiv(i32PrimaryDivider, i32PreDivider, 4, 0);
@@ -575,7 +575,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
         int i32PreDivider;
         float fPLLCLKFreq;
         fPLLCLKFreq = 3 * (2 << CLKGEN->DISPCLKCTRL_b.DISPCLKSEL);
-        i32PreDivider = nema_ceil(fPLLCLKFreq / psDCConfig->fCLKMaxFreq);
+        i32PreDivider = ceilf(fPLLCLKFreq / psDCConfig->fCLKMaxFreq);
 
         //
         // The value of the predivider should be less than 128 on Apollo510.
@@ -1898,7 +1898,7 @@ void
 nemadc_wait_vsync(void)
 {
     /* Wait for the interrupt */
-    if (k_sem_take(&nemadc_sem, K_MSEC(CONFIG_DC_WAIT_VSYNC_TIMEOUT_MS)) != 0) {
+    if (k_sem_take(&nemadc_sem, K_MSEC(CONFIG_NEMADC_WAIT_DC_VSYNC_TIMEOUT_MS)) != 0) {
         LOG_ERR("DC wait timeout!");
     }
 }
