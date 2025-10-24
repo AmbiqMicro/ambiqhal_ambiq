@@ -115,7 +115,7 @@ static uint8_t cpu_only_buffer[CONFIG_NEMAGFX_HEAP_SIZE_CPU_ONLY * 1024]
 static struct k_heap cpu_only_heap;
 
 // Define the ring buffer for GPU command lists
-#define RING_BUFFER_LENGTH ((CONFIG_MAX_PENDING_COMMAND_LIST * 12 + 16) * 4)
+#define RING_BUFFER_LENGTH ((CONFIG_NEMAGFX_MAX_PENDING_COMMAND_LIST * 12 + 16) * 4)
 static uint8_t ring_buffer[RING_BUFFER_LENGTH] __aligned(8) Z_GENERIC_SECTION(SRAM_NO_CACHE);
 
 static nema_ringbuffer_t ring_buffer_str = {
@@ -161,7 +161,7 @@ int nema_wait_irq_cl(int cl_id)
 {
 	int ret;
 	// Set a generous retry counter to prevent infinite loops.
-	int max_retries = CONFIG_GPU_WAIT_IRQ_TIMEOUT_MS * 2;
+	int max_retries = CONFIG_NEMAGFX_WAIT_GPU_IRQ_TIMEOUT_MS * 2;
 
 	while (gpu_ambiq_get_last_cl_id(gpu_dev) < cl_id) {
 		ret = nema_wait_irq();
@@ -184,7 +184,7 @@ int nema_wait_irq_cl(int cl_id)
 
 int nema_wait_irq(void)
 {
-	return gpu_ambiq_wait_interrupt(gpu_dev, CONFIG_GPU_WAIT_IRQ_TIMEOUT_MS);
+	return gpu_ambiq_wait_interrupt(gpu_dev, CONFIG_NEMAGFX_WAIT_GPU_IRQ_TIMEOUT_MS);
 }
 
 uint32_t nema_reg_read(uint32_t reg)
@@ -426,7 +426,7 @@ bool nema_rb_check_full(void)
 		}
 	}
 
-	return (total_pending_cl >= CONFIG_MAX_PENDING_COMMAND_LIST);
+	return (total_pending_cl >= CONFIG_NEMAGFX_MAX_PENDING_COMMAND_LIST);
 }
 
 int nema_get_last_cl_id(void)

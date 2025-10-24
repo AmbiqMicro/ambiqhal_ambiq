@@ -5,22 +5,24 @@
 #
 zephyr_library()
 
+# Common header
 zephyr_include_directories(port)
-zephyr_include_directories(headers/common/mem)
-zephyr_include_directories(headers/include/tsi/common)
-zephyr_include_directories(headers/include/tsi/NemaDC)
-zephyr_include_directories(headers/include/tsi/NemaGFX)
-zephyr_include_directories(headers/include/tsi/NemaVG)
-zephyr_include_directories(headers/NemaDC)
-zephyr_include_directories(headers/NemaGFX/Nema)
-zephyr_include_directories(extensions)
 
-# Include all used C sources.
-zephyr_library_sources(
-    port/nema_hal.c
-    port/nema_dc_hal.c
-    )
+# DC header and source files
+zephyr_include_directories_ifdef(CONFIG_AMBIQ_COMPONENT_USE_NEMADC headers/include/tsi/NemaDC)
+zephyr_include_directories_ifdef(CONFIG_AMBIQ_COMPONENT_USE_NEMADC headers/NemaDC)
 
-# Include the library in project
+zephyr_library_sources_ifdef(CONFIG_AMBIQ_COMPONENT_USE_NEMADC port/nema_dc_hal.c)
+
+# GPU header and source files
+zephyr_include_directories_ifdef(CONFIG_AMBIQ_COMPONENT_USE_NEMAGFX headers/include/tsi/NemaGFX)
+zephyr_include_directories_ifdef(CONFIG_AMBIQ_COMPONENT_USE_NEMAGFX headers/include/tsi/NemaVG)
+zephyr_include_directories_ifdef(CONFIG_AMBIQ_COMPONENT_USE_NEMAGFX headers/NemaGFX/Nema)
+zephyr_include_directories_ifdef(CONFIG_AMBIQ_COMPONENT_USE_NEMAGFX extensions)
+
+zephyr_library_sources_ifdef(CONFIG_AMBIQ_COMPONENT_USE_NEMAGFX port/nema_hal.c)
+
+zephyr_link_libraries_ifdef(CONFIG_AMBIQ_COMPONENT_USE_NEMAGFX ${CMAKE_CURRENT_SOURCE_DIR}/extensions/gpu_patch.a)
+
+# Include the common library in project
 zephyr_link_libraries(${CMAKE_CURRENT_SOURCE_DIR}/libraries/lib_nema_${CONFIG_SOC_SERIES}_nemagfx.a)
-zephyr_link_libraries(${CMAKE_CURRENT_SOURCE_DIR}/extensions/gpu_patch.a)
