@@ -1204,7 +1204,35 @@ am_hal_i2s_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
     //
     AM_HAL_I2S_CHK_HANDLE(pHandle);
 
-    I2Sn(ui32Module)->INTEN |= ui32IntMask;
+    if ((ui32IntMask & AM_HAL_I2S_INT_RXDMACPL) == AM_HAL_I2S_INT_RXDMACPL)
+    {
+        I2Sn(ui32Module)->IPBIRPT |= I2S0_IPBIRPT_RXDMAM_Msk;
+        I2Sn(ui32Module)->INTEN   |= I2S0_INTSTAT_RXDMACPL_Msk;
+    }
+
+    if ((ui32IntMask & AM_HAL_I2S_INT_TXDMACPL) == AM_HAL_I2S_INT_TXDMACPL)
+    {
+        I2Sn(ui32Module)->IPBIRPT |= I2S0_IPBIRPT_TXDMAM_Msk;
+        I2Sn(ui32Module)->INTEN   |= I2S0_INTSTAT_TXDMACPL_Msk;
+    }
+
+    if ((ui32IntMask & AM_HAL_I2S_INT_RXREQCNT) == AM_HAL_I2S_INT_RXREQCNT)
+    {
+        I2Sn(ui32Module)->IPBIRPT |= I2S0_IPBIRPT_RXFFM_Msk;
+        I2Sn(ui32Module)->INTEN   |= I2S0_INTSTAT_RXREQCNT_Msk;
+    }
+
+    if ((ui32IntMask & AM_HAL_I2S_INT_TXREQCNT) == AM_HAL_I2S_INT_TXREQCNT)
+    {
+        I2Sn(ui32Module)->IPBIRPT |= I2S0_IPBIRPT_TXFFM_Msk;
+        I2Sn(ui32Module)->INTEN   |= I2S0_INTSTAT_TXREQCNT_Msk;
+    }
+
+    if ((ui32IntMask & AM_HAL_I2S_INT_TXFIFO_EMPTY) == AM_HAL_I2S_INT_TXFIFO_EMPTY)
+    {
+        I2Sn(ui32Module)->IPBIRPT |= I2S0_IPBIRPT_TXEM_Msk;
+        I2Sn(ui32Module)->INTEN   |= I2S0_INTSTAT_IPB_Msk;
+    }
 
     return AM_HAL_STATUS_SUCCESS;
 }
@@ -1225,7 +1253,35 @@ am_hal_i2s_interrupt_disable(void *pHandle, uint32_t ui32IntMask)
     //
     AM_HAL_I2S_CHK_HANDLE(pHandle);
 
-    I2Sn(ui32Module)->INTEN &= ~ui32IntMask;
+    if ((ui32IntMask & AM_HAL_I2S_INT_RXDMACPL) == AM_HAL_I2S_INT_RXDMACPL)
+    {
+        I2Sn(ui32Module)->IPBIRPT &= ~I2S0_IPBIRPT_RXDMAM_Msk;
+        I2Sn(ui32Module)->INTEN   &= ~I2S0_INTSTAT_RXDMACPL_Msk;
+    }
+
+    if ((ui32IntMask & AM_HAL_I2S_INT_TXDMACPL) == AM_HAL_I2S_INT_TXDMACPL)
+    {
+        I2Sn(ui32Module)->IPBIRPT &= ~I2S0_IPBIRPT_TXDMAM_Msk;
+        I2Sn(ui32Module)->INTEN   &= ~I2S0_INTSTAT_TXDMACPL_Msk;
+    }
+
+    if ((ui32IntMask & AM_HAL_I2S_INT_RXREQCNT) == AM_HAL_I2S_INT_RXREQCNT)
+    {
+        I2Sn(ui32Module)->IPBIRPT &= ~I2S0_IPBIRPT_RXFFM_Msk;
+        I2Sn(ui32Module)->INTEN   &= ~I2S0_INTSTAT_RXREQCNT_Msk;
+    }
+
+    if ((ui32IntMask & AM_HAL_I2S_INT_TXREQCNT) == AM_HAL_I2S_INT_TXREQCNT)
+    {
+        I2Sn(ui32Module)->IPBIRPT &= ~I2S0_IPBIRPT_TXFFM_Msk;
+        I2Sn(ui32Module)->INTEN   &= ~I2S0_INTSTAT_TXREQCNT_Msk;
+    }
+
+    if ((ui32IntMask & AM_HAL_I2S_INT_TXFIFO_EMPTY) == AM_HAL_I2S_INT_TXFIFO_EMPTY)
+    {
+        I2Sn(ui32Module)->IPBIRPT &= ~I2S0_IPBIRPT_TXEM_Msk;
+        I2Sn(ui32Module)->INTEN   &= ~I2S0_INTSTAT_IPB_Msk;
+    }
 
     return AM_HAL_STATUS_SUCCESS;
 }
@@ -1760,6 +1816,15 @@ am_hal_i2s_dma_transfer_complete(void *pHandle)
     //
     I2Sn(ui32Module)->RXDMASTAT = 0x0;
     I2Sn(ui32Module)->TXDMASTAT = 0x0;
+    I2Sn(ui32Module)->I2SCTL = 0;
+    I2Sn(ui32Module)->TXDMATOTCNT = 0;
+    I2Sn(ui32Module)->RXDMATOTCNT = 0;
+    I2Sn(ui32Module)->TXDMATOTCNTNEXT = 0;
+    I2Sn(ui32Module)->RXDMATOTCNTNEXT = 0;
+    I2Sn(ui32Module)->TXCHANID = 0;
+    I2Sn(ui32Module)->RXCHANID = 0;
+    I2Sn(ui32Module)->INTCLR = 0xFFFFFFFF;
+    I2Sn(ui32Module)->I2SCTL = 0x22;
 
     return AM_HAL_STATUS_SUCCESS;
 }
