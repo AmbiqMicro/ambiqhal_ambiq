@@ -68,12 +68,12 @@ am_hal_tpiu_enable(uint32_t ui32SetItmBaud)
     //
     // TPIU formatter & flush control register.
     //
-    TPIU->FFCR = 0;
+    TPI->FFCR = 0;
 
     //
     // Set the Current Parallel Port Size (note - only 1 bit can be set).
     //
-    TPIU->CSPSR = TPI_CSPSR_CWIDTH_1BIT;
+    TPI->CSPSR = TPI_CSPSR_CWIDTH_1BIT;
 
     //
     // Use some default assumptions to set the ITM frequency.
@@ -105,23 +105,23 @@ am_hal_tpiu_enable(uint32_t ui32SetItmBaud)
   //
 #define TPI_CSPSR_CWIDTH_1BIT      1
 #define TPI_SPPR_TXMODE_UART       2
-#define TPI_ITCTRL_Mode_NORMAL     0
+#define TPI_ITCTRL_MODE_NORMAL     0
 #ifndef TPI_ACPR_SWOSCALER_Pos
 #define TPI_ACPR_SWOSCALER_Pos              0U                                         /*!< TPI ACPR: SWOSCALER Position */
 #define TPI_ACPR_SWOSCALER_Msk             (0xFFFFUL /*<< TPI_ACPR_SWOSCALER_Pos*/)    /*!< TPI ACPR: SWOSCALER Mask */
 #endif
-    TPIU->ACPR = _VAL2FLD(TPI_ACPR_SWOSCALER, ui32SWOscaler);
+    TPI->ACPR = _VAL2FLD(TPI_ACPR_SWOSCALER, ui32SWOscaler);
 
     //
     // Set the Pin Protocol.
     //
-    TPIU->SPPR = _VAL2FLD( TPIU_SPPR_TXMODE, TPI_SPPR_TXMODE_UART);  // NRZ
+    TPI->SPPR = _VAL2FLD( TPI_SPPR_TXMODE, TPI_SPPR_TXMODE_UART);  // NRZ
 
     //
     // Make sure we are not in test mode (important for proper deep sleep
     // operation).
     //
-    TPIU->ITCTRL = _VAL2FLD(TPIU_ITCTRL_Mode, TPI_ITCTRL_Mode_NORMAL);
+    TPI->ITCTRL = _VAL2FLD(TPI_ITCTRL_Mode, TPI_ITCTRL_MODE_NORMAL);
 
     //
     // Enable the TPIU clock source in MCU control.
@@ -136,7 +136,7 @@ am_hal_tpiu_enable(uint32_t ui32SetItmBaud)
     //
     am_hal_delay_us(100);
 
-} // am_hal_tpiu_enable()
+} // an_hal_tpiu_enable()
 
 //*****************************************************************************
 //
@@ -147,14 +147,14 @@ am_hal_tpiu_enable(uint32_t ui32SetItmBaud)
 //
 //*****************************************************************************
 void
-am_hal_tpiu_disable(void)
+an_hal_tpiu_disable(void)
 {
     //
     // Disable the CM4 TPIU clock source in MCU control.
     //
     MCUCTRL->DBGCTRL_b.CM4CLKSEL = MCUCTRL_DBGCTRL_CM4CLKSEL_LOWPWR;
     MCUCTRL->DBGCTRL_b.CM4TPIUENABLE = MCUCTRL_DBGCTRL_CM4TPIUENABLE_DIS;
-} // am_hal_tpiu_disable()
+} // an_hal_tpiu_disable()
 
 //*****************************************************************************
 //
