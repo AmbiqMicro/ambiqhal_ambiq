@@ -79,7 +79,6 @@
 //*****************************************************************************
 #include <string.h>
 #include "am_mcu_apollo.h"
-#include "am_bsp.h"
 #include "am_util.h"
 #include "am_util_multi_boot_private.h"
 #include "am_util_multi_boot.h"

@@ -30,6 +30,7 @@ zephyr_library_sources(hal/mcu/am_hal_mcuctrl.c)
 zephyr_library_sources(hal/mcu/am_hal_sysctrl.c)
 zephyr_library_sources(hal/mcu/am_hal_syspll.c)
 zephyr_library_sources(hal/mcu/am_hal_itm.c)
+zephyr_library_sources(hal/mcu/am_hal_mram.c)
 
 if(CONFIG_AMBIQ_HAL_USE_ADC)
     zephyr_library_sources(hal/am_hal_adc.c)
@@ -74,6 +75,10 @@ if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPIC OR CONFIG_AMBIQ_HAL_USE
     zephyr_library_sources(hal/mcu/am_hal_cmdq.c)
 endif()
 
+if(CONFIG_AMBIQ_HAL_USE_SPID OR CONFIG_AMBIQ_HAL_USE_IOS_I2C)
+    zephyr_library_sources(hal/mcu/am_hal_ios.c)
+endif()
+
 if(CONFIG_AMBIQ_HAL_USE_I2S)
     zephyr_library_sources(hal/am_hal_i2s.c)
 endif()
@@ -103,4 +108,19 @@ if(CONFIG_AMBIQ_HAL_USE_MRAM)
     zephyr_library_sources(hal/mcu/am_hal_mram.c)
 endif()
 
+if(CONFIG_BT_AMOTA)
+    zephyr_library_sources(hal/mcu/am_hal_secure_ota.c)
+    # am_hal_reset.c is needed for am_hal_reset_control, include if not already included
+    if(NOT CONFIG_AMBIQ_HAL_USE_HWINFO)
+        zephyr_library_sources(hal/mcu/am_hal_reset.c)
+    endif()
+    # Utils source files are in a different directory, need to use relative path from module root
+    # AM_PART_APOLLO510 needs to be defined for conditional compilation in utils files
+    # AM_HAL_FLASH_PAGE_SIZE needs to be defined for apollo510b (MRAM uses 1KB pages)
+    add_compile_definitions(AM_PART_APOLLO510 AM_HAL_FLASH_PAGE_SIZE=1024)
+    zephyr_library_sources(../../utils/am_util_bootloader.c)
+    zephyr_library_sources(../../utils/am_util_multi_boot.c)
+endif()
+
+zephyr_include_directories(hal)
 zephyr_library_compile_options(-w)

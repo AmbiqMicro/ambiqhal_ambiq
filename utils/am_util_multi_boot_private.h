@@ -49,7 +49,6 @@
 #define AM_MULTI_BOOT_PRIVATE_H
 
 #include "am_mcu_apollo.h"
-#include "am_bsp.h"
 #include "am_util.h"
 
 //*****************************************************************************
