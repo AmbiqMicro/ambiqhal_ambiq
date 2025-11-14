@@ -67,8 +67,12 @@
 #include "am_mcu_apollo.h"
 #include "nema_dc_jdi.h"
 
-#if defined(AM_PART_APOLLO510)
+#if defined(AM_PART_APOLLO4_API)
+#include "apollo4p.h"
+#elif defined(AM_PART_APOLLO510)
 #include "apollo510.h"
+#elif defined(AM_PART_APOLLO330P_510L)
+#include "apollo510L.h"
 #endif
 
 #ifndef NEMADC_BASEADDR
@@ -110,6 +114,12 @@ static float fFormatPeriod = 0;
 static uint32_t ui32DCRegBlock0[12];    // offset from 0x00 to 0x2C
 static uint32_t ui32DCRegBlock1[4];     // offset from 0x1A0 to 0x1AC
 static bool bDCRegBackup = false;
+
+#if defined(AM_PART_APOLLO330P_510L)
+static uint8_t  ui8DCClkSrc;            // store the clksrc of DC
+static uint8_t  ui8DCClkDivider;        // store the clk divider of DC
+static bool bClkConfigBackup = false;
+#endif
 //*****************************************************************************
 //
 //! @brief Backup the key registers
@@ -252,6 +262,180 @@ wait_dbi_idle(uint32_t ui32Mask, uint32_t ui32Value)
     return am_hal_delay_us_status_change(ui32usMaxDelay, (uint32_t)&DC->STATUS, ui32Mask, ui32Value);
 }
 
+#if defined(AM_PART_APOLLO330P_510L)
+//*****************************************************************************
+//
+//! @brief control the NemaDC clock
+//!
+//! @param eClkControl  - Clock control option (enable/disable).
+//! @param eClkSel      - Clock source selection.
+//! @param ui32Divider  - Divider value to configure the clock speed.
+//!
+//! @return AM_HAL_STATUS_SUCCESS or ui32Status.
+//!
+//! This function enables or disables the NemaDC clock based on the provided
+//! control parameter. If enabling the clock, the clock source and divider
+//! will be configured accordingly. If disabling, the clock source and divider
+//! parameters are ignored and should be set to 0.
+//
+//*****************************************************************************
+uint32_t
+nemadc_clock_control(display_clock_control_e eClkControl, display_clksrc_e eClkSel, uint32_t ui32Divider)
+{
+    uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
+    switch(eClkControl)
+    {
+        case DISP_CLOCK_DISABLE:
+            //
+            // Get the currently used clock source
+            //
+            uint8_t ui8DISPClkSrc;
+            ui8DISPClkSrc = CRM->DISPCLKCRM_b.DISPCLKCLKSEL;
+
+            //
+            // Disable DISP non-APB clock
+            //
+            ui32Status = am_hal_crm_control(DISPCLK, CLOCK_SET, false);
+            if(ui32Status)
+            {
+                return ui32Status;
+            }
+
+            //
+            // Disable DISP APB clock
+            //
+            ui32Status = am_hal_crm_control(DC, CLOCK_SET, false);
+            if(ui32Status)
+            {
+                return ui32Status;
+            }
+
+            //
+            // Reset DISP APB and DISP Modules
+            //
+            ui32Status = am_hal_crm_control(DC, RESET, true);
+            if(ui32Status)
+            {
+                return ui32Status;
+            }
+
+            //
+            // Disable DC clock
+            //
+            ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DISPCTRLCLK_DISABLE, NULL);
+            if(ui32Status)
+            {
+                return ui32Status;
+            }
+
+            //
+            // Release clk src by clock manager
+            //
+            if(ui8DISPClkSrc == DISPCLKSRC_PLLVCO)
+            {
+                ui32Status = am_hal_clkmgr_clock_release(AM_HAL_CLKMGR_CLK_ID_PLLVCO, AM_HAL_CLKMGR_USER_ID_DC);
+                if(ui32Status)
+                {
+                    return ui32Status;
+                }
+            }
+            else if(ui8DISPClkSrc == DISPCLKSRC_PLLVCO)
+            {
+                ui32Status = am_hal_clkmgr_clock_release(AM_HAL_CLKMGR_CLK_ID_HFRC, AM_HAL_CLKMGR_USER_ID_DC);
+                if(ui32Status)
+                {
+                    return ui32Status;
+                }
+            }
+        break;
+
+        case DISP_CLOCK_ENABLE:
+            //
+            // Check if the DC peripheral is already enabled.
+            //
+            bool bStatus = true;
+            am_hal_pwrctrl_periph_enabled(AM_HAL_PWRCTRL_PERIPH_DISP, &bStatus);
+            if(!bStatus)
+            {
+                //
+                // If not enabled, enable the DC peripheral.
+                // This is required to ensure correct CRM configuration order:
+                //
+                // 1.Enable DC power
+                // 2.Set CLKGEN->CLKCTRL.DISPCTRLCLKEN
+                // 3.Set CRM->APBDISPCRM.APBDISPCLKEN
+                //
+                // Failing to enable the DC may cause APBDISPCRM->APBDISPCLKACTIVE
+                // bitfield never assert.
+                //
+                ui32Status = am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_DISP);
+                if(ui32Status)
+                {
+                    return ui32Status;
+                }
+            }
+
+            ui32Status = am_hal_crm_config(DISPCLK, (CRM_DISPCLKCRM_DISPCLKCLKSEL_Enum)eClkSel, ui32Divider - 1);
+            if(ui32Status)
+            {
+                return ui32Status;
+            }
+
+            //
+            // Request clk src by clock manager
+            //
+            if(eClkSel == DISPCLKSRC_PLLVCO)
+            {
+                ui32Status = am_hal_clkmgr_clock_request(AM_HAL_CLKMGR_CLK_ID_PLLVCO, AM_HAL_CLKMGR_USER_ID_DC);
+                if(ui32Status)
+                {
+                    return ui32Status;
+                }
+            }
+            else if(eClkSel == DISPCLKSRC_HFRC_192MHz)
+            {
+                ui32Status = am_hal_clkmgr_clock_request(AM_HAL_CLKMGR_CLK_ID_HFRC, AM_HAL_CLKMGR_USER_ID_DC);
+                if(ui32Status)
+                {
+                    return ui32Status;
+                }
+            }
+
+            //
+            // Enable DC clock
+            //
+            ui32Status = am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DISPCTRLCLK_ENABLE, NULL);
+            if(ui32Status)
+            {
+                return ui32Status;
+            }
+
+            //
+            // Enable DISP APB clock
+            //
+            ui32Status = am_hal_crm_control(DC, CLOCK_SET, true);
+            if(ui32Status)
+            {
+                return ui32Status;
+            }
+
+            //
+            // Enable DISP non-APB clock
+            //
+            ui32Status = am_hal_crm_control(DISPCLK, CLOCK_SET, true);
+            if(ui32Status)
+            {
+                return ui32Status;
+            }
+        break;
+
+        default:
+            return AM_HAL_STATUS_INVALID_ARG;
+    }
+    return AM_HAL_STATUS_SUCCESS;
+}
+#endif
+
 //*****************************************************************************
 //
 //! @brief reset JDI used parameters
@@ -282,8 +466,22 @@ uint32_t
 nemadc_power_control(am_hal_sysctrl_power_state_e ePowerState, bool bRetainState)
 {
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
-    bool bStatus;
+    bool bStatus = true;
     am_hal_pwrctrl_periph_enabled(AM_HAL_PWRCTRL_PERIPH_DISP, &bStatus);
+#if defined(AM_PART_APOLLO330P_510L)
+    //
+    // This API does nothing for DSI mode, DSI power control API will take care DC power control by itself.
+    //
+    if (bDCRegBackup && (ui32DCRegBlock0[NEMADC_REG_INTERFACE_CFG/4] & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN)))
+    {
+        return AM_HAL_STATUS_INVALID_OPERATION;
+    }
+
+    if (bStatus && (nemadc_reg_read(NEMADC_REG_INTERFACE_CFG) & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN)))
+    {
+        return AM_HAL_STATUS_INVALID_OPERATION;
+    }
+#endif
     //
     // Decode the requested power state and update DC operation accordingly.
     //
@@ -305,6 +503,26 @@ nemadc_power_control(am_hal_sysctrl_power_state_e ePowerState, bool bRetainState
                 return ui32Status;
             }
 
+#if defined(AM_PART_APOLLO330P_510L)
+            if(bClkConfigBackup)
+            {
+                //
+                // Restore DC clock
+                //
+                ui32Status = nemadc_clock_control(DISP_CLOCK_ENABLE, ui8DCClkSrc, ui8DCClkDivider);
+                if (ui32Status != AM_HAL_STATUS_SUCCESS)
+                {
+                    return ui32Status;
+                }
+            }
+            else
+            {
+                //
+                // There is no valid DC CLK backup configuration.
+                //
+                return AM_HAL_STATUS_FAIL;
+            }
+#else
             //
             // Enable DC clock
             //
@@ -313,7 +531,7 @@ nemadc_power_control(am_hal_sysctrl_power_state_e ePowerState, bool bRetainState
             {
                 return ui32Status;
             }
-
+#endif
             //
             // Initialize NemaDC, it includes enable interrupt
             //
@@ -372,10 +590,28 @@ nemadc_power_control(am_hal_sysctrl_power_state_e ePowerState, bool bRetainState
                 //
                 NVIC_DisableIRQ(NEMADC_IRQ);
 
+#if defined(AM_PART_APOLLO330P_510L)
+                //
+                // Store the clock configuration of DC
+                //
+                ui8DCClkSrc = CRM->DISPCLKCRM_b.DISPCLKCLKSEL;
+                ui8DCClkDivider = CRM->DISPCLKCRM_b.DISPCLKCLKDIV;
+                bClkConfigBackup = true;
+
+                //
+                // Disable and release DC clock.
+                //
+                nemadc_clock_control(DISP_CLOCK_DISABLE, 0, 0);
+                if(ui32Status)
+                {
+                    return ui32Status;
+                }
+#else
                 //
                 // Disable DC clock
                 //
                 am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DCCLK_DISABLE, NULL);
+#endif
 
                 //
                 // Disable power
@@ -411,7 +647,14 @@ void
 nemadc_configure(nemadc_initial_config_t *psDCConfig)
 {
     uint32_t cfg = 0;
-    if(psDCConfig->eInterface == DISP_INTERFACE_DBI || psDCConfig->eInterface == DISP_INTERFACE_DBIDSI)
+    int i32PreDivider = 1,i32PrimaryDivider = 1;
+#if defined(AM_PART_APOLLO330P_510L)
+    float fPLLCLKFreq = (float)192.0 / (CRM->DISPCLKCRM_b.DISPCLKCLKDIV + 1);
+#else
+    float fPLLCLKFreq = 3 * (2 << CLKGEN->DISPCLKCTRL_b.DISPCLKSEL);
+#endif
+
+    if (psDCConfig->eInterface == DISP_INTERFACE_DBI || psDCConfig->eInterface == DISP_INTERFACE_DBIDSI)
     {
         //
         // Program NemaDC MIPI interface
@@ -419,47 +662,50 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
 #ifdef CONFIG_MIPI_DSI_AMBIQ
         if (psDCConfig->eInterface == DISP_INTERFACE_DBIDSI)
         {
-            if(CLKGEN->DISPCLKCTRL_b.DISPCLKSEL == CLKGEN_DISPCLKCTRL_DISPCLKSEL_HFRC192)
+#if defined(SOC_SERIES_APOLLO5X)
+#if defined(AM_PART_APOLLO330P_510L)
+            if (CRM->DISPCLKCRM_b.DISPCLKCLKSEL == CRM_DISPCLKCRM_DISPCLKCLKSEL_HFRC_192MHz && CRM->DISPCLKCRM_b.DISPCLKCLKDIV == 0)
+#else
+            if (CLKGEN->DISPCLKCTRL_b.DISPCLKSEL == CLKGEN_DISPCLKCTRL_DISPCLKSEL_HFRC192)
+#endif
             {
                 //
                 // Set the primary divider ratio to 2 to make sure the pixel clock isn't greater than 96MHz and bypass predivider
                 //
-                nemadc_clkdiv(2, 1, 4, 0);
+                i32PrimaryDivider = 2;
             }
-            else
-            {
-                //
-                // Set the primary divider ratio to 0 or 1,it's bypass the primary divider.the swap feature is invalid in this situation.
-                // After this configuration, both pixel_clk and format_clk's frequencies are from pll_clk through predivider if its value is equal to 0 or 1;
-                // they are from pll_clk directly when its value is 0 or 1.
-                //
-                nemadc_clkdiv(1, 1, 4, 0);
-            }
+#elif defined(SOC_SERIES_APOLLO4X)
+            //
+            // Set the primary divider ratio to 0 or 1,it's bypass the primary divider.the swap feature is invalid in this situation.
+            // After this configuration, both pixel_clk and format_clk's frequencies are from pll_clk through predivider if its value is equal to 0 or 1;
+            // they are from pll_clk directly when its value is 0 or 1.
+            //
+            nemadc_clkdiv(1, 1, 4, 0);
+#endif
+
+#if defined(AM_PART_APOLLO4_API)
+            cfg = MIPICFG_DBI_EN | MIPICFG_RESX | MIPICFG_EXT_CTRL | MIPICFG_EN_STALL | MIPICFG_PIXCLK_OUT_EN | psDCConfig->ui32PixelFormat;
+#else
             cfg = MIPICFG_DBI_EN | MIPICFG_RESX | MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN | MIPICFG_EN_STALL | psDCConfig->ui32PixelFormat;
             //
             // Setting the DBIB_CLK clock frequency is the half of the format clock, that is 96MHz.(This is the limitation of the DSI host)
             //
             nemadc_reg_write(NEMADC_REG_FORMAT_CTRL2, 0x2U << 30);
+#endif
         }
         else
 #endif
         {
-            int i32PreDivider;
-            float fPLLCLKFreq;
-            //
-            // Calculated the present clock source frequency.
-            //
-            fPLLCLKFreq = 3 * (2 << CLKGEN->DISPCLKCTRL_b.DISPCLKSEL);
             i32PreDivider = ceilf(fPLLCLKFreq / psDCConfig->fCLKMaxFreq);
 
             //
-            // The value of the predivider should be less than 128 on Apollo510.
+            // The value of the predivider should be less than 128 on Apollo510 & Apollo510L.
             //
-            if(i32PreDivider > 127)
+            if (i32PreDivider > 127)
             {
                 return;
             }
-            nemadc_clkdiv( 1, i32PreDivider, 4, 0);
+
             //
             // Adjust the timing between signals D/CX and WRX.
             //
@@ -472,14 +718,14 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
             cfg |= MIPICFG_DIS_TE;
         }
         nemadc_MIPI_CFG_out(cfg);
+
+        nemadc_clkdiv(i32PrimaryDivider, i32PreDivider, 4, 0);
     }
     else if ((psDCConfig->eInterface == DISP_INTERFACE_QSPI) ||
              (psDCConfig->eInterface == DISP_INTERFACE_DSPI) ||
-             (psDCConfig->eInterface == DISP_INTERFACE_SPI4))
+             (psDCConfig->eInterface == DISP_INTERFACE_SPI4) ||
+             (psDCConfig->eInterface == DISP_INTERFACE_QSPI_DDR))
     {
-        int i32PreDivider;
-        float fPLLCLKFreq;
-        fPLLCLKFreq = 3 * (2 << CLKGEN->DISPCLKCTRL_b.DISPCLKSEL);
         //
         // SDR frequency
         //
@@ -491,7 +737,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
         {
             return;
         }
-        nemadc_clkdiv(1, i32PreDivider, 4, 0);
+        nemadc_clkdiv(i32PrimaryDivider, i32PreDivider, 4, 0);
 
         cfg = psDCConfig->ui32PixelFormat;
         if(psDCConfig->bTEEnable)
@@ -502,9 +748,6 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
     }
     else if (psDCConfig->eInterface == DISP_INTERFACE_JDI)
     {
-        int i32PreDivider,i32PrimaryDivider;
-        float fPLLCLKFreq;
-        fPLLCLKFreq = 3 * (2 << CLKGEN->DISPCLKCTRL_b.DISPCLKSEL);
         //
         // Calculate the Optimal solution primary divider and predivider for the JDI interface.
         //
@@ -572,19 +815,16 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
     }
     else if (psDCConfig->eInterface == DISP_INTERFACE_DPI)
     {
-        int i32PreDivider;
-        float fPLLCLKFreq;
-        fPLLCLKFreq = 3 * (2 << CLKGEN->DISPCLKCTRL_b.DISPCLKSEL);
         i32PreDivider = ceilf(fPLLCLKFreq / psDCConfig->fCLKMaxFreq);
 
         //
-        // The value of the predivider should be less than 128 on Apollo510.
+        // The value of the predivider should be less than 128 on Apollo510 & Apollo510L.
         //
         if(i32PreDivider > 127)
         {
             return;
         }
-        nemadc_clkdiv( 1, i32PreDivider, 4, 0);
+        nemadc_clkdiv(i32PrimaryDivider, i32PreDivider, 4, 0);
 
         //
         // Configure DPI(RGB) interface color coding, Hsync and Vsync polarity.
@@ -612,7 +852,14 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
     }
     else
     {
+#if defined(AM_PART_APOLLO4_API)
+        nemadc_reg_write(NEMADC_REG_CLKCTRL_CG,
+                        (NemaDC_clkctrl_cg_clk_swap |
+                         NemaDC_clkctrl_cg_l0_bus_clk |
+                         NemaDC_clkctrl_cg_clk_en));
+#else
         nemadc_reg_write(NEMADC_REG_CLKCTRL_CG, NemaDC_clkctrl_cg_clk_en);
+#endif
     }
 }
 
@@ -647,10 +894,10 @@ dc_transfer_frame(bool bAutoLaunch, bool bContinue)
         ((ui32Cfg & (MIPICFG_SPI3 | MIPICFG_SPI4 | MIPICFG_DSPI | MIPICFG_QSPI | MIPICFG_DSPI_SPIX )) == 0))
     {
         //
-        // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
+        // Bitfields MIPICFG_EXT_CTRL only configured for the DSI interface.
         //
 #ifdef CONFIG_MIPI_DSI_AMBIQ
-        if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
+        if (ui32Cfg & MIPICFG_EXT_CTRL)
         {
 #if defined(AM_PART_APOLLO510)
             if (APOLLO5_B0)
@@ -672,12 +919,26 @@ dc_transfer_frame(bool bAutoLaunch, bool bContinue)
                           NemaDC_dt_DCS_long_write, // Unused parameter
                           NemaDC_dcs_datacmd);
 
+#if  defined(AM_PART_APOLLO4_API)
+            //
+            // Set scan-line (DCS) command
+            //
+            nemadc_MIPI_out(MIPI_DBIB_CMD | MIPI_write_memory_continue | NemaDC_sline_cmd);
+#endif
+#ifdef MANUALLY_CONTROL_DBIB_CSX
+            nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_SPI_HOLD | MIPICFG_FRC_CSX_0);
+            //
+            // Send DCS write_memory_start command
+            //
+            nemadc_MIPI_out(MIPI_DBIB_CMD | ui32MemWrCmd);
+#else
             nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_SPI_HOLD);
             //
             // Send DCS write_memory_start command
             //
             nemadc_MIPI_out(MIPI_DBIB_CMD | ui32MemWrCmd);
             wait_dbi_idle(DC_STATUS_dbi_busy, 0x0U);
+#endif
         }
         else
 #endif
@@ -847,13 +1108,22 @@ nemadc_transfer_frame_end(void)
         ((ui32Cfg & (MIPICFG_SPI3 | MIPICFG_SPI4 | MIPICFG_DSPI | MIPICFG_QSPI | MIPICFG_DSPI_SPIX )) == 0))
     {
         //
-        // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
+        // Bitfields MIPICFG_EXT_CTRL only configured for the DSI interface.
         //
 #ifdef CONFIG_MIPI_DSI_AMBIQ
-        if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
+        if (ui32Cfg & MIPICFG_EXT_CTRL)
         {
+#ifdef MANUALLY_CONTROL_DBIB_CSX
+            nemadc_MIPI_CFG_out(ui32Cfg & ~(MIPICFG_SPI_HOLD | MIPICFG_FRC_CSX_0));
+#else
             nemadc_MIPI_CFG_out(ui32Cfg & (~MIPICFG_SPI_HOLD));
+#endif
+#if defined(AM_PART_APOLLO4_API)
+            nemadc_reg_write(NEMADC_REG_CLKCTRL_CG, NemaDC_clkctrl_cg_clk_en | NemaDC_clkctrl_cg_clk_swap); // enable clock gating
+#else
             nemadc_reg_write(NEMADC_REG_CLKCTRL_CG, NemaDC_clkctrl_cg_clk_en); // enable clock gating
+#endif
+
             nemadc_reg_write(NEMADC_REG_GPIO, nemadc_reg_read(NEMADC_REG_GPIO) | 0x1); // LP
         }
         else
@@ -1112,6 +1382,9 @@ dsi_generic_write(uint8_t* pui8Para, uint8_t ui8ParaLen, bool bHS)
     //
     ui32Cfg = nemadc_reg_read(NEMADC_REG_DBIB_CFG);
 
+#if defined(AM_PART_APOLLO4_API)
+    nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_SPI_HOLD);
+#else
     if ( ui8ParaLen < 9 )
     {
         //
@@ -1128,7 +1401,7 @@ dsi_generic_write(uint8_t* pui8Para, uint8_t ui8ParaLen, bool bHS)
         nemadc_reg_write(NEMADC_REG_GPIO, nemadc_reg_read(NEMADC_REG_GPIO) | 0x08);
         nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_FRC_CSX_0);
     }
-
+#endif
     //
     // Download command & parameter to DBI i/f
     //
@@ -1205,10 +1478,10 @@ nemadc_mipi_cmd_write(uint8_t ui8Command,
         ((ui32Cfg & (MIPICFG_SPI3 | MIPICFG_SPI4 | MIPICFG_DSPI | MIPICFG_QSPI | MIPICFG_DSPI_SPIX )) == 0))
     {
         //
-        // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
+        // Bitfields MIPICFG_EXT_CTRL only configured for the DSI interface.
         //
 #ifdef CONFIG_MIPI_DSI_AMBIQ
-        if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
+        if (ui32Cfg & MIPICFG_EXT_CTRL)
         {
 #if defined(AM_PART_APOLLO510)
             if (APOLLO5_B0)
@@ -1224,7 +1497,7 @@ nemadc_mipi_cmd_write(uint8_t ui8Command,
             {
                 ui32Status = dsi_generic_write(p_ui8Para, ui8ParaLen, bHS);
             }
-
+#if !defined(AM_PART_APOLLO4_API)
             if (ui32Status == AM_HAL_STATUS_SUCCESS)
             {
                 //
@@ -1232,6 +1505,7 @@ nemadc_mipi_cmd_write(uint8_t ui8Command,
                 //
                 ui32Status = am_hal_dsi_wait_stop_state(0);
             }
+#endif
         }
         else
 #endif
@@ -1404,7 +1678,12 @@ dsi_dcs_read(uint8_t ui8Cmd, uint8_t ui8DataLen, uint32_t* ui32Received, bool bH
         return AM_HAL_STATUS_TIMEOUT;
     }
     ui32Cfg = nemadc_reg_read(NEMADC_REG_DBIB_CFG);
+
+#if defined(AM_PART_APOLLO4_API)
+    if(true)
+#else
     if(ui8DataLen == 1)
+#endif
     {
         nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_EN_DVALID | MIPICFG_SPI_HOLD);
 
@@ -1545,6 +1824,9 @@ dsi_generic_read(uint8_t *p_ui8Para, uint8_t ui8ParaLen, uint8_t ui8DataLen, uin
         }
     }
 
+#if defined(AM_PART_APOLLO4_API)
+    nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_EN_DVALID);
+#else
     if (ui8DataLen == 1)
     {
         //
@@ -1578,6 +1860,7 @@ dsi_generic_read(uint8_t *p_ui8Para, uint8_t ui8ParaLen, uint8_t ui8DataLen, uin
             nemadc_reg_write(NEMADC_REG_DBIB_RDAT, 0);
         }
     }
+#endif
 
     //
     // Return directly if timeout
@@ -1642,15 +1925,17 @@ nemadc_mipi_cmd_read(uint8_t ui8Command,
         ((ui32Cfg & (MIPICFG_SPI3 | MIPICFG_SPI4 | MIPICFG_DSPI | MIPICFG_QSPI | MIPICFG_DSPI_SPIX )) == 0))
     {
         //
-        // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
+        // Bitfields MIPICFG_EXT_CTRL only configured for the DSI interface.
         //
 #ifdef CONFIG_MIPI_DSI_AMBIQ
-        if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
+        if (ui32Cfg & MIPICFG_EXT_CTRL)
         {
+#if !defined(AM_PART_APOLLO4_API)
             //
             // Enable DSI read,otherwise enable TE interruption
             //
             nemadc_reg_write(NEMADC_REG_GPIO, nemadc_reg_read(NEMADC_REG_GPIO) & (~0x20));
+#endif
 #if defined(AM_PART_APOLLO510)
             if (APOLLO5_B0)
             {
@@ -1665,11 +1950,12 @@ nemadc_mipi_cmd_read(uint8_t ui8Command,
             {
                 ui32Status = dsi_generic_read(p_ui8Para, ui8ParaLen, ui8DataLen, p_ui32Data, bHS);
             }
+#if !defined(AM_PART_APOLLO4_API)
             //
             // Enable TE interruption,otherwise enable DSI read.
             //
             nemadc_reg_write(NEMADC_REG_GPIO, nemadc_reg_read(NEMADC_REG_GPIO) | 0x20);
-
+#endif
         }
         else
 #endif
@@ -1768,7 +2054,7 @@ nemadc_mipi_cmd_read(uint8_t ui8Command,
 //!
 //! @param  pvUnused            - invalid  parameter
 //!
-//! this function used to clear Vsync interrupt status bit.and execute callback.
+//! This function is used to clear vsync interrupt status bit and execute callback.
 //!
 //! @return None.
 //
@@ -1793,10 +2079,6 @@ prvVsyncInterruptHandler(void *pvUnused)
     {
         nemadc_vsync_cb(vsync_arg, 0);
     }
-    else
-    {
-
-    }
 }
 //*****************************************************************************
 //
@@ -1804,7 +2086,7 @@ prvVsyncInterruptHandler(void *pvUnused)
 //!
 //! @param  pvUnused            - invalid  parameter
 //!
-//! this function used to clear TE interrupt status bit.and execute callback.
+//! This function is used to clear TE interrupt status bit and execute callback.
 //!
 //! @return None.
 //
@@ -1827,10 +2109,6 @@ prvTEInterruptHandler(void *pvUnused)
     if (nemadc_te_cb != NULL)
     {
         nemadc_te_cb(NULL, 0);
-    }
-    else
-    {
-
     }
 }
 
@@ -1874,11 +2152,12 @@ nemadc_sys_init(void)
     /* Clear the interrupt */
     nemadc_reg_write(NEMADC_REG_INTERRUPT, 0);
 
+#if !defined(AM_PART_APOLLO4_API)
     //
     // Enable TE interruption
     //
     nemadc_reg_write(NEMADC_REG_GPIO, 0x20);
-
+#endif
     /* Install Interrupt Handler */
     NVIC_SetPriority(NEMADC_IRQ, AM_IRQ_PRIORITY_DEFAULT);
     NVIC_EnableIRQ(NEMADC_IRQ);

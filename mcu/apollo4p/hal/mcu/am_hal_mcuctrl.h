@@ -47,8 +47,7 @@
 #ifndef AM_HAL_MCUCTRL_H
 #define AM_HAL_MCUCTRL_H
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "am_mcu_apollo.h"
 
 #include "regs/am_reg.h"
 #include "regs/am_reg_base_addresses.h"
@@ -506,4 +505,3 @@ extern uint32_t am_hal_mcuctrl_info_get(am_hal_mcuctrl_infoget_e eInfoGet,
 //! @}
 //
 //*****************************************************************************
-
