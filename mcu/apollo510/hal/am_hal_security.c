@@ -75,12 +75,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision stable-c286075505 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
 #include <stdbool.h>
 #include "am_mcu_apollo.h"
+
+//
+// Enable debug output for CRC boundary splitting
+//
+//#define DEBUG_CRC_BOUNDARY
 
 //*****************************************************************************
 //  Local defines.
@@ -98,6 +103,33 @@
 // Globals
 //
 //*****************************************************************************
+
+//
+// Global variable to track CRC initialization state
+//
+static bool g_bCrcInitialized = false;
+
+//*****************************************************************************
+//
+// Set CRC initialization state to true
+//
+//*****************************************************************************
+static inline void
+am_hal_crc_set_init(void)
+{
+    g_bCrcInitialized = true;
+}
+
+//*****************************************************************************
+//
+// Set CRC initialization state to false
+//
+//*****************************************************************************
+static inline void
+am_hal_crc_finalize(void)
+{
+    g_bCrcInitialized = false;
+}
 
 //*****************************************************************************
 //
@@ -322,8 +354,12 @@ am_hal_crc32(uint32_t ui32StartAddr, uint32_t ui32SizeBytes, uint32_t *pui32Crc)
     //
     // Program the CRC engine to compute the crc
     //
-    ui32CRC32                 = 0xFFFFFFFF;
-    SECURITY->RESULT          = ui32CRC32;
+    if (g_bCrcInitialized == false)
+    {
+        ui32CRC32                 = 0xFFFFFFFF;
+        SECURITY->RESULT          = ui32CRC32;
+    }
+
     SECURITY->SRCADDR         = ui32StartAddr;
     SECURITY->LEN             = ui32SizeBytes;
     SECURITY->CTRL_b.FUNCTION = SECURITY_CTRL_FUNCTION_CRC32;
@@ -351,6 +387,192 @@ am_hal_crc32(uint32_t ui32StartAddr, uint32_t ui32SizeBytes, uint32_t *pui32Crc)
     return status;
 
 } // am_hal_crc32()
+
+
+//*****************************************************************************
+//
+// Helper function to find the next problematic boundary that would be crossed
+//
+//*****************************************************************************
+static uint32_t
+am_hal_crc_find_next_boundary(uint32_t ui32StartAddr, uint32_t ui32SizeBytes)
+{
+    uint32_t ui32EndAddr = ui32StartAddr + ui32SizeBytes - 1;
+    uint32_t ui32NextBoundary = ui32EndAddr + 1; // Default: no boundary crossed
+
+    //
+    // Check if we're in ITCM or DTCM and would cross a 4KB boundary
+    // Calculate 4KB boundaries relative to the start of the respective TCM
+    //
+    if ((
+#if ITCM_BASEADDR != 0  // Avoid compiler warning "pointless comparison of unsigned integer with zero"
+         (ui32StartAddr >= ITCM_BASEADDR) &&
+#endif
+                                             (ui32StartAddr <= ITCM_END)) ||
+        ((ui32StartAddr >= DTCM_BASEADDR) && (ui32StartAddr <= DTCM_END)))
+    {
+        //
+        // Find next 4KB boundary in TCM (simple and correct approach)
+        // ITCM 4KB boundaries: 0x00000000, 0x00001000, 0x00002000, etc.
+        // DTCM 4KB boundaries: 0x20000000, 0x20001000, 0x20002000, etc.
+        //
+        uint32_t ui32Current4KBBoundary = (ui32StartAddr & 0xFFFFF000) + 0x1000;
+
+        if (ui32EndAddr >= ui32Current4KBBoundary)
+        {
+            ui32NextBoundary = ui32Current4KBBoundary;
+        }
+    }
+
+    //
+    // Check major memory boundaries and select the closest one
+    //
+    if ((ui32StartAddr <= DTCM_END) && (ui32EndAddr >= SSRAM0_BASEADDR))
+    {
+        //
+        // Choose the closest boundary (4KB vs major boundary)
+        //
+        if (ui32NextBoundary > SSRAM0_BASEADDR)
+        {
+            ui32NextBoundary = SSRAM0_BASEADDR;
+        }
+    }
+    else if ((ui32StartAddr <= SSRAM0_END) && (ui32EndAddr >= SSRAM1_BASEADDR))
+    {
+        if (ui32NextBoundary > SSRAM1_BASEADDR)
+        {
+            ui32NextBoundary = SSRAM1_BASEADDR;
+        }
+    }
+    else if ((ui32StartAddr <= SSRAM1_END) && (ui32EndAddr >= SSRAM2_BASEADDR))
+    {
+        if (ui32NextBoundary > SSRAM2_BASEADDR)
+        {
+            ui32NextBoundary = SSRAM2_BASEADDR;
+        }
+    }
+
+    return ui32NextBoundary;
+}
+
+//*****************************************************************************
+//
+// CRC32 function with boundary crossing protection
+//
+//*****************************************************************************
+uint32_t
+am_hal_crc(uint32_t *pui32StartAddr, uint32_t ui32SizeBytes, uint32_t *pui32Crc)
+{
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    if ((pui32StartAddr == NULL) || (pui32Crc == NULL))
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    //
+    // Word count validation (this check is technically redundant since word counts are always byte-aligned)
+    //
+    if ((ui32SizeBytes) & 0x3)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+    uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
+    uint32_t ui32CurrentAddr;
+    uint32_t ui32RemainingWords;
+    uint32_t ui32ChunkSizeBytes;
+    uint32_t ui32ChunkSizeWords;
+    uint32_t ui32NextBoundary;
+    uint32_t ui32CurrentCrc = 0xFFFFFFFF;
+
+    if ( SECURITY->CTRL_b.ENABLE )
+    {
+        SECURITY->CTRL_b.ENABLE = 0x00;
+        SECURITY->CTRL = 0x00;
+    }
+
+    ui32CurrentAddr = (uint32_t)pui32StartAddr;
+    ui32RemainingWords = ui32SizeBytes / 4;
+
+    //
+    // Process data in chunks, splitting at problematic boundaries
+    //
+    while (ui32RemainingWords > 0)
+    {
+        //
+        // Find the next problematic boundary (boundary detection works in bytes)
+        //
+        uint32_t ui32RemainingBytes = ui32RemainingWords * 4;
+        ui32NextBoundary = am_hal_crc_find_next_boundary(ui32CurrentAddr, ui32RemainingBytes);
+
+        //
+        // Determine chunk size - either to the boundary or remaining data
+        //
+        if (ui32NextBoundary < ui32CurrentAddr + ui32RemainingBytes)
+        {
+            //
+            // We hit a boundary, process up to the boundary
+            //
+            ui32ChunkSizeBytes = ui32NextBoundary - ui32CurrentAddr;
+        }
+        else
+        {
+            //
+            // No boundary crossed, process all remaining data
+            //
+            ui32ChunkSizeBytes = ui32RemainingBytes;
+        }
+
+        //
+        // Convert chunk size to words and validate word alignment
+        //
+        ui32ChunkSizeWords = ui32ChunkSizeBytes / 4;
+
+        //
+        // Only process if there's data in this chunk
+        //
+        if (ui32ChunkSizeWords > 0)
+        {
+            //
+            // Debug output to track boundary splitting
+            //
+#ifdef DEBUG_CRC_BOUNDARY
+            am_util_stdio_printf("CRC Chunk: addr=0x%08X, size=%d bytes (%d words), boundary=0x%08X, seed=0x%08X\n",
+                                ui32CurrentAddr, ui32ChunkSizeBytes, ui32ChunkSizeWords, ui32NextBoundary, ui32CurrentCrc);
+#endif
+
+            //
+            // Compute CRC on this chunk using seeded calculation
+            //
+            ui32Status = am_hal_crc32(ui32CurrentAddr, ui32ChunkSizeBytes, &ui32CurrentCrc);
+
+            if (ui32Status != AM_HAL_STATUS_SUCCESS)
+            {
+                return ui32Status;
+            }
+
+#ifdef DEBUG_CRC_BOUNDARY
+            am_util_stdio_printf("CRC Result: 0x%08X\n", ui32CurrentCrc);
+#endif
+            am_hal_crc_set_init();
+        }
+
+        //
+        // Move to next chunk
+        //
+        ui32CurrentAddr += ui32ChunkSizeBytes;
+        ui32RemainingWords -= ui32ChunkSizeWords;
+    }
+
+    am_hal_crc_finalize();
+
+    //
+    // Return the final CRC value
+    //
+    *pui32Crc = ui32CurrentCrc;
+
+    return ui32Status;
+}
 
 //*****************************************************************************
 //
