@@ -674,13 +674,6 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
                 //
                 i32PrimaryDivider = 2;
             }
-#elif defined(SOC_SERIES_APOLLO4X)
-            //
-            // Set the primary divider ratio to 0 or 1,it's bypass the primary divider.the swap feature is invalid in this situation.
-            // After this configuration, both pixel_clk and format_clk's frequencies are from pll_clk through predivider if its value is equal to 0 or 1;
-            // they are from pll_clk directly when its value is 0 or 1.
-            //
-            nemadc_clkdiv(1, 1, 4, 0);
 #endif
 
 #if defined(AM_PART_APOLLO4_API)

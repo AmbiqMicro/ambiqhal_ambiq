@@ -134,7 +134,8 @@ typedef enum
     DISP_INTERFACE_SPI4,
     DISP_INTERFACE_JDI,
     DISP_INTERFACE_DPI,
-    DISP_INTERFACE_DBI
+    DISP_INTERFACE_DBI,
+    DISP_INTERFACE_QSPI_DDR
 } display_interface_t;
 
 typedef struct
