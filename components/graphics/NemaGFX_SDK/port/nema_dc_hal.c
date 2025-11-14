@@ -67,7 +67,9 @@
 #include "am_mcu_apollo.h"
 #include "nema_dc_jdi.h"
 
-#if defined(AM_PART_APOLLO510)
+#if defined(AM_PART_APOLLO4_API)
+#include "apollo4p.h"
+#elif defined(AM_PART_APOLLO510)
 #include "apollo510.h"
 #elif defined(AM_PART_APOLLO330P_510L)
 #include "apollo510L.h"
@@ -660,6 +662,7 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
 #ifdef CONFIG_MIPI_DSI_AMBIQ
         if (psDCConfig->eInterface == DISP_INTERFACE_DBIDSI)
         {
+#if defined(SOC_SERIES_APOLLO5X)
 #if defined(AM_PART_APOLLO330P_510L)
             if (CRM->DISPCLKCRM_b.DISPCLKCLKSEL == CRM_DISPCLKCRM_DISPCLKCLKSEL_HFRC_192MHz && CRM->DISPCLKCRM_b.DISPCLKCLKDIV == 0)
 #else
@@ -671,12 +674,17 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
                 //
                 i32PrimaryDivider = 2;
             }
+#endif
 
+#if defined(AM_PART_APOLLO4_API)
+            cfg = MIPICFG_DBI_EN | MIPICFG_RESX | MIPICFG_EXT_CTRL | MIPICFG_EN_STALL | MIPICFG_PIXCLK_OUT_EN | psDCConfig->ui32PixelFormat;
+#else
             cfg = MIPICFG_DBI_EN | MIPICFG_RESX | MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN | MIPICFG_EN_STALL | psDCConfig->ui32PixelFormat;
             //
             // Setting the DBIB_CLK clock frequency is the half of the format clock, that is 96MHz.(This is the limitation of the DSI host)
             //
             nemadc_reg_write(NEMADC_REG_FORMAT_CTRL2, 0x2U << 30);
+#endif
         }
         else
 #endif
@@ -837,7 +845,14 @@ nemadc_configure(nemadc_initial_config_t *psDCConfig)
     }
     else
     {
+#if defined(AM_PART_APOLLO4_API)
+        nemadc_reg_write(NEMADC_REG_CLKCTRL_CG,
+                        (NemaDC_clkctrl_cg_clk_swap |
+                         NemaDC_clkctrl_cg_l0_bus_clk |
+                         NemaDC_clkctrl_cg_clk_en));
+#else
         nemadc_reg_write(NEMADC_REG_CLKCTRL_CG, NemaDC_clkctrl_cg_clk_en);
+#endif
     }
 }
 
@@ -872,10 +887,10 @@ dc_transfer_frame(bool bAutoLaunch, bool bContinue)
         ((ui32Cfg & (MIPICFG_SPI3 | MIPICFG_SPI4 | MIPICFG_DSPI | MIPICFG_QSPI | MIPICFG_DSPI_SPIX )) == 0))
     {
         //
-        // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
+        // Bitfields MIPICFG_EXT_CTRL only configured for the DSI interface.
         //
 #ifdef CONFIG_MIPI_DSI_AMBIQ
-        if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
+        if (ui32Cfg & MIPICFG_EXT_CTRL)
         {
 #if defined(AM_PART_APOLLO510)
             if (APOLLO5_B0)
@@ -897,6 +912,12 @@ dc_transfer_frame(bool bAutoLaunch, bool bContinue)
                           NemaDC_dt_DCS_long_write, // Unused parameter
                           NemaDC_dcs_datacmd);
 
+#if  defined(AM_PART_APOLLO4_API)
+            //
+            // Set scan-line (DCS) command
+            //
+            nemadc_MIPI_out(MIPI_DBIB_CMD | MIPI_write_memory_continue | NemaDC_sline_cmd);
+#endif
 #ifdef MANUALLY_CONTROL_DBIB_CSX
             nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_SPI_HOLD | MIPICFG_FRC_CSX_0);
             //
@@ -1080,17 +1101,22 @@ nemadc_transfer_frame_end(void)
         ((ui32Cfg & (MIPICFG_SPI3 | MIPICFG_SPI4 | MIPICFG_DSPI | MIPICFG_QSPI | MIPICFG_DSPI_SPIX )) == 0))
     {
         //
-        // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
+        // Bitfields MIPICFG_EXT_CTRL only configured for the DSI interface.
         //
 #ifdef CONFIG_MIPI_DSI_AMBIQ
-        if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
+        if (ui32Cfg & MIPICFG_EXT_CTRL)
         {
 #ifdef MANUALLY_CONTROL_DBIB_CSX
             nemadc_MIPI_CFG_out(ui32Cfg & ~(MIPICFG_SPI_HOLD | MIPICFG_FRC_CSX_0));
 #else
             nemadc_MIPI_CFG_out(ui32Cfg & (~MIPICFG_SPI_HOLD));
 #endif
+#if defined(AM_PART_APOLLO4_API)
+            nemadc_reg_write(NEMADC_REG_CLKCTRL_CG, NemaDC_clkctrl_cg_clk_en | NemaDC_clkctrl_cg_clk_swap); // enable clock gating
+#else
             nemadc_reg_write(NEMADC_REG_CLKCTRL_CG, NemaDC_clkctrl_cg_clk_en); // enable clock gating
+#endif
+
             nemadc_reg_write(NEMADC_REG_GPIO, nemadc_reg_read(NEMADC_REG_GPIO) | 0x1); // LP
         }
         else
@@ -1349,6 +1375,9 @@ dsi_generic_write(uint8_t* pui8Para, uint8_t ui8ParaLen, bool bHS)
     //
     ui32Cfg = nemadc_reg_read(NEMADC_REG_DBIB_CFG);
 
+#if defined(AM_PART_APOLLO4_API)
+    nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_SPI_HOLD);
+#else
     if ( ui8ParaLen < 9 )
     {
         //
@@ -1365,7 +1394,7 @@ dsi_generic_write(uint8_t* pui8Para, uint8_t ui8ParaLen, bool bHS)
         nemadc_reg_write(NEMADC_REG_GPIO, nemadc_reg_read(NEMADC_REG_GPIO) | 0x08);
         nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_FRC_CSX_0);
     }
-
+#endif
     //
     // Download command & parameter to DBI i/f
     //
@@ -1442,10 +1471,10 @@ nemadc_mipi_cmd_write(uint8_t ui8Command,
         ((ui32Cfg & (MIPICFG_SPI3 | MIPICFG_SPI4 | MIPICFG_DSPI | MIPICFG_QSPI | MIPICFG_DSPI_SPIX )) == 0))
     {
         //
-        // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
+        // Bitfields MIPICFG_EXT_CTRL only configured for the DSI interface.
         //
 #ifdef CONFIG_MIPI_DSI_AMBIQ
-        if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
+        if (ui32Cfg & MIPICFG_EXT_CTRL)
         {
 #if defined(AM_PART_APOLLO510)
             if (APOLLO5_B0)
@@ -1461,7 +1490,7 @@ nemadc_mipi_cmd_write(uint8_t ui8Command,
             {
                 ui32Status = dsi_generic_write(p_ui8Para, ui8ParaLen, bHS);
             }
-
+#if !defined(AM_PART_APOLLO4_API)
             if (ui32Status == AM_HAL_STATUS_SUCCESS)
             {
                 //
@@ -1469,6 +1498,7 @@ nemadc_mipi_cmd_write(uint8_t ui8Command,
                 //
                 ui32Status = am_hal_dsi_wait_stop_state(0);
             }
+#endif
         }
         else
 #endif
@@ -1641,7 +1671,12 @@ dsi_dcs_read(uint8_t ui8Cmd, uint8_t ui8DataLen, uint32_t* ui32Received, bool bH
         return AM_HAL_STATUS_TIMEOUT;
     }
     ui32Cfg = nemadc_reg_read(NEMADC_REG_DBIB_CFG);
+
+#if defined(AM_PART_APOLLO4_API)
+    if(true)
+#else
     if(ui8DataLen == 1)
+#endif
     {
         nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_EN_DVALID | MIPICFG_SPI_HOLD);
 
@@ -1782,6 +1817,9 @@ dsi_generic_read(uint8_t *p_ui8Para, uint8_t ui8ParaLen, uint8_t ui8DataLen, uin
         }
     }
 
+#if defined(AM_PART_APOLLO4_API)
+    nemadc_MIPI_CFG_out(ui32Cfg | MIPICFG_EN_DVALID);
+#else
     if (ui8DataLen == 1)
     {
         //
@@ -1815,6 +1853,7 @@ dsi_generic_read(uint8_t *p_ui8Para, uint8_t ui8ParaLen, uint8_t ui8DataLen, uin
             nemadc_reg_write(NEMADC_REG_DBIB_RDAT, 0);
         }
     }
+#endif
 
     //
     // Return directly if timeout
@@ -1879,15 +1918,17 @@ nemadc_mipi_cmd_read(uint8_t ui8Command,
         ((ui32Cfg & (MIPICFG_SPI3 | MIPICFG_SPI4 | MIPICFG_DSPI | MIPICFG_QSPI | MIPICFG_DSPI_SPIX )) == 0))
     {
         //
-        // Bitfields MIPICFG_EXT_CTRL,MIPICFG_BLANKING_EN only configured for the DSI interface.
+        // Bitfields MIPICFG_EXT_CTRL only configured for the DSI interface.
         //
 #ifdef CONFIG_MIPI_DSI_AMBIQ
-        if (ui32Cfg & (MIPICFG_EXT_CTRL | MIPICFG_BLANKING_EN))
+        if (ui32Cfg & MIPICFG_EXT_CTRL)
         {
+#if !defined(AM_PART_APOLLO4_API)
             //
             // Enable DSI read,otherwise enable TE interruption
             //
             nemadc_reg_write(NEMADC_REG_GPIO, nemadc_reg_read(NEMADC_REG_GPIO) & (~0x20));
+#endif
 #if defined(AM_PART_APOLLO510)
             if (APOLLO5_B0)
             {
@@ -1902,11 +1943,12 @@ nemadc_mipi_cmd_read(uint8_t ui8Command,
             {
                 ui32Status = dsi_generic_read(p_ui8Para, ui8ParaLen, ui8DataLen, p_ui32Data, bHS);
             }
+#if !defined(AM_PART_APOLLO4_API)
             //
             // Enable TE interruption,otherwise enable DSI read.
             //
             nemadc_reg_write(NEMADC_REG_GPIO, nemadc_reg_read(NEMADC_REG_GPIO) | 0x20);
-
+#endif
         }
         else
 #endif
@@ -2103,11 +2145,12 @@ nemadc_sys_init(void)
     /* Clear the interrupt */
     nemadc_reg_write(NEMADC_REG_INTERRUPT, 0);
 
+#if !defined(AM_PART_APOLLO4_API)
     //
     // Enable TE interruption
     //
     nemadc_reg_write(NEMADC_REG_GPIO, 0x20);
-
+#endif
     /* Install Interrupt Handler */
     NVIC_SetPriority(NEMADC_IRQ, AM_IRQ_PRIORITY_DEFAULT);
     NVIC_EnableIRQ(NEMADC_IRQ);
