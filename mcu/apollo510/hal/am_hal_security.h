@@ -2,9 +2,9 @@
 //
 //! @file am_hal_security.h
 //!
-//! @brief Functions for security functions
+//! @brief Functions for on-chip security features
 //!
-//! @addtogroup security Security Functionality
+//! @addtogroup security_ap510 Security Functionality
 //! @ingroup apollo510_hal
 //! @{
 //
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p0p0-5f68a8286b of the AmbiqSuite Development Package.
+// This is part of revision stable-c286075505 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -134,7 +134,7 @@ extern "C"
 //! am_hal_info0_read().
 //
 //*****************************************************************************
-uint32_t am_hal_security_get_info(am_hal_security_info_t *pSecInfo);
+extern uint32_t am_hal_security_get_info(am_hal_security_info_t *pSecInfo);
 
 //*****************************************************************************
 //
@@ -147,7 +147,7 @@ uint32_t am_hal_security_get_info(am_hal_security_info_t *pSecInfo);
 //! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
-uint32_t am_hal_security_get_socid(am_hal_security_socid_t *pSocId);
+extern uint32_t am_hal_security_get_socid(am_hal_security_socid_t *pSocId);
 
 //*****************************************************************************
 //
@@ -161,7 +161,7 @@ uint32_t am_hal_security_get_socid(am_hal_security_socid_t *pSocId);
 //! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
-uint32_t am_hal_security_set_key(am_hal_security_locktype_t lockType, am_hal_security_128bkey_t *pKey);
+extern uint32_t am_hal_security_set_key(am_hal_security_locktype_t lockType, am_hal_security_128bkey_t *pKey);
 
 //*****************************************************************************
 //
@@ -176,7 +176,7 @@ uint32_t am_hal_security_set_key(am_hal_security_locktype_t lockType, am_hal_sec
 //! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
-uint32_t am_hal_security_get_lock_status(am_hal_security_locktype_t lockType, bool *pbUnlockStatus);
+extern uint32_t am_hal_security_get_lock_status(am_hal_security_locktype_t lockType, bool *pbUnlockStatus);
 
 //*****************************************************************************
 //
@@ -193,7 +193,29 @@ uint32_t am_hal_security_get_lock_status(am_hal_security_locktype_t lockType, bo
 //! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
-uint32_t am_hal_crc32(uint32_t startAddr, uint32_t sizeBytes, uint32_t *pCrc);
+extern uint32_t am_hal_crc32(uint32_t startAddr, uint32_t sizeBytes, uint32_t *pCrc);
+
+//*****************************************************************************
+//
+//! @brief  Compute CRC32 for a specified payload with boundary crossing protection
+//!
+//! @param  pui8StartAddr - Pointer to the start address of the payload.
+//! @param  ui32SizeBytes - The length of payload in bytes (must be multiple of 4).
+//! @param  pui32Crc      - Pointer to variable to return the computed CRC.
+//!
+//! This function uses the hardware engine to compute CRC32 on an arbitrary data
+//! payload.  The payload can reside in any contiguous memory including external
+//! memory. This implementation includes workarounds for when transfers cross
+//! certain memory boundaries (DTCM-SSRAM0, SSRAM0-SSRAM1, SSRAM1-SSRAM2)
+//! or ERR014 when the CRC crosses 4KB boundaries within TCM. The function
+//! automatically splits transfers at these boundaries.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
+//
+//*****************************************************************************
+extern uint32_t am_hal_crc(uint32_t *pui32StartAddr,
+                    uint32_t ui32SizeBytes,
+                    uint32_t *pui32Crc);
 
 //*****************************************************************************
 //
