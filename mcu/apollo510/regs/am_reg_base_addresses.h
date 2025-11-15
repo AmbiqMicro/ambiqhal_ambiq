@@ -74,6 +74,18 @@
 #define SSRAM_BASEADDR                          (0x20080000)
 #define SSRAM_MAX_SIZE                          (3072UL * 1024UL)
 
+//
+// Memory boundary definitions for DMA errata workaround
+//
+#define DTCM_END                                (0x2007FFFFUL)
+#define ITCM_END                                (0x0003FFFFUL)
+#define SSRAM0_BASEADDR                         (0x20080000UL)
+#define SSRAM0_END                              (0x2017FFFFUL)
+#define SSRAM1_BASEADDR                         (0x20180000UL)
+#define SSRAM1_END                              (0x2027FFFFUL)
+#define SSRAM2_BASEADDR                         (0x20280000UL)
+#define SSRAM2_END                              (0x2037FFFFUL)
+
 // ****************************************************************************
 // MRAM Address Space
 // ****************************************************************************
