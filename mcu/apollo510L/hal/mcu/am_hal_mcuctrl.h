@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MCUCTRL_H
@@ -72,6 +72,36 @@ extern "C"
     (MCUCTRL_CHIPREV_REVMAJ_Msk | MCUCTRL_CHIPREV_REVMIN_Msk)) >          \
       (_VAL2FLD(MCUCTRL_CHIPREV_REVMAJ, MCUCTRL_CHIPREV_REVMAJ_A) |       \
         _VAL2FLD(MCUCTRL_CHIPREV_REVMIN, MCUCTRL_CHIPREV_REVMIN_REV0)))
+
+#define APOLLO510L_A1                                                     \
+  ((MCUCTRL->CHIPREV  &                                                   \
+    (MCUCTRL_CHIPREV_REVMAJ_Msk | MCUCTRL_CHIPREV_REVMIN_Msk)) ==         \
+      (_VAL2FLD(MCUCTRL_CHIPREV_REVMAJ, MCUCTRL_CHIPREV_REVMAJ_A) |       \
+        _VAL2FLD(MCUCTRL_CHIPREV_REVMIN, MCUCTRL_CHIPREV_REVMIN_REV1)))
+
+#define APOLLO510L_GE_A1                                                  \
+  ((MCUCTRL->CHIPREV  &                                                   \
+    (MCUCTRL_CHIPREV_REVMAJ_Msk | MCUCTRL_CHIPREV_REVMIN_Msk)) >=         \
+      (_VAL2FLD(MCUCTRL_CHIPREV_REVMAJ, MCUCTRL_CHIPREV_REVMAJ_A) |       \
+        _VAL2FLD(MCUCTRL_CHIPREV_REVMIN, MCUCTRL_CHIPREV_REVMIN_REV1)))
+
+#define APOLLO510L_GT_A1                                                  \
+  ((MCUCTRL->CHIPREV  &                                                   \
+    (MCUCTRL_CHIPREV_REVMAJ_Msk | MCUCTRL_CHIPREV_REVMIN_Msk)) >          \
+      (_VAL2FLD(MCUCTRL_CHIPREV_REVMAJ, MCUCTRL_CHIPREV_REVMAJ_A) |       \
+        _VAL2FLD(MCUCTRL_CHIPREV_REVMIN, MCUCTRL_CHIPREV_REVMIN_REV1)))
+
+#define APOLLO510L_LE_A1                                                  \
+  ((MCUCTRL->CHIPREV  &                                                   \
+    (MCUCTRL_CHIPREV_REVMAJ_Msk | MCUCTRL_CHIPREV_REVMIN_Msk)) <=         \
+      (_VAL2FLD(MCUCTRL_CHIPREV_REVMAJ, MCUCTRL_CHIPREV_REVMAJ_A) |       \
+        _VAL2FLD(MCUCTRL_CHIPREV_REVMIN, MCUCTRL_CHIPREV_REVMIN_REV1)))
+
+#define APOLLO510L_LT_A1                                                  \
+  ((MCUCTRL->CHIPREV  &                                                   \
+    (MCUCTRL_CHIPREV_REVMAJ_Msk | MCUCTRL_CHIPREV_REVMIN_Msk)) <          \
+      (_VAL2FLD(MCUCTRL_CHIPREV_REVMAJ, MCUCTRL_CHIPREV_REVMAJ_A) |       \
+        _VAL2FLD(MCUCTRL_CHIPREV_REVMIN, MCUCTRL_CHIPREV_REVMIN_REV1)))
 
 #define A0_TRIMVER_1  1
 #define A0_TRIMVER_2  2
@@ -271,6 +301,27 @@ typedef struct
 
 //**************************************
 //
+//! MCUCTRL trimver structure
+//! Note, see also am_hal_mcuctrl_feature_t.
+//
+//**************************************
+typedef union                                           // Trim version info
+{
+    uint32_t ui32trimver;
+
+    struct
+    {
+        uint32_t ui8TrimVerMin  : 8;    // [7:0]
+        uint32_t ui8TrimVerMaj  : 8;    // [15:8]
+        uint32_t bTrimVerValid  : 1;    // [16:16] 1 if version data valid
+        uint32_t bTrimVerPCM    : 1;    // [17:17] 1 if PCM numbering
+        uint32_t bTrimVerRsvd18 : 6;    // [23:18]
+        uint32_t bTrimVerRsvd24 : 8;    // [31:24]
+    } trimver_b;
+} am_hal_mcuctrl_trimver_t;
+
+//**************************************
+//
 //! MCUCTRL features available structure
 //
 //**************************************
@@ -291,6 +342,11 @@ typedef struct
     bool                        bCM4DEBUG;          // CM4 SWD
     bool                        bFPU;               // FPU
     am_hal_mcuctrl_mve_e        eMVECfg;            // MVE
+    //
+    // Declare an anonymous union that is a copy of am_hal_mcuctrl_trimver_t.
+    // This is done so that the union members can be accessed directly as a
+    // member of am_hal_mcuctrl_feature_t.
+    //
     union                                           // Trim version info
     {
         uint32_t ui32trimver;
@@ -354,6 +410,17 @@ extern uint32_t am_hal_mcuctrl_extclk32k_status_get(am_hal_mcuctrl_ext32k_status
 //
 // ****************************************************************************
 extern uint32_t am_hal_mcuctrl_status_get(am_hal_mcuctrl_status_t *psStatus);
+
+// ****************************************************************************
+//
+//! @brief Get trim version information.
+//!
+//! This function returns a data structure of trim revision information.
+//!
+//! @param psTrim - Pointer to the trim structure to receive the data.
+//
+// ****************************************************************************
+extern uint32_t am_hal_mcuctrl_trim_version_get(uint32_t *pui32trimver);
 
 // ****************************************************************************
 //

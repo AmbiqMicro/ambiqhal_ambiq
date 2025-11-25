@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -87,7 +87,7 @@
 #include "am_mcu_apollo.h"
 #include "am_hal_crm_private.h"
 
-// #TODO update when the reg of MCUCTRL D2ASPARE is updated
+// #TODO FIXME update when the reg of MCUCTRL D2ASPARE is updated
 #define MCUCTRL_D2ASPARE_UART0PLL  (0x01 << 22) // Bit 22 for UART0, Bit 23 for UART1
 
 //*****************************************************************************

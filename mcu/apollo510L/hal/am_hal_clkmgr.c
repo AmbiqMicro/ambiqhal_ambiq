@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -155,6 +155,7 @@ static bool g_bDisableHfadjOnFullReleased = false;
 
 // Flags to indicate that SYSPLL has been disabled for DeepSleep
 static bool g_bSysPllDisabledForDeepSleep = false;
+static bool g_bSysPllReleasedHFRCForDeepSleep = false;
 
 // Syspll Fref Priority
 static am_hal_clkmgr_syspll_fref_priority_t g_sFrefPriority = {.high = AM_HAL_SYSPLL_FREFSEL_HFRC192DIV4,
@@ -2510,6 +2511,24 @@ uint32_t am_hal_clkmgr_control(am_hal_clkmgr_control_e eControl, const void *pCo
             break;
         }
 
+        case AM_HAL_CLKMGR_SYSPLL_EMPHASIS_SET:
+        {
+            //
+            // Configuration to set SYSPLL configuration emphasis lock speed
+            // or lowest current
+            //
+            if (pConfig != NULL)
+            {
+                am_hal_syspll_emphasis_set(*((am_hal_syspll_emphasis_mode_e *)pConfig));
+                ui32Status = AM_HAL_STATUS_SUCCESS;
+            }
+            else
+            {
+                ui32Status = AM_HAL_STATUS_INVALID_ARG;
+            }
+            break;
+        }
+
 
         default:
             return AM_HAL_STATUS_INVALID_ARG;
@@ -2599,6 +2618,14 @@ void am_hal_clkmgr_private_deepsleep_enter(void)
 
         // Set SYSPLL disabled for deep sleep flag
         g_bSysPllDisabledForDeepSleep = true;
+
+        // Release HFRC if it is the FREF for SYSPLL, and let hardware manage
+        // it if CPU is the only user.
+        if (am_hal_clkmgr_is_requested_by_user(AM_HAL_CLKMGR_CLK_ID_HFRC, AM_HAL_CLKMGR_USER_ID_SYSPLL))
+        {
+            am_hal_clkmgr_release_HFRC(AM_HAL_CLKMGR_USER_ID_SYSPLL);
+            g_bSysPllReleasedHFRCForDeepSleep = true;
+        }
     }
 }
 
@@ -2614,6 +2641,16 @@ void am_hal_clkmgr_private_deepsleep_exit(void)
     // Note: HW will keep SYSPLL powered up until deepsleep is entered
     if (g_bSysPllDisabledForDeepSleep)
     {
+        // Request HFRC if it was disabled before deep sleep
+        if (g_bSysPllReleasedHFRCForDeepSleep)
+        {
+            // Request HFRC as clock source for SYSPLL
+            am_hal_clkmgr_request_HFRC(AM_HAL_CLKMGR_USER_ID_SYSPLL);
+
+            // Clear HFRC released for deep sleep flag
+            g_bSysPllReleasedHFRCForDeepSleep = false;
+        }
+
         // Power Off SYSPLL
         am_hal_pwrctrl_syspll_enable();
 

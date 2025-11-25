@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_IOS_H
@@ -766,6 +766,20 @@ extern uint32_t am_hal_ios_dma_transfer_abort(void *pHandle);
 //
 //*****************************************************************************
 extern uint32_t am_hal_ios_dma_fullduplex_transfer_abort(void *pTXHandle, void *pRXHandle);
+
+//*****************************************************************************
+//
+//! @brief IOS get dma status
+//!
+//! @param pHandle        - handle for the interface.
+//! @param pui32DmaStatus - pointer to a uint32_t to return the dma status
+//!
+//! This function returns the dma status for the given peripheral.
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_ios_dma_status_get(void *pHandle, uint32_t *pui32DmaStatus);
 
 #ifdef __cplusplus
 }

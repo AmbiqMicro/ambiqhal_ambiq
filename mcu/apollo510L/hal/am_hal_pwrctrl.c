@@ -78,7 +78,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -694,9 +694,12 @@ am_hal_pwrctrl_rss_bootup(void)
     else
     {
 
-        MCUCTRL->BODCTRL_b.BODRFPWD = 0;
-        am_hal_delay_us(1);
-        MCUCTRL->BODCTRL_b.BODRFPWD = 1;
+        if (APOLLO510L_A0)
+        {
+            MCUCTRL->BODCTRL_b.BODRFPWD = 0;
+            am_hal_delay_us(1);
+            MCUCTRL->BODCTRL_b.BODRFPWD = 1;
+        }
 
         //
         // Turn on RSS power
@@ -2092,21 +2095,6 @@ pwrctrl_INFO1_populate(void)
     g_sINFO1regs.ui32ADC_GAIN_ERR           = info1buf[0];
     g_sINFO1regs.ui32ADC_OFFSET_ERR         = info1buf[1];
 
-    CHK_OFFSET_DELTA(AM_REG_OTP_INFO1_AUDADC_B1_HG_INTERCEPT_O, AM_REG_OTP_INFO1_AUDADC_A0_LG_OFFSET_O, 12 );
-    RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_AUDADC_A0_LG_OFFSET_O  / 4), 12, &info1buf[0]);
-    g_sINFO1regs.ui32AUDADC_A0_LG_OFFSET    = info1buf[0];
-    g_sINFO1regs.ui32AUDADC_A0_HG_SLOPE     = info1buf[1];
-    g_sINFO1regs.ui32AUDADC_A0_HG_INTERCEPT = info1buf[2];
-    g_sINFO1regs.ui32AUDADC_A1_LG_OFFSET    = info1buf[3];
-    g_sINFO1regs.ui32AUDADC_A1_HG_SLOPE     = info1buf[4];
-    g_sINFO1regs.ui32AUDADC_A1_HG_INTERCEPT = info1buf[5];
-    g_sINFO1regs.ui32AUDADC_B0_LG_OFFSET    = info1buf[6];
-    g_sINFO1regs.ui32AUDADC_B0_HG_SLOPE     = info1buf[7];
-    g_sINFO1regs.ui32AUDADC_B0_HG_INTERCEPT = info1buf[8];
-    g_sINFO1regs.ui32AUDADC_B1_LG_OFFSET    = info1buf[9];
-    g_sINFO1regs.ui32AUDADC_B1_HG_SLOPE     = info1buf[10];
-    g_sINFO1regs.ui32AUDADC_B1_HG_INTERCEPT = info1buf[11];
-
     //
     // All done, mark the data as valid
     //
@@ -2325,8 +2313,16 @@ buck_ldo_override_init(void)
     //
     MCUCTRL->VRCTRL_b.SIMOBUCKPDNB   = 1;
     MCUCTRL->VRCTRL_b.SIMOBUCKRSTB   = 1;
-    MCUCTRL->VRCTRL_b.SIMOBUCKACTIVE = 1;
-    MCUCTRL->VRCTRL_b.SIMOBUCKOVER   = 1;
+    if (g_bIsTrimver2OrNewer)
+    {
+        MCUCTRL->VRCTRL_b.SIMOBUCKACTIVE = 0;
+        MCUCTRL->VRCTRL_b.SIMOBUCKOVER   = 0;
+    }
+    else
+    {
+        MCUCTRL->VRCTRL_b.SIMOBUCKACTIVE = 1;
+        MCUCTRL->VRCTRL_b.SIMOBUCKOVER   = 1;
+    }
 
 #if AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL
     //
@@ -2359,6 +2355,10 @@ buck_ldo_override_init(void)
 void
 buck_ldo_update_override(bool bEnable)
 {
+    if (bEnable && g_bIsTrimver2OrNewer)
+    {
+        SCM->SCMCNTRCTRL1 = SCMCNTRCTRL1_SETTING_FRCBUCKACT;
+    }
     MCUCTRL->VRCTRL_b.SIMOBUCKOVER   = bEnable;
 #if AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL
     MCUCTRL->VRCTRL_b.CORELDOOVER    = bEnable;
@@ -2689,6 +2689,20 @@ am_hal_pwrctrl_temp_update(float fCurTemp, am_hal_pwrctrl_temp_thresh_t * psTemp
 // ****************************************************************************
 //
 //  am_hal_pwrctrl_wait_pll_lock_for_hp2()
+//  Decides CPU will enter HP1 and wait until PLL_LOCK and switch to HP2.
+//
+//  bWaitPllockForHp2 - Configuration flag:
+//                      - true: During MCU switches from LP/sleep to HP2,
+//                              CPU will NOT enter HP1 mode first. Instead,
+//                              it will wait for PLL lock and then directly
+//                              enter HP2 mode. This ensures the system
+//                              operates at HP2 frequency only after the
+//                              PLL is fully locked.
+//                      - false: During MCU switches from LP/sleep to HP2,
+//                              CPU will enter HP1 mode first, then wait
+//                              for PLL lock, and finally switch to HP2
+//                              mode. This allows the system to operate at
+//                              HP1 frequency while waiting for PLL lock.
 //
 // ****************************************************************************
 void
@@ -2758,11 +2772,11 @@ am_hal_pwrctrl_syspll_enabled(bool *bEnabled)
 //
 // ****************************************************************************
 uint32_t am_hal_pwrctrl_get_cm4_pwrstate(am_hal_pwrctrl_cm4_pwr_state_e * pCm4pwrstate)
- {
-    *pCm4pwrstate = PWRCTRL->CM4PWRSTATE_b.CM4PWRSTATUS;
+{
+    *pCm4pwrstate = (am_hal_pwrctrl_cm4_pwr_state_e)PWRCTRL->CM4PWRSTATE_b.CM4PWRSTATUS;
 
     return AM_HAL_STATUS_SUCCESS;
- }
+}
 
 // ****************************************************************************
 //

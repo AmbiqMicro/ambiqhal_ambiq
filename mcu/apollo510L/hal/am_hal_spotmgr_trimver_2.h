@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SPOTMGR_TRIMVER_2_H
@@ -128,6 +128,16 @@ extern uint32_t am_hal_spotmgr_trimver_2_init(void);
 //
 //*****************************************************************************
 extern uint32_t am_hal_spotmgr_trimver_2_simobuck_init_bfr_enable(void);
+
+//*****************************************************************************
+//
+//! @brief SIMOBUCK initialziation handling at stage just after enabling
+//!        SIMOBUCK
+//!
+//! @return SUCCESS or Failures.
+//
+//*****************************************************************************
+extern uint32_t am_hal_spotmgr_trimver_2_simobuck_init_aft_enable(void);
 
 #ifdef __cplusplus
 }

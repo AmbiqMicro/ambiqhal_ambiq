@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -855,6 +855,17 @@ typedef enum
 }
 am_hal_usb_ep_xfer_type_e;
 
+//
+//! USB external clock selection
+//
+typedef enum
+{
+    eUSB_R14_NOCHANGE = 0x7F,   // use default
+    eUSB_R14_X40 = 0,           // use for 24Mhz
+    eUSB_R14_X20 = 1,           // use for 12 Mhz
+
+} usbphy_reg14_state_e;
+
 //*****************************************************************************
 //
 // Static functions
@@ -976,11 +987,13 @@ am_hal_usb_crm_phyrefclk_disable()
 //
 //*****************************************************************************
 static inline uint32_t
-am_hal_usb_crm_phyrefclk_enable(am_hal_usb_phyclksrc_e eUSBRefClkSel, am_hal_usb_phyclksrc_div_e eUSBRefClkDiv)
+am_hal_usb_crm_phyrefclk_enable(am_hal_usb_phyclksrc_e eUSBRefClkSel,
+                                am_hal_usb_phyclksrc_div_e eUSBRefClkDiv)
 {
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
 
-    ui32Status = am_hal_crm_clock_config_USBREFCLK(eUSBRefClkSel, eUSBRefClkDiv);
+    ui32Status = am_hal_crm_clock_config_USBREFCLK((am_hal_crm_usbrefclk_clksel_e)eUSBRefClkSel,
+                                                   (uint32_t)eUSBRefClkDiv);
     if ( ui32Status != AM_HAL_STATUS_SUCCESS )
     {
         return ui32Status;
@@ -4265,7 +4278,7 @@ am_hal_usb_out_ep_dma1_adma_handling(am_hal_usb_state_t *pState, USB_Type *pUSB,
 static inline void
 am_hal_usb_auto_gen_clk_source(void *pHandle, am_hal_usb_dev_speed_e eSpeed, am_hal_usb_phyclksrc_e *eClkSrc, am_hal_usb_phyclksrc_div_e *eClkDiv)
 {
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *) pHandle;
+    usbphy_reg14_state_e reg14State = eUSB_R14_X40;
 
     if (eSpeed == AM_HAL_USB_SPEED_FULL)
     {
@@ -4276,22 +4289,22 @@ am_hal_usb_auto_gen_clk_source(void *pHandle, am_hal_usb_dev_speed_e eSpeed, am_
     {
         am_hal_clkmgr_board_info_t board;
         am_hal_clkmgr_board_info_get(&board);
-        if (board.sXtalHs.ui32XtalHsFreq == 48000000)
+        if ( board.sXtalHs.ui32XtalHsFreq == 48000000 )
         {
             *eClkSrc = AM_HAL_USB_PHYCLKSRC_RF_XTAL_48M;
             *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_2;
         }
-        else if (board.sXtalHs.ui32XtalHsFreq == 24000000)
+        else if ( board.sXtalHs.ui32XtalHsFreq == 24000000 )
         {
             *eClkSrc = AM_HAL_USB_PHYCLKSRC_RF_XTAL_48M;
             *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_1;
         }
-        else if(board.ui32ExtRefClkFreq == 48000000)
+        else if ( board.ui32ExtRefClkFreq == 48000000 )
         {
             *eClkSrc = AM_HAL_USB_PHYCLKSRC_EXTREF_CLK;
             *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_2;
         }
-        else if(board.ui32ExtRefClkFreq == 24000000)
+        else if ( board.ui32ExtRefClkFreq == 24000000 )
         {
             *eClkSrc = AM_HAL_USB_PHYCLKSRC_EXTREF_CLK;
             *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_1;
@@ -4301,6 +4314,8 @@ am_hal_usb_auto_gen_clk_source(void *pHandle, am_hal_usb_dev_speed_e eSpeed, am_
             *eClkSrc = AM_HAL_USB_PHYCLKSRC_PLLPOSTDIV;
             *eClkDiv = AM_HAL_USB_PHYCLKSRC_DIV_1;
         }
+
+        USBPHY->REG14_b.BF55 = reg14State;
     }
 }
 

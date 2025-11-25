@@ -76,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -267,7 +267,9 @@ pdm_clock_set(uint32_t ui32Module, am_hal_pdm_clkspd_e eClocksel)
         //
         // Set and enable clock via CRM.
         //
-        ui32Status = am_hal_crm_clock_config_PDM0CLK(EXTRACT_PDM_CRM_CLKSRC(eClocksel), EXTRACT_PDM_CRM_CLKDIV(eClocksel));
+        ui32Status = am_hal_crm_clock_config_PDM0CLK(
+                        (am_hal_crm_pdmclk_clksel_e)EXTRACT_PDM_CRM_CLKSRC(eClocksel),
+                        (uint32_t)EXTRACT_PDM_CRM_CLKDIV(eClocksel));
         if (AM_HAL_STATUS_SUCCESS != ui32Status)
         {
             am_hal_clkmgr_clock_release(eClockID, eUserID);

@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_ID_H
@@ -137,8 +137,8 @@ extern "C"
 #ifndef AM_ID_APOLLO510
 #define AM_ID_APOLLO510
 #endif
-#ifndef AM_ID_APOLLO510L
-#define AM_ID_APOLLO510L
+#ifndef AM_ID_APOLLO330P_510L
+#define AM_ID_APOLLO330P_510L
 #endif
 #ifndef AM_ID_APOLLO510L_CM4
 #define AM_ID_APOLLO510L_CM4
@@ -149,7 +149,7 @@ extern "C"
 //
 // Define a macro for packages for certain devices.
 //
-#if defined(AM_ID_APOLLO4P) || defined(AM_ID_APOLLO510) || defined(AM_ID_APOLLO510L)
+#if defined(AM_ID_APOLLO4P) || defined(AM_ID_APOLLO510) || defined(AM_ID_APOLLO330P_510L)
 //
 // PKGSTD is SIP, SIP2, BGA, CSP
 //

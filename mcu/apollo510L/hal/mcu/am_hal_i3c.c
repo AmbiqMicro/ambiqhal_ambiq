@@ -50,7 +50,7 @@
 //
 // ${}
 //copyright
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -2751,6 +2751,7 @@ uint32_t am_hal_i3c_intr_status_get(void *pHandle, uint32_t *pui32Status, bool b
     //
     // if requested, only return the interrupts that are enabled.
     //
+    DIAG_SUPPRESS_VOLATILE_ORDER()
     if ( bEnabledOnly )
     {
         uint32_t ui32RetVal = (I3Cn(ui32Module)->PIOINTRSTATUS & 0x3FF) | (I3Cn(ui32Module)->INTRSTATUS & 0xFC00) | (I3Cn(ui32Module)->RHINTRSTATUS << 16);
@@ -2760,6 +2761,7 @@ uint32_t am_hal_i3c_intr_status_get(void *pHandle, uint32_t *pui32Status, bool b
     {
         *pui32Status = (I3Cn(ui32Module)->PIOINTRSTATUS & 0x3FF) | (I3Cn(ui32Module)->INTRSTATUS & 0xFC00) | (I3Cn(ui32Module)->RHINTRSTATUS << 16);
     }
+    DIAG_DEFAULT_VOLATILE_ORDER()
 
     return AM_HAL_STATUS_SUCCESS;
 }

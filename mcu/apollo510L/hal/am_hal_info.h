@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_INFO_H
@@ -76,6 +76,16 @@ typedef enum
 
 //*****************************************************************************
 //
+//! @brief Apollo510 INFO0 signature values.
+//
+//*****************************************************************************
+#define INFO0_SIGNATURE0    0x48EAAD88
+#define INFO0_SIGNATURE1    0xC9705737
+#define INFO0_SIGNATURE2    0x0A6B8458
+#define INFO0_SIGNATURE3    0xE41A9D74
+
+//*****************************************************************************
+//
 //! @brief Determine if INFO0 is valid.
 //
 //*****************************************************************************
@@ -83,18 +93,24 @@ extern bool am_hal_info0_valid(void);
 
 //*****************************************************************************
 //
-// AM_INFO_FLD2VAL()
-// This macro allows decoding of INFOx register fields, similar
-// to the CMSIS _FLD2VAL macro.
-// Parameters:
-//  info: 0, 1, or C (C must be capitalized)
-//  field: The field of the register.
-//  value: The value of the entire register as read from the INFOx space.
+//! AM_INFO_FLD2VAL_OTP()
+//! AM_INFO_FLD2VAL()
+//! This macro allows decoding of INFOx register fields, similar
+//! to the CMSIS _FLD2VAL macro.
+//! Parameters:
+//!  info: 0, 1, or C (C must be capitalized)
+//!  field: The field of the register.
+//!  value: The value of the entire register as read from the INFOx space.
 //
-// AM_INFO_VAL2FLD() is not provided as the INFOx register definitions already generate these for each register.
+//! AM_INFO_VAL2FLD() is not provided as the INFOx register definitions already
+//!  generate these for each register.
+//
+//! In general, for purposes of extracting fields, it does not matter whether
+//! the 'OTP' or 'MRAM' version is used as the field extractions are the same.
 //
 //*****************************************************************************
-#define AM_INFO_FLD2VAL(info, field, value) (((uint32_t)(value) & AM_REG_INFO ##info## _ ## field ## _Msk) >> AM_REG_INFO ## info ## _ ## field ## _Pos)
+#define AM_INFO_FLD2VAL_OTP(info, field, value) (((uint32_t)(value) & AM_REG_OTP_INFO ##info## _ ## field ## _Msk) >> AM_REG_OTP_INFO ## info ## _ ## field ## _Pos)
+#define AM_INFO_FLD2VAL(info, field, value)     (((uint32_t)(value) & AM_REG_INFO ##info## _ ## field ## _Msk) >> AM_REG_INFO ## info ## _ ## field ## _Pos)
 
 //*****************************************************************************
 //

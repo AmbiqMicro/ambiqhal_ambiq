@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SYSPLL_H
@@ -138,6 +138,19 @@ typedef enum
     AM_HAL_SYSPLL_FMODE_FRACTION = MCUCTRL_PLLCTL0_DSMPD_ACTIVE,
     AM_HAL_SYSPLL_FMODE_INTEGER  = MCUCTRL_PLLCTL0_DSMPD_POWERDOWN,
 } am_hal_syspll_fraction_mode_e;
+
+// ****************************************************************************
+//
+//! @enum am_hal_syspll_emphasis_mode_e
+//! @brief System PLL emphasis mode selection when both integer and fractional
+//!         solution are valid.
+//
+// ****************************************************************************
+typedef enum
+{
+    AM_HAL_SYSPLL_FAVOR_POWER,
+    AM_HAL_SYSPLL_FAVOR_LOCK_SPEED,
+} am_hal_syspll_emphasis_mode_e;
 
 //*****************************************************************************
 //
@@ -392,6 +405,22 @@ extern uint32_t am_hal_syspll_lock_wait(void *pHandle);
 //
 //*****************************************************************************
 extern uint32_t am_hal_syspll_bypass_set(void *pHandle, bool bBypass);
+
+//*****************************************************************************
+//
+//! @brief System PLL set emphasis when both integer and fractional solutions
+//!         are valid
+//!
+//! @param eEmphasisMode    - Setting the emphasis mode for System PLL.
+//!
+//! This function configures the System PLL emphasis mode.
+//!
+//! @return status          - generic or interface specific status.
+//!         - AM_HAL_STATUS_SUCCESS: System PLL emphasis mode set successfully.
+//!         - AM_HAL_STATUS_INVALID_HANDLE: Invalid pHandle.
+//
+//*****************************************************************************
+extern uint32_t am_hal_syspll_emphasis_set(am_hal_syspll_emphasis_mode_e eEmphasisMode);
 
 #ifdef __cplusplus
 }

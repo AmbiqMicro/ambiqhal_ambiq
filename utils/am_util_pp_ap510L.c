@@ -1,12 +1,48 @@
 //*****************************************************************************
 //
-//! @file am_util_pp.c
+//! @file am_util_pp_ap510L.c
 //!
-//! @brief Functions to aid power profiling and debugging
+//! @brief Functions to aid power profiling and debugging (AP510L specific)
 //!
-//! @addtogroup ppf Power Profiling Functionality
+//! @addtogroup ppf_ap510L_utils Power Profiling Functionality
+//!
 //! @ingroup utils
 //! @{
+//! Purpose: This module provides pin programming and configuration utilities
+//!          for Ambiq Micro devices. It enables GPIO setup, pad configuration,
+//!          and pin function management for embedded applications requiring
+//!          flexible I/O control. The utilities support various pin modes,
+//!          drive strengths, and peripheral routing options.
+//!
+//! @section utils_pp_features Key Features
+//!
+//! 1. @b Pin @b Configuration: Flexible pin setup options.
+//! 2. @b Pad @b Control: Advanced pad configuration.
+//! 3. @b Function @b Selection: Multiple pin function support.
+//! 4. @b Drive @b Strength: Configurable output drive.
+//! 5. @b Protection: Pin protection mechanisms.
+//!
+//! @section utils_pp_functionality Functionality
+//!
+//! - Configure pin functions
+//! - Set pad characteristics
+//! - Manage drive strengths
+//! - Handle pin protection
+//! - Control pin states
+//!
+//! @section utils_pp_usage Usage
+//!
+//! 1. Initialize pin configuration
+//! 2. Set pad parameters
+//! 3. Configure pin functions
+//! 4. Manage pin states
+//!
+//! @section utils_pp_configuration Configuration
+//!
+//! - Set pin function modes
+//! - Configure drive strengths
+//! - Define protection options
+//! - Set pad characteristics
 //
 //*****************************************************************************
 
@@ -42,7 +78,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

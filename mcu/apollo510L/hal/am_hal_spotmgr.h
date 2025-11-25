@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SPOTMGR_H
@@ -101,6 +101,22 @@ extern "C"
 #define AUDSSPWRST_MONITOR_PERIPH_MASK_PS1 AUDSSPWRST_ALL_PERIPH_MASK
 //! Mask of AUDSS peripherals monitored by SPOT manager
 #define AUDSSPWRST_MONITOR_PERIPH_MASK AUDSSPWRST_ALL_PERIPH_MASK
+//! Default setting for SCMCNTRCTRL1
+#define SCMCNTRCTRL1_SETTING_DEFAULT (5)
+//! SCMCNTRCTRL1 setting for forcing buck active before deepsleep
+#define SCMCNTRCTRL1_SETTING_FRCBUCKACT (3)
+//! Default setting for SCM LPTHRESHVDDS register
+#define SCM_LPTHRESHVDDS_SETTING_DEFAULT (1)
+//! Default setting for SCM LPTHRESHVDDF register
+#define SCM_LPTHRESHVDDF_SETTING_DEFAULT (1)
+//! Default setting for SCM LPTHRESHVDDC register
+#define SCM_LPTHRESHVDDC_SETTING_DEFAULT (1)
+//! Default setting for SCM LPTHRESHVDDCLV register
+#define SCM_LPTHRESHVDDCLV_SETTING_DEFAULT (1)
+//! Default setting for SCM LPTHRESHVDDRF register
+#define SCM_LPTHRESHVDDRF_SETTING_DEFAULT (1)
+//! Default setting for SCM LPSTAT register
+#define SCM_LPSTAT_SETTING_DEFAULT (0x3)
 
 //*****************************************************************************
 //

@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -393,18 +393,18 @@ typedef struct
     //
     // Clock
     //
-    //! ide down ratio for generating internal master MCLKQ.
+    //! Divide down ratio for generating internal master MCLKQ.
     am_hal_pdm_mclkdiv_e eClkDivider;
 
     //! PDMA_CKO frequency divisor.Fpdma_cko = Fmclk_l/(MCLKDIV+1)
-    am_hal_pdm_pdma_clkodiv_e ePDMAClkOutDivder ;
+    am_hal_pdm_pdma_clkodiv_e ePDMAClkOutDivder;
 
     //! Gain
     am_hal_pdm_gain_e eLeftGain;
     am_hal_pdm_gain_e eRightGain;
 
     //! Fine grain step size for smooth PGA or Softmute attenuation
-    //! transition0: 0.13dB1: 0.26dB
+    //! transition0: 0.13dB, 1: 0.26dB
     am_hal_pdm_gain_stepsize_e eStepSize;
 
     //! Decimation Rate
@@ -630,20 +630,20 @@ extern uint32_t am_hal_pdm_fifo_flush(void *pHandle);
 //! @return value of FIFOREAD
 //
 //*****************************************************************************
-uint32_t am_hal_pdm_fifo_data_read(void *pHandle);
+extern uint32_t am_hal_pdm_fifo_data_read(void *pHandle);
 
 //*****************************************************************************
 //
 //! @brief Read FIFO data.
 //!
 //! @param pHandle - handle for the interface.
-//! @param buffer  - Pointer to beffer for FIFOREAD
+//! @param buffer  - Pointer to buffer for FIFOREAD
 //! @param size    - Size to read
 //!
 //! @return 0
 //
 //*****************************************************************************
-uint32_t am_hal_pdm_fifo_data_reads(void *pHandle, uint8_t* buffer, uint32_t size);
+extern uint32_t am_hal_pdm_fifo_data_reads(void *pHandle, uint8_t *buffer, uint32_t size);
 
 //*****************************************************************************
 //
@@ -654,7 +654,7 @@ uint32_t am_hal_pdm_fifo_data_reads(void *pHandle, uint8_t* buffer, uint32_t siz
 //! @return value of FIFOCNT
 //
 //*****************************************************************************
-uint32_t am_hal_pdm_fifo_count_get(void *pHandle);
+extern uint32_t am_hal_pdm_fifo_count_get(void *pHandle);
 
 //*****************************************************************************
 //
@@ -665,7 +665,7 @@ uint32_t am_hal_pdm_fifo_count_get(void *pHandle);
 //! @return AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-uint32_t am_hal_pdm_fifo_threshold_setup(void *pHandle, uint32_t value);
+extern uint32_t am_hal_pdm_fifo_threshold_setup(void *pHandle, uint32_t value);
 
 //*****************************************************************************
 //
@@ -759,7 +759,7 @@ extern uint32_t am_hal_pdm_interrupt_status_get(void *pHandle, uint32_t *pui32St
 //! @return AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_pdm_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_hal_pdm_transfer_t* psConfig);
+extern uint32_t am_hal_pdm_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_hal_pdm_transfer_t *psConfig);
 
 //*****************************************************************************
 //

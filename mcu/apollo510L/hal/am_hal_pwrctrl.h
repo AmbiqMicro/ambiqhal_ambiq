@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -225,6 +225,7 @@ typedef enum
     AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE1 = PWRCTRL_MCUPERFREQ_MCUPERFSTATUS_HP1, // 192 MHz
     AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE2 = PWRCTRL_MCUPERFREQ_MCUPERFSTATUS_HP2, // 250 MHz
 } am_hal_pwrctrl_mcu_mode_e;
+#define AM_HAL_PWRCTRL_MCU_MODE_HPMAX   AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE2  // Define for max high performance
 
 //
 //! vddf boost mode enum.
@@ -940,8 +941,18 @@ extern uint32_t am_hal_pwrctrl_temp_update(float fCurTemp,
 //
 //! @brief Decides CPU will enter HP1 and wait until PLL_LOCK and switch to HP2.
 //!
-//! @param bWaitPllockForHp2 - true: CPU will NOT enter HP1. It will Wait for PLL_LOCK and then directly enter HP2 mode.
-//!                            false:CPU will enter HP1 until PLL lock and then switch to HP2.
+//! @param bWaitPllockForHp2 - Configuration flag:
+//!                            - true: During MCU switches from LP/sleep to HP2,
+//!                                    CPU will NOT enter HP1 mode first. Instead,
+//!                                    it will wait for PLL lock and then directly
+//!                                    enter HP2 mode. This ensures the system
+//!                                    operates at HP2 frequency only after the
+//!                                    PLL is fully locked.
+//!                            - false: During MCU switches from LP/sleep to HP2,
+//!                                    CPU will enter HP1 mode first, then wait
+//!                                    for PLL lock, and finally switch to HP2
+//!                                    mode. This allows the system to operate at
+//!                                    HP1 frequency while waiting for PLL lock.
 //!
 //! @return None.
 //

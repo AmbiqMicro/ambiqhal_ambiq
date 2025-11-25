@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -132,7 +132,7 @@ static const uint8_t g_DeviceNameApollo510L_cm4[] = "Apollo5 Lite CM4";
 //
 // Define pkg types for certain devices.
 //
-static const uint8_t g_PackageType[][4]       = { "SIP", "SIP2", "BGA", "CSP" };
+static const uint8_t g_PackageType[][5]       = { "SIP", "SIP2", "BGA", "CSP" };
 #endif
 
 static const uint8_t g_TempRange[][11] = { "Commercial", "Military", "Automotive", "Industrial" };
@@ -211,11 +211,11 @@ am_util_id_device(am_util_id_t *psIDDevice)
     //
     // Go get all the device (hardware) info from the HAL
     //
-#if defined(AM_PART_APOLLO3_API) || defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
+#if defined(AM_PART_APOLLO) || defined(AM_PART_APOLLO2)
+    am_hal_mcuctrl_device_info_get(&psIDDevice->sMcuCtrlDevice);
+#else
     am_hal_mcuctrl_info_get(AM_HAL_MCUCTRL_INFO_DEVICEID, &psIDDevice->sMcuCtrlDevice);
     am_hal_mcuctrl_info_get(AM_HAL_MCUCTRL_INFO_FEATURES_AVAIL, &psIDDevice->sMcuCtrlFeature);
-#else
-    am_hal_mcuctrl_device_info_get(&psIDDevice->sMcuCtrlDevice);
 #endif
 
     //
@@ -382,7 +382,7 @@ am_util_id_device(am_util_id_t *psIDDevice)
                 chiprev_set(psIDDevice, 1);
             }
         }
-#endif // AM_ID_APOLLO330P
+#endif // AM_ID_APOLLO330P_510L
 
 #if defined(AM_ID_APOLLO510L_CM4)
         //if ( ( ui32PN == AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO510L_CM4)          &&

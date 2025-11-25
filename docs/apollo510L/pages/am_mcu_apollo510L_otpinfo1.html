@@ -87,30 +87,8 @@
   <A id="ADC_GAIN_ERRindex" href="#ADC_GAIN_ERR"><B>OTP_INFO1_ADC_GAIN_ERR</B> - ADC gain error</A><BR>
   <B><TT>0x0000092C: </TT></B>
   <A id="ADC_OFFSET_ERRindex" href="#ADC_OFFSET_ERR"><B>OTP_INFO1_ADC_OFFSET_ERR</B> - ADC offset</A><BR>
-  <B><TT>0x00000940: </TT></B>
-  <A id="AUDADC_A0_LG_OFFSETindex" href="#AUDADC_A0_LG_OFFSET"><B>OTP_INFO1_AUDADC_A0_LG_OFFSET</B> - Audio ADC low gain offset</A><BR>
-  <B><TT>0x00000944: </TT></B>
-  <A id="AUDADC_A0_HG_SLOPEindex" href="#AUDADC_A0_HG_SLOPE"><B>OTP_INFO1_AUDADC_A0_HG_SLOPE</B> - Audio ADC high gain slope</A><BR>
-  <B><TT>0x00000948: </TT></B>
-  <A id="AUDADC_A0_HG_INTERCEPTindex" href="#AUDADC_A0_HG_INTERCEPT"><B>OTP_INFO1_AUDADC_A0_HG_INTERCEPT</B> - Audio ADC high gain intercept</A><BR>
-  <B><TT>0x0000094C: </TT></B>
-  <A id="AUDADC_A1_LG_OFFSETindex" href="#AUDADC_A1_LG_OFFSET"><B>OTP_INFO1_AUDADC_A1_LG_OFFSET</B> - Audio ADC low gain offset</A><BR>
-  <B><TT>0x00000950: </TT></B>
-  <A id="AUDADC_A1_HG_SLOPEindex" href="#AUDADC_A1_HG_SLOPE"><B>OTP_INFO1_AUDADC_A1_HG_SLOPE</B> - Audio ADC high gain slope</A><BR>
-  <B><TT>0x00000954: </TT></B>
-  <A id="AUDADC_A1_HG_INTERCEPTindex" href="#AUDADC_A1_HG_INTERCEPT"><B>OTP_INFO1_AUDADC_A1_HG_INTERCEPT</B> - Audio ADC high gain intercept</A><BR>
-  <B><TT>0x00000958: </TT></B>
-  <A id="AUDADC_B0_LG_OFFSETindex" href="#AUDADC_B0_LG_OFFSET"><B>OTP_INFO1_AUDADC_B0_LG_OFFSET</B> - Audio ADC low gain offset</A><BR>
-  <B><TT>0x0000095C: </TT></B>
-  <A id="AUDADC_B0_HG_SLOPEindex" href="#AUDADC_B0_HG_SLOPE"><B>OTP_INFO1_AUDADC_B0_HG_SLOPE</B> - Audio ADC high gain slope</A><BR>
-  <B><TT>0x00000960: </TT></B>
-  <A id="AUDADC_B0_HG_INTERCEPTindex" href="#AUDADC_B0_HG_INTERCEPT"><B>OTP_INFO1_AUDADC_B0_HG_INTERCEPT</B> - Audio ADC high gain intercept</A><BR>
-  <B><TT>0x00000964: </TT></B>
-  <A id="AUDADC_B1_LG_OFFSETindex" href="#AUDADC_B1_LG_OFFSET"><B>OTP_INFO1_AUDADC_B1_LG_OFFSET</B> - Audio ADC low gain offset</A><BR>
-  <B><TT>0x00000968: </TT></B>
-  <A id="AUDADC_B1_HG_SLOPEindex" href="#AUDADC_B1_HG_SLOPE"><B>OTP_INFO1_AUDADC_B1_HG_SLOPE</B> - Audio ADC high gain slope</A><BR>
-  <B><TT>0x0000096C: </TT></B>
-  <A id="AUDADC_B1_HG_INTERCEPTindex" href="#AUDADC_B1_HG_INTERCEPT"><B>OTP_INFO1_AUDADC_B1_HG_INTERCEPT</B> - Audio ADC high gain intercept</A><BR>
+  <B><TT>0x00000930: </TT></B>
+  <A id="PGM_INFOindex" href="#PGM_INFO"><B>OTP_INFO1_PGM_INFO</B> - Information concerning programming of the the device.</A><BR>
   <B><TT>0x00000970: </TT></B>
   <A id="RFTRIM_TRIM_VERindex" href="#RFTRIM_TRIM_VER"><B>OTP_INFO1_RFTRIM_TRIM_VER</B> - RF trim version</A><BR>
   <B><TT>0x00000974: </TT></B>
@@ -427,87 +405,14 @@
 </TR>
 <TR valign="top">
   <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_A0_LG_OFFSET"> OTP_INFO1_AUDADC_A0_LG_OFFSET</A><BR>
-    <TT>0x940</TT>
+    <A href="#PGM_INFO"> OTP_INFO1_PGM_INFO</A><BR>
+    <TT>0x930</TT>
   </TH>
-  <TD bgcolor="#ffffff" colspan="32">LGOFFSET<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_A0_HG_SLOPE"> OTP_INFO1_AUDADC_A0_HG_SLOPE</A><BR>
-    <TT>0x944</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">HGSLOPE<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_A0_HG_INTERCEPT"> OTP_INFO1_AUDADC_A0_HG_INTERCEPT</A><BR>
-    <TT>0x948</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">HGINTERCEPT<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_A1_LG_OFFSET"> OTP_INFO1_AUDADC_A1_LG_OFFSET</A><BR>
-    <TT>0x94C</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">LGOFFSET<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_A1_HG_SLOPE"> OTP_INFO1_AUDADC_A1_HG_SLOPE</A><BR>
-    <TT>0x950</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">HGSLOPE<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_A1_HG_INTERCEPT"> OTP_INFO1_AUDADC_A1_HG_INTERCEPT</A><BR>
-    <TT>0x954</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">HGINTERCEPT<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_B0_LG_OFFSET"> OTP_INFO1_AUDADC_B0_LG_OFFSET</A><BR>
-    <TT>0x958</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">LGOFFSET<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_B0_HG_SLOPE"> OTP_INFO1_AUDADC_B0_HG_SLOPE</A><BR>
-    <TT>0x95C</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">HGSLOPE<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_B0_HG_INTERCEPT"> OTP_INFO1_AUDADC_B0_HG_INTERCEPT</A><BR>
-    <TT>0x960</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">HGINTERCEPT<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_B1_LG_OFFSET"> OTP_INFO1_AUDADC_B1_LG_OFFSET</A><BR>
-    <TT>0x964</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">LGOFFSET<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_B1_HG_SLOPE"> OTP_INFO1_AUDADC_B1_HG_SLOPE</A><BR>
-    <TT>0x968</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">HGSLOPE<BR><TT>0x00000000</TT></TD>
-</TR>
-<TR valign="top">
-  <TH align="left" bgcolor="#888888">
-    <A href="#AUDADC_B1_HG_INTERCEPT"> OTP_INFO1_AUDADC_B1_HG_INTERCEPT</A><BR>
-    <TT>0x96C</TT>
-  </TH>
-  <TD bgcolor="#ffffff" colspan="32">HGINTERCEPT<BR><TT>0x00000000</TT></TD>
+  <TD bgcolor="#ffffff" colspan="7">YEAR<BR><TT>0x00</TT></TD>
+  <TD bgcolor="#ffffff" colspan="4">MONTH<BR><TT>0x0</TT></TD>
+  <TD bgcolor="#ffffff" colspan="5">DAY<BR><TT>0x00</TT></TD>
+  <TD bgcolor="#ffffff" colspan="8">TRIMREV<BR><TT>0x00</TT></TD>
+  <TD bgcolor="#ffffff" colspan="8">TRIMSUBREV<BR><TT>0x00</TT></TD>
 </TR>
 <TR valign="top">
   <TH align="left" bgcolor="#888888">
@@ -3124,11 +3029,11 @@
 <HR>
 </BODY>
 </HTML>
-<H2 id="AUDADC_A0_LG_OFFSET"><A href="#index">OTP_INFO1_AUDADC_A0_LG_OFFSET</A></H2>
-<TABLE><TR><TD><B>Audio ADC low gain offset</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x0940 (word offset 0x0250)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_A0_LG_OFFSET ADDRESS:</B></TD>
-<TD><TT>0x42006940</TT></TD></TR><BR>
+<H2 id="PGM_INFO"><A href="#index">OTP_INFO1_PGM_INFO</A></H2>
+<TABLE><TR><TD><B>Information concerning programming of the the device.</B></TD></TR></TABLE><BR>
+<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x0930 (word offset 0x024C)</TT></TD></TR></TABLE><BR>
+<TR><TD><B> OTP_INFO1_PGM_INFO ADDRESS:</B></TD>
+<TD><TT>0x42006930</TT></TD></TR><BR>
 <BR></TABLE>
 <TABLE border="1" cellpadding="1" cellspacing="0">
   <TR valign="top" bgcolor="#888888">
@@ -3166,7 +3071,15 @@
     <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
   </TR>
 <TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">LGOFFSET<BR><TT>0x00000000</TT>
+<TD bgcolor="#ffffff" colspan="7">YEAR<BR><TT>0x00</TT>
+</TD>
+<TD bgcolor="#ffffff" colspan="4">MONTH<BR><TT>0x0</TT>
+</TD>
+<TD bgcolor="#ffffff" colspan="5">DAY<BR><TT>0x00</TT>
+</TD>
+<TD bgcolor="#ffffff" colspan="8">TRIMREV<BR><TT>0x00</TT>
+</TD>
+<TD bgcolor="#ffffff" colspan="8">TRIMSUBREV<BR><TT>0x00</TT>
 </TD>
 </TR>
 </TABLE>
@@ -3180,798 +3093,53 @@
     <TH><U><SMALL>Description</SMALL></U></TH>
   </TR>
 <TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>LGOFFSET</TD>
+<TD nowrap>31:25</TD>
+<TD nowrap>YEAR</TD>
 <TD nowrap>uint_32</TD>
 <TD nowrap> </TD>
-<TD>Low Gain (LG) Offset
+<TD>Year (2000 base).
   <TABLE>
   </TABLE>
 </TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for low gain offset (less than 12dB). A0 maps to Slot 0</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_A0_HG_SLOPE"><A href="#index">OTP_INFO1_AUDADC_A0_HG_SLOPE</A></H2>
-<TABLE><TR><TD><B>Audio ADC high gain slope</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x0944 (word offset 0x0251)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_A0_HG_SLOPE ADDRESS:</B></TD>
-<TD><TT>0x42006944</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">HGSLOPE<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
 <TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>HGSLOPE</TD>
+<TD nowrap>24:21</TD>
+<TD nowrap>MONTH</TD>
 <TD nowrap>uint_32</TD>
 <TD nowrap> </TD>
-<TD>High Gain (HG) Slope
+<TD>Month.
   <TABLE>
   </TABLE>
 </TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for high gain slope (more than 12dB). A0 maps to Slot 0</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_A0_HG_INTERCEPT"><A href="#index">OTP_INFO1_AUDADC_A0_HG_INTERCEPT</A></H2>
-<TABLE><TR><TD><B>Audio ADC high gain intercept</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x0948 (word offset 0x0252)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_A0_HG_INTERCEPT ADDRESS:</B></TD>
-<TD><TT>0x42006948</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">HGINTERCEPT<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
 <TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>HGINTERCEPT</TD>
+<TD nowrap>20:16</TD>
+<TD nowrap>DAY</TD>
 <TD nowrap>uint_32</TD>
 <TD nowrap> </TD>
-<TD>High Gain (HG) Intercept
+<TD>Day.
   <TABLE>
   </TABLE>
 </TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for high gain intercept (more than 12dB). A0 maps to Slot 0</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_A1_LG_OFFSET"><A href="#index">OTP_INFO1_AUDADC_A1_LG_OFFSET</A></H2>
-<TABLE><TR><TD><B>Audio ADC low gain offset</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x094C (word offset 0x0253)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_A1_LG_OFFSET ADDRESS:</B></TD>
-<TD><TT>0x4200694C</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">LGOFFSET<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
 <TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>LGOFFSET</TD>
+<TD nowrap>15:8</TD>
+<TD nowrap>TRIMREV</TD>
 <TD nowrap>uint_32</TD>
 <TD nowrap> </TD>
-<TD>Low Gain (LG) Offset
+<TD>For 510L A1 and later, this field is the same value as TRIM_REV register. For 510L A0 it is invalid.
   <TABLE>
   </TABLE>
 </TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for low gain offset (less than 12dB). A1 maps to Slot 1</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_A1_HG_SLOPE"><A href="#index">OTP_INFO1_AUDADC_A1_HG_SLOPE</A></H2>
-<TABLE><TR><TD><B>Audio ADC high gain slope</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x0950 (word offset 0x0254)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_A1_HG_SLOPE ADDRESS:</B></TD>
-<TD><TT>0x42006950</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">HGSLOPE<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
 <TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>HGSLOPE</TD>
+<TD nowrap>7:0</TD>
+<TD nowrap>TRIMSUBREV</TD>
 <TD nowrap>uint_32</TD>
 <TD nowrap> </TD>
-<TD>High Gain (HG) Slope
+<TD>Trim sub-revision. The major trim version is at TRIM_REV.
   <TABLE>
   </TABLE>
 </TD>
 </TABLE>
 <BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for high gain slope (more than 12dB). A1 maps to Slot 1</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_A1_HG_INTERCEPT"><A href="#index">OTP_INFO1_AUDADC_A1_HG_INTERCEPT</A></H2>
-<TABLE><TR><TD><B>Audio ADC high gain intercept</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x0954 (word offset 0x0255)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_A1_HG_INTERCEPT ADDRESS:</B></TD>
-<TD><TT>0x42006954</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">HGINTERCEPT<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
-<TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>HGINTERCEPT</TD>
-<TD nowrap>uint_32</TD>
-<TD nowrap> </TD>
-<TD>High Gain (HG) Intercept
-  <TABLE>
-  </TABLE>
-</TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for high gain intercept (more than 12dB). A1 maps to Slot 1</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_B0_LG_OFFSET"><A href="#index">OTP_INFO1_AUDADC_B0_LG_OFFSET</A></H2>
-<TABLE><TR><TD><B>Audio ADC low gain offset</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x0958 (word offset 0x0256)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_B0_LG_OFFSET ADDRESS:</B></TD>
-<TD><TT>0x42006958</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">LGOFFSET<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
-<TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>LGOFFSET</TD>
-<TD nowrap>uint_32</TD>
-<TD nowrap> </TD>
-<TD>Low Gain (LG) Offset
-  <TABLE>
-  </TABLE>
-</TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for low gain offset (less than 12dB). B0 maps to Slot 2</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_B0_HG_SLOPE"><A href="#index">OTP_INFO1_AUDADC_B0_HG_SLOPE</A></H2>
-<TABLE><TR><TD><B>Audio ADC high gain slope</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x095C (word offset 0x0257)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_B0_HG_SLOPE ADDRESS:</B></TD>
-<TD><TT>0x4200695C</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">HGSLOPE<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
-<TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>HGSLOPE</TD>
-<TD nowrap>uint_32</TD>
-<TD nowrap> </TD>
-<TD>High Gain (HG) Slope
-  <TABLE>
-  </TABLE>
-</TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for high gain slope (more than 12dB). B0 maps to Slot 2</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_B0_HG_INTERCEPT"><A href="#index">OTP_INFO1_AUDADC_B0_HG_INTERCEPT</A></H2>
-<TABLE><TR><TD><B>Audio ADC high gain intercept</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x0960 (word offset 0x0258)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_B0_HG_INTERCEPT ADDRESS:</B></TD>
-<TD><TT>0x42006960</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">HGINTERCEPT<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
-<TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>HGINTERCEPT</TD>
-<TD nowrap>uint_32</TD>
-<TD nowrap> </TD>
-<TD>High Gain (HG) Intercept
-  <TABLE>
-  </TABLE>
-</TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for high gain intercept (more than 12dB). B0 maps to Slot 2</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_B1_LG_OFFSET"><A href="#index">OTP_INFO1_AUDADC_B1_LG_OFFSET</A></H2>
-<TABLE><TR><TD><B>Audio ADC low gain offset</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x0964 (word offset 0x0259)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_B1_LG_OFFSET ADDRESS:</B></TD>
-<TD><TT>0x42006964</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">LGOFFSET<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
-<TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>LGOFFSET</TD>
-<TD nowrap>uint_32</TD>
-<TD nowrap> </TD>
-<TD>Low Gain (LG) Offset
-  <TABLE>
-  </TABLE>
-</TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for low gain offset (less than 12dB). B1 maps to Slot 3</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_B1_HG_SLOPE"><A href="#index">OTP_INFO1_AUDADC_B1_HG_SLOPE</A></H2>
-<TABLE><TR><TD><B>Audio ADC high gain slope</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x0968 (word offset 0x025A)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_B1_HG_SLOPE ADDRESS:</B></TD>
-<TD><TT>0x42006968</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">HGSLOPE<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
-<TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>HGSLOPE</TD>
-<TD nowrap>uint_32</TD>
-<TD nowrap> </TD>
-<TD>High Gain (HG) Slope
-  <TABLE>
-  </TABLE>
-</TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for high gain slope (more than 12dB). B1 maps to Slot 3</TT></TD></TR></TABLE><BR>
-<BR><BR>
-<HR>
-</BODY>
-</HTML>
-<H2 id="AUDADC_B1_HG_INTERCEPT"><A href="#index">OTP_INFO1_AUDADC_B1_HG_INTERCEPT</A></H2>
-<TABLE><TR><TD><B>Audio ADC high gain intercept</B></TD></TR></TABLE><BR>
-<TABLE><TR><TD><B>REGISTER OFFSET:</B></TD><TD><TT>0x096C (word offset 0x025B)</TT></TD></TR></TABLE><BR>
-<TR><TD><B> OTP_INFO1_AUDADC_B1_HG_INTERCEPT ADDRESS:</B></TD>
-<TD><TT>0x4200696C</TT></TD></TR><BR>
-<BR></TABLE>
-<TABLE border="1" cellpadding="1" cellspacing="0">
-  <TR valign="top" bgcolor="#888888">
-    <TD bgcolor="#E6E8F2"><SMALL><B>31</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>30</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>29</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>28</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>27</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>26</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>25</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>24</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>23</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>22</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>21</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>20</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>19</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>18</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>17</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>16</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>15</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>14</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>13</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>12</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>11</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>10</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>9</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>8</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>7</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>6</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>5</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>4</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>3</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>2</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>1</B></SMALL></TD>
-    <TD bgcolor="#E6E8F2"><SMALL><B>0</B></SMALL></TD>
-  </TR>
-<TR valign="top">
-<TD bgcolor="#ffffff" colspan="32">HGINTERCEPT<BR><TT>0x00000000</TT>
-</TD>
-</TR>
-</TABLE>
-<BR>
-<TABLE border="1" cellpadding="3" cellspacing="0">
-  <TR align="left" bgcolor="#E6E8F2">
-    <TH><U><SMALL>Bits</SMALL></U></TH>
-    <TH><U><SMALL>Name</SMALL></U></TH>
-    <TH><U><SMALL>Type</SMALL></U></TH>
-    <TH><U><SMALL>Flags</SMALL></U></TH>
-    <TH><U><SMALL>Description</SMALL></U></TH>
-  </TR>
-<TR align="left">
-<TD nowrap>31:0</TD>
-<TD nowrap>HGINTERCEPT</TD>
-<TD nowrap>uint_32</TD>
-<TD nowrap> </TD>
-<TD>High Gain (HG) Intercept
-  <TABLE>
-  </TABLE>
-</TD>
-</TABLE>
-<BR>
-<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>This is the float value for high gain intercept (more than 12dB). B1 maps to Slot 3</TT></TD></TR></TABLE><BR>
+<TABLE><TR><TD><B>Description:</B></TD></TR><TR><TD><TT>Device programming information</TT></TD></TR></TABLE><BR>
 <BR><BR>
 <HR>
 </BODY>

@@ -76,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -890,7 +890,13 @@ uint32_t
 am_hal_dsi_power_control(am_hal_sysctrl_power_state_e ePowerState,
                          bool bRetainState)
 {
-    static am_hal_dsi_state_t sDSIState = {0};
+    static am_hal_dsi_state_t sDSIState =
+    {
+        .eTrim    = (am_hal_dsi_freq_trim_e) 0,
+        .eWidth   = (am_hal_dsi_dbi_width_e) 0,
+        .ui8Lanes = 0,
+        .bisValid = false,
+    };
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
     bool bStatus;
     am_hal_pwrctrl_periph_enabled(AM_HAL_PWRCTRL_PERIPH_DISPPHY, &bStatus);

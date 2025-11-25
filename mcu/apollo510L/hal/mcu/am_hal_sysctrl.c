@@ -76,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -147,7 +147,7 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
 {
     bool bSimobuckAct = false;
     bool bReportedDeepSleep = false;
-    bool bBuckIntoLPinDS = false;
+    bool bBuckIntoLPinDS = false, bBuckIntoACTinDS = false;
     am_hal_pwrctrl_pwrmodctl_cpdlp_t sActCpdlpConfig;
     am_hal_spotmgr_cpu_state_e eCpuSt;
     uint32_t  ui32CpdlpConfig = 0;
@@ -164,6 +164,11 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
     // Disable interrupts and save the previous interrupt state.
     //
     AM_CRITICAL_BEGIN
+
+    //
+    // Clear CPUPWRSTATUS FULLRETCACHE and FUNCRETCACHE status bits
+    //
+    PWRCTRL->CPUPWRSTATUS =PWRCTRL_CPUPWRSTATUS_FULLRETCACHE_Msk | PWRCTRL_CPUPWRSTATUS_FUNCRETCACHE_Msk;
 
     //
     // Get the current CPDLPSTATE configuration in active mode
@@ -221,6 +226,11 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
         am_hal_spotmgr_tempco_suspend();
 #endif
         //
+        // Prepare clock manager for deepsleep
+        //
+        am_hal_clkmgr_private_deepsleep_enter();
+
+        //
         // Report CPU state change
         //
         am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_CPU_STATE, false, (void *) &eCpuSt);
@@ -243,11 +253,6 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
         bReportedDeepSleep = true;
 
         //
-        // Prepare clock manager for deepsleep
-        //
-        am_hal_clkmgr_private_deepsleep_enter();
-
-        //
         // Check if SIMOBUCK needs to stay in Active mode in DeepSleep
         //
         if ( bSimobuckAct )
@@ -255,7 +260,23 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
             //
             // Check if SIMOBUCK would go into LP mode in DeepSleep
             //
-            if (g_bIsTrimver1OrNewer)
+            if (g_bIsTrimver2OrNewer)
+            {
+                if (g_bAppFrcBuckAct || g_bFrcBuckAct)
+                {
+                    //
+                    // This implies upon deepsleep, buck can keep in active mode
+                    //
+                    bBuckIntoACTinDS = true;
+
+                    //
+                    // Force buck to go in active mode
+                    //
+                    buck_ldo_update_override(true);
+
+                }
+            }
+            else
             {
                 if (!g_bAppFrcBuckAct && !g_bFrcBuckAct)
                 {
@@ -322,6 +343,20 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
     }
 
     //
+    // Wait (up to 1 ms) for either FULLRETCACHE (bit 19) or
+    // FUNCRETCACHE (bit 21) in CPUPWRSTATUS to be set.
+    //
+    if(sActCpdlpConfig.eElpConfig != AM_HAL_PWRCTRL_ELP_OFF)
+    {
+        am_hal_delay_us_status_check(1000,
+                                    (uint32_t) &PWRCTRL->CPUPWRSTATUS,
+                                    PWRCTRL_CPUPWRSTATUS_FULLRETCACHE_Msk |
+                                    PWRCTRL_CPUPWRSTATUS_FUNCRETCACHE_Msk,
+                                    0,
+                                    false);
+    }
+
+    //
     // Before executing WFI, flush APB writes.
     //
     am_hal_sysctrl_sysbus_write_flush();
@@ -363,7 +398,18 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
         //
         am_hal_clkmgr_private_deepsleep_exit();
     }
-    if ( bBuckIntoLPinDS )
+    if ( bBuckIntoACTinDS )
+    {
+        //
+        // Disable overrides
+        //
+        MCUCTRL->VRCTRL_b.SIMOBUCKOVER = false;
+        //
+        // Set SCM mode to 2
+        //
+        SCM->SCMCNTRCTRL1 = SCMCNTRCTRL1_SETTING_DEFAULT;
+    }
+    else if ( bBuckIntoLPinDS )
     {
         //
         // Re-enable overrides

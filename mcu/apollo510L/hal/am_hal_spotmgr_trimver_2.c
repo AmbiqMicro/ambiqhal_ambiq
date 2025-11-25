@@ -74,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -158,9 +158,6 @@ typedef uint32_t (*TransitionSequencePtr)(uint32_t, uint32_t);
 
 //! Default VDDFRXCOMPTRIMMINUS for power state 1
 #define DEFAULT_VDDFRXCOMPTRIMMINUS_PS1 (0)
-
-//! Value for setting SCMCNTRCTRL1 before enabling SIMOBUCK
-#define SCMCNTRCTRL1_SETTING_BEFORE_SIMOBUCK_EN (5)
 
 //*****************************************************************************
 //
@@ -437,7 +434,10 @@ spotmgr_buck_deepsleep_state_determine(am_hal_spotmgr_power_status_t * psPwrStat
             {
                 if ((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0EN == TIMER_CTRL0_TMR0EN_EN) &&
                     (TIMER->GLOBEN & (TIMER_GLOBEN_ENB0_EN << ui32TimerNumber))        &&
-                    (((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK >= AM_HAL_TIMER_CLOCK_HFRC_DIV4)            &&
+                    ((
+#if AM_HAL_TIMER_CLOCK_HFRC_DIV4 != 0   // Avoid compiler warning "pointless comparison of unsigned integer with zero"
+                      (TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK >= AM_HAL_TIMER_CLOCK_HFRC_DIV4)            &&
+#endif
                       (TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK <= AM_HAL_TIMER_CLOCK_HFRC_DIV4K))          ||
                      ((TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK >= AM_HAL_TIMER_CLOCK_GPIO0)                &&
                       (TIMERn(ui32TimerNumber)->CTRL0_b.TMR0CLK <= AM_HAL_TIMER_CLOCK_GPIO99))))
@@ -854,18 +854,52 @@ uint32_t am_hal_spotmgr_trimver_2_simobuck_init_bfr_enable(void)
     SCM->SCMCNTRCTRL2_b.FCNT2            = g_sSpotMgrINFO1regs.sScmCntrCtrl2.CNTRCTRL2_b.FCNT2;
     SCM->SCMCNTRCTRL2_b.FCNT1            = g_sSpotMgrINFO1regs.sScmCntrCtrl2.CNTRCTRL2_b.FCNT1;
     SCM->LPHYSTCNT_b.LPHYSTCNT           = g_sSpotMgrINFO1regs.sScmLpHystCnt.LPHYST_b.LPHYSTCNT;
-    SCM->LPTHRESHVDDS_b.LPTHRESHVDDS     = g_sSpotMgrINFO1regs.sScmLpThreshVdds.LPTHRESH_b.LPTHRESHVDD;
-    SCM->LPTHRESHVDDF_b.LPTHRESHVDDF     = g_sSpotMgrINFO1regs.sScmLpThreshVddf.LPTHRESH_b.LPTHRESHVDD;
-    SCM->LPTHRESHVDDC_b.LPTHRESHVDDC     = g_sSpotMgrINFO1regs.sScmLpThreshVddc.LPTHRESH_b.LPTHRESHVDD;
-    SCM->LPTHRESHVDDCLV_b.LPTHRESHVDDCLV = g_sSpotMgrINFO1regs.sScmLpThreshVddclv.LPTHRESH_b.LPTHRESHVDD;
-    SCM->LPTHRESHVDDRF_b.LPTHRESHVDDRF   = g_sSpotMgrINFO1regs.sScmLpThreshVddrf.LPTHRESH_b.LPTHRESHVDD;
     SCM->ACTTHRESH1_b.ACTTHRESHVDDS      = g_sSpotMgrINFO1regs.sScmActThresh1.ACTTHRESH1_b.ACTTHRESHVDDS;
     SCM->ACTTHRESH1_b.ACTTHRESHVDDF      = g_sSpotMgrINFO1regs.sScmActThresh1.ACTTHRESH1_b.ACTTHRESHVDDF;
     SCM->ACTTHRESH2_b.ACTTHRESHVDDC      = g_sSpotMgrINFO1regs.sScmActThresh2.ACTTHRESH2_b.ACTTHRESHVDDC;
     SCM->ACTTHRESH2_b.ACTTHRESHVDDCLV    = g_sSpotMgrINFO1regs.sScmActThresh2.ACTTHRESH2_b.ACTTHRESHVDDCLV;
     SCM->ACTTHRESH3_b.ACTTHRESHVDDRF     = g_sSpotMgrINFO1regs.sScmActThresh3.ACTTHRESH3_b.ACTTHRESHVDDRF;
-    SCM->SCMCNTRCTRL1                    = SCMCNTRCTRL1_SETTING_BEFORE_SIMOBUCK_EN;
+    SCM->SCMCNTRCTRL1                    = SCMCNTRCTRL1_SETTING_DEFAULT;
+    SCM->LPTHRESHVDDS_b.LPTHRESHVDDS     = SCM_LPTHRESHVDDS_SETTING_DEFAULT;
+    SCM->LPTHRESHVDDF_b.LPTHRESHVDDF     = SCM_LPTHRESHVDDF_SETTING_DEFAULT;
+    SCM->LPTHRESHVDDC_b.LPTHRESHVDDC     = SCM_LPTHRESHVDDC_SETTING_DEFAULT;
+    SCM->LPTHRESHVDDCLV_b.LPTHRESHVDDCLV = SCM_LPTHRESHVDDCLV_SETTING_DEFAULT;
+    SCM->LPTHRESHVDDRF_b.LPTHRESHVDDRF   = SCM_LPTHRESHVDDRF_SETTING_DEFAULT;
+    SCM->LPSTAT                          = SCM_LPSTAT_SETTING_DEFAULT;
 
+    return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+//! @brief SIMOBUCK initialziation handling at stage just after enabling
+//!        SIMOBUCK
+//!
+//! @return SUCCESS or Failures.
+//
+//*****************************************************************************
+uint32_t am_hal_spotmgr_trimver_2_simobuck_init_aft_enable(void)
+{
+    uint32_t ui32Status;
+    //
+    // Wait for LPOVRTRIG bit to be set with timeout
+    // Using 1000us timeout
+    //
+    ui32Status = am_hal_delay_us_status_check(1000,
+                                              (uint32_t)&SCM->LPSTAT,
+                                              0x1,  // LPOVRTRIG bit mask (bit 0)
+                                              0x1,  // Wait for bit to be set to 1
+                                              true);
+    if (ui32Status != AM_HAL_STATUS_SUCCESS)
+    {
+        return AM_HAL_STATUS_TIMEOUT;
+    }
+    
+    SCM->LPTHRESHVDDS_b.LPTHRESHVDDS     = g_sSpotMgrINFO1regs.sScmLpThreshVdds.LPTHRESH_b.LPTHRESHVDD;
+    SCM->LPTHRESHVDDF_b.LPTHRESHVDDF     = g_sSpotMgrINFO1regs.sScmLpThreshVddf.LPTHRESH_b.LPTHRESHVDD;
+    SCM->LPTHRESHVDDC_b.LPTHRESHVDDC     = g_sSpotMgrINFO1regs.sScmLpThreshVddc.LPTHRESH_b.LPTHRESHVDD;
+    SCM->LPTHRESHVDDCLV_b.LPTHRESHVDDCLV = g_sSpotMgrINFO1regs.sScmLpThreshVddclv.LPTHRESH_b.LPTHRESHVDD;
+    SCM->LPTHRESHVDDRF_b.LPTHRESHVDDRF   = g_sSpotMgrINFO1regs.sScmLpThreshVddrf.LPTHRESH_b.LPTHRESHVDD;
     return AM_HAL_STATUS_SUCCESS;
 }
 

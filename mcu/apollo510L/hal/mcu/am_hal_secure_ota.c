@@ -76,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -129,7 +129,8 @@ uint32_t am_hal_ota_init(uint32_t ui32ProgramKey, am_hal_otadesc_t *pOtaDesc)
     gSOtaState.mramSize = sDevice.ui32MRAMSize;
 
     // Validate the flash page
-    if (otaDescAddr >= (gSOtaState.mramSize - sizeof(am_hal_otadesc_t)))
+    if ( (otaDescAddr < MRAM_BASEADDR) ||
+        (otaDescAddr > (MRAM_BASEADDR + gSOtaState.mramSize - sizeof(am_hal_otadesc_t))) )
     {
         return AM_HAL_STATUS_INVALID_ARG;
     }
@@ -168,7 +169,8 @@ uint32_t am_hal_ota_add(uint32_t ui32ProgamKey, uint8_t imageMagic, uint32_t *pI
     uint32_t imageAddr = (uint32_t)pImage;
     uint32_t status = AM_HAL_STATUS_SUCCESS;
     // Validate the Image Pointer
-    if (imageAddr >= gSOtaState.mramSize)
+    if (imageAddr > (MRAM_BASEADDR + gSOtaState.mramSize) ||
+        imageAddr < MRAM_BASEADDR )
     {
         return AM_HAL_STATUS_INVALID_ARG;
     }
@@ -203,7 +205,8 @@ uint32_t am_hal_get_ota_status(uint32_t maxOta, am_hal_ota_status_t *pStatus, ui
     uint32_t numOta = 0;
     am_hal_otadesc_t *pOtaDesc = (am_hal_otadesc_t *)AM_HAL_OTA_GET_BLOB_PTR(MCUCTRL->OTAPOINTER);
 
-    if ((uint32_t)pOtaDesc >= (gSOtaState.mramSize - sizeof(am_hal_otadesc_t)))
+    if ( ((uint32_t)pOtaDesc < MRAM_BASEADDR) ||
+          (uint32_t)pOtaDesc > (MRAM_BASEADDR + gSOtaState.mramSize - sizeof(am_hal_otadesc_t)) )
     {
         return AM_HAL_STATUS_OUT_OF_RANGE;
     }

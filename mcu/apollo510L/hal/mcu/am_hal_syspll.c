@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -170,6 +170,9 @@ typedef struct
 //
 //*****************************************************************************
 am_hal_syspll_state_t             g_SysPLLState[AM_REG_SYSPLL_NUM_MODULES];
+
+// Flag to indicate SYSPLL preference for lock speed or lowest active current
+static bool g_bSysPllFavorLockSpeed = false;
 
 //*****************************************************************************
 //
@@ -407,8 +410,13 @@ am_hal_syspll_config_generate(am_hal_syspll_config_t* pConfig, float fRefClkMHz,
 {
     bool bRet = false;
     bool bIntMode = false;
+    bool bFracMode = false;
     uint8_t ui8RefDiv = 0;
+    uint8_t ui8FracRefDiv = 0;
+    uint8_t ui8IntRefDiv = 0;
     uint16_t ui16FBDivInt = 0;
+    uint16_t ui16FracFBDivInt = 0;
+    uint16_t ui16IntFBDivInt = 0;
     uint32_t ui32FBDivFrac = 0;
 
     //
@@ -430,16 +438,17 @@ am_hal_syspll_config_generate(am_hal_syspll_config_t* pConfig, float fRefClkMHz,
     //
     // Check whether the VCO clock rate can be generated in integer mode.
     //
-    bRet = syspll_config_util_integer_mode_check(fRefClkMHz, fVCOClkMHz, &ui8RefDiv, &ui16FBDivInt);
+    bRet = syspll_config_util_integer_mode_check(fRefClkMHz, fVCOClkMHz, &ui8IntRefDiv, &ui16IntFBDivInt);
     bIntMode = bRet;
 
     //
     // If the requested VCO clock rate cannot be generated in integer mode,
     // generate the configuration using fraction mode.
     //
-    if (!bIntMode)
+    if (!bIntMode || g_bSysPllFavorLockSpeed)
     {
-        bRet = syspll_config_util_fraction_mode_check(fRefClkMHz, fVCOClkMHz, &ui8RefDiv, &ui16FBDivInt, &ui32FBDivFrac);
+        bRet = syspll_config_util_fraction_mode_check(fRefClkMHz, fVCOClkMHz, &ui8FracRefDiv, &ui16FracFBDivInt, &ui32FBDivFrac);
+        bFracMode = bRet;
     }
 
     //
@@ -447,6 +456,18 @@ am_hal_syspll_config_generate(am_hal_syspll_config_t* pConfig, float fRefClkMHz,
     //
     if (bRet)
     {
+        bool bUseFrac = bFracMode && (!bIntMode || (g_bSysPllFavorLockSpeed && (ui8FracRefDiv <= ui8IntRefDiv)));
+
+        if (bUseFrac)
+        {
+            ui8RefDiv = ui8FracRefDiv;
+            ui16FBDivInt = ui16FracFBDivInt;
+        }
+        else
+        {
+            ui8RefDiv = ui8IntRefDiv;
+            ui16FBDivInt = ui16IntFBDivInt;
+        }
 
         float FBDiv = ui16FBDivInt + (float)ui32FBDivFrac / 0x1000000;
         float fVCOClkMHzActual = fRefClkMHz * FBDiv / ui8RefDiv;
@@ -461,8 +482,8 @@ am_hal_syspll_config_generate(am_hal_syspll_config_t* pConfig, float fRefClkMHz,
         pConfig->eVCOSel = (fVCOClkMHz >= AM_HAL_SYSPLL_VCO_HI_MODE_FREQ_MIN) ? AM_HAL_SYSPLL_VCOSEL_VCOHI :
                                                                                 AM_HAL_SYSPLL_VCOSEL_VCOLO;
 
-        pConfig->eFractionMode = bIntMode ? AM_HAL_SYSPLL_FMODE_INTEGER :
-                                            AM_HAL_SYSPLL_FMODE_FRACTION;
+        pConfig->eFractionMode = bUseFrac ? AM_HAL_SYSPLL_FMODE_FRACTION :
+                                            AM_HAL_SYSPLL_FMODE_INTEGER;
         pConfig->ui8RefDiv = ui8RefDiv;
         pConfig->ui16FBDivInt = ui16FBDivInt;
         pConfig->ui32FBDivFrac = ui32FBDivFrac;
@@ -794,7 +815,6 @@ am_hal_syspll_deinitialize(void *pHandle)
 
     uint32_t               status = AM_HAL_STATUS_SUCCESS;
     am_hal_syspll_state_t  *pSysPLLState = (am_hal_syspll_state_t *)pHandle;
-    bool                    bPowerEnabled = false;
 
     // Disable PLL if it is still enabled
     if (pSysPLLState->prefix.s.bEnable)
@@ -803,13 +823,9 @@ am_hal_syspll_deinitialize(void *pHandle)
     }
 
     //
-    // Turn off power gates for system PLL if it is not yet powered off
+    // Turn off power gates for system PLL
     //
-    am_hal_pwrctrl_syspll_enabled(&bPowerEnabled);
-    if (bPowerEnabled)
-    {
-        am_hal_pwrctrl_syspll_disable();
-    }
+    am_hal_pwrctrl_syspll_disable();
 
     //
     // Clear inititalized flag
@@ -1139,6 +1155,29 @@ am_hal_syspll_bypass_set(void *pHandle, bool bBypass)
     return AM_HAL_STATUS_SUCCESS;
 
 } // am_hal_syspll_bypass_set()
+
+//*****************************************************************************
+//
+// System PLL set emphasis when both integer and fractional solutions are valid
+//
+//*****************************************************************************
+uint32_t
+am_hal_syspll_emphasis_set(am_hal_syspll_emphasis_mode_e eEmphasisMode)
+{
+    if (eEmphasisMode == AM_HAL_SYSPLL_FAVOR_LOCK_SPEED)
+    {
+        g_bSysPllFavorLockSpeed = true;
+    }
+    else if (eEmphasisMode == AM_HAL_SYSPLL_FAVOR_POWER)
+    {
+        g_bSysPllFavorLockSpeed = false;
+    }
+    //
+    // Return status.
+    //
+    return AM_HAL_STATUS_SUCCESS;
+
+} // am_hal_syspll_favor_lock_speed_set()
 
 //*****************************************************************************
 //

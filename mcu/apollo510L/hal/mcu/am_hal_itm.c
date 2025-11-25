@@ -76,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -196,7 +196,7 @@ am_hal_itm_disable(void)
     //
     ui32Status = am_hal_delay_us_status_change(1000,
                                                (uint32_t)&ITM->TCR,
-                                               (ITM_TCR_ITMENA_Msk & ITM_TCR_BUSY_Msk),
+                                               (ITM_TCR_ITMENA_Msk | ITM_TCR_BUSY_Msk),
                                                0 );
     if ( ui32Status != AM_HAL_STATUS_SUCCESS )
     {
@@ -239,17 +239,12 @@ am_hal_itm_tpiu_pipeline_flush(void)
     }
 
     //
-    // At this point, ITM activity has completed. There could still be activity
-    // in the ITM or TPIU pipeline, but this cannot be determined by Apollo510L.
+    // At this point, most ITM activity has completed. However, there could
+    // still be activity in the ITM or TPIU pipeline which must be drained.
+    // TPIUBUSY provides the method for determining that.
     //
-    // The only thing that can be done is to allow some extra time for the
-    // pipeline to be cleared.
-    //
-    // Note that future Ambiq devices may provide a status bit for this purpose.
-    //
-    am_hal_delay_us(500);
-
-    return AM_HAL_STATUS_SUCCESS;
+    return am_hal_delay_us_status_change(500, (uint32_t)&MCUCTRL->DBGCTRL,
+                                         MCUCTRL_DBGCTRL_TPIUBUSY_Msk, 0);
 
 } // am_hal_itm_tpiu_pipeline_flush()
 

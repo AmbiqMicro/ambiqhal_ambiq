@@ -44,8 +44,6 @@
 //! - Set validation parameters
 //
 //*****************************************************************************
-
-//*****************************************************************************
 //
 // Copyright (c) 2025, Ambiq Micro, Inc.
 // All rights reserved.
@@ -76,12 +74,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <string.h>
 #include "am_mcu_apollo.h"
-#include "am_bsp.h"
 #include "am_util.h"
 #include "am_util_multi_boot_private.h"
 #include "am_util_multi_boot.h"
@@ -176,7 +173,7 @@ check_flash_address_range(uint32_t address, uint32_t size)
         am_hal_mcuctrl_device_info_get(&sDevice);
 #endif
 
-#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4L) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO510)
+#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4L) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO510) && !defined(AM_PART_APOLLO330P_510L)
         g_intFlashSize = sDevice.ui32FlashSize;
 #else
         g_intFlashSize = sDevice.ui32MRAMSize;
@@ -423,11 +420,11 @@ image_start_packet_read(am_util_bootloader_image_t *psImage, uint32_t *pui32Pack
     // This implementation uses the excess SRAM available in the system
     // CAUTION!!!: For this to work it is essential that the unused SRAM banks are
     // not powered down
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO510)
+#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO510) || defined(AM_PART_APOLLO330P_510L)
     if ( (sDevice.ui32DTCMSize - MAX_SRAM_USED) >= psImage->ui32NumBytes)
     {
         g_am_util_multiboot.bStoreInSRAM = 1;
-        #if defined(AM_PART_APOLLO510)
+        #if defined(AM_PART_APOLLO510) || defined(AM_PART_APOLLO330P_510L)
         g_am_util_multiboot.pui8RxBuffer = (uint8_t *)(SSRAM_BASEADDR + MAX_SRAM_USED);
         #else
         g_am_util_multiboot.pui8RxBuffer = (uint8_t *)(SRAM_BASEADDR + MAX_SRAM_USED);
@@ -921,7 +918,7 @@ am_util_multiboot_ota_handler(am_util_multiboot_ota_t *pOtaInfo, uint32_t *pTemp
     //
     // Perform a software reset.
     //
-#if (defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P) || defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO510))
+#if (defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P) || defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO510) || defined(AM_PART_APOLLO330P_510L))
     am_hal_reset_control(AM_HAL_RESET_CONTROL_SWPOI, 0);
 #else
     am_hal_reset_poi();

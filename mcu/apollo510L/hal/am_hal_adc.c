@@ -89,7 +89,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_1-29944d3085 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -329,7 +329,7 @@ adc_clock_id_get(am_hal_adc_clksel_e clksel)
 static uint32_t
 adc_crm_set(uint32_t ui32Module, am_hal_adc_clksel_e eClocksel)
 {
-    am_hal_crm_adc_clksel_e eSource = EXTRACT_CRM_CLKSRC(eClocksel);
+    am_hal_crm_adc_clksel_e eSource = (am_hal_crm_adc_clksel_e)EXTRACT_CRM_CLKSRC(eClocksel);
     uint32_t ui32Ratio = EXTRACT_CRM_CLKDIV(eClocksel);
 
     return am_hal_crm_clock_config_ADC(eSource, ui32Ratio);
