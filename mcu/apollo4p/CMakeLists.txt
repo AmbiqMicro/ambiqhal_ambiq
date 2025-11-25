@@ -52,7 +52,7 @@ if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPIC OR CONFIG_AMBIQ_HAL_USE
     zephyr_library_sources(hal/mcu/am_hal_fault.c)
 endif()
 
-if(CONFIG_AMBIQ_HAL_USE_SPID)
+if(CONFIG_AMBIQ_HAL_USE_SPID OR CONFIG_AMBIQ_HAL_USE_IOS_I2C)
     zephyr_library_sources(hal/mcu/am_hal_ios.c)
 endif()
 

@@ -35,7 +35,7 @@ if(CONFIG_AMBIQ_HAL_USE_STIMER)
     zephyr_library_sources(hal/am_hal_stimer.c)
 endif()
 
-if(CONFIG_AMBIQ_HAL_USE_TIMER)
+if(CONFIG_AMBIQ_HAL_USE_TIMER OR CONFIG_AMBIQ_HAL_USE_CTIMER)
     zephyr_library_sources(hal/am_hal_ctimer.c)
 endif()
 
@@ -48,7 +48,7 @@ if(CONFIG_AMBIQ_HAL_USE_I2C OR CONFIG_AMBIQ_HAL_USE_SPIC OR CONFIG_AMBIQ_HAL_USE
     zephyr_library_sources(hal/am_hal_cmdq.c)
 endif()
 
-if(CONFIG_AMBIQ_HAL_USE_SPID)
+if(CONFIG_AMBIQ_HAL_USE_SPID OR CONFIG_AMBIQ_HAL_USE_IOS_I2C)
     zephyr_library_sources(hal/am_hal_ios.c)
 endif()
 
