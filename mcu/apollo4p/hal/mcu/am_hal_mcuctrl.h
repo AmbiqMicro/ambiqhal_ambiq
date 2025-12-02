@@ -49,8 +49,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "am_mcu_apollo.h"
 
+#include "regs/am_reg.h"
+#include "regs/am_reg_base_addresses.h"
+#include "regs/am_reg_mcu.h"
+#include "regs/am_reg_macros.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -113,10 +116,8 @@ typedef struct
     //! enable XTALHF GPIO output on clockout pin.
     //
     bool                           b_arg_enable_HfXtalClockout;
-
 }
 am_hal_mcuctrl_control_arg_t;
-
 
 extern const am_hal_mcuctrl_control_arg_t g_amHalMcuctrlArgDefault;
 extern const am_hal_mcuctrl_control_arg_t g_amHalMcuctrlArgBLEDefault;
