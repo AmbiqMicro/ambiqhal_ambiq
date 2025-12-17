@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MRAM_H
@@ -254,7 +254,9 @@ extern uint32_t am_hal_mram_main_words_program(uint32_t ui32ProgramKey, uint32_t
 //! @brief Initialize MRAM for DeepSleep.
 //!
 //! This function implements a workaround required for Apollo4 B0 parts in
-//! order to fix the MRAM DeepSleep config params.
+//! order to fix the MRAM DeepSleep config params. The Apollo510L devices do not
+//! require this workaround, and thus this is only intended as a placeholder
+//! function.
 //!
 //! @return 0 for success, non-zero for failure.
 //

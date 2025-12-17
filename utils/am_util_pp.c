@@ -78,17 +78,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "am_mcu_apollo.h"
 #include "am_util.h"
 #include "am_util_pp.h"
-#include "am_bsp.h"
 
 #if USE_AMIC_AUDADC
 #define AM_HAL_MAGIC_AUDADC                0xAFAFAF

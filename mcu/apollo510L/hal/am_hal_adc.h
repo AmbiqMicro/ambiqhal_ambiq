@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_ADC_H
@@ -87,6 +87,8 @@
 #define AM_HAL_ADC_SAMPLE_DIVISORF      ((float)AM_HAL_ADC_SAMPLE_2N)               // Divisor for 12 bits
 #define AM_HAL_ADC_SAMPLE_MASK          ((AM_HAL_ADC_SAMPLE_2N - 1) << 6)           // Mask for integer portion of the sample
 #define AM_HAL_ADC_SAMPLE_MASK_FULL     (((1 << (AM_HAL_ADC_SAMPLE_BITS + 6)) - 1)) // Mask for the full sample
+#define AM_HAL_ADC_SAMPLE_12BIT_SAT     (AM_HAL_ADC_SAMPLE_2N - 1)                  // ADC saturation value for 12 bits
+#define AM_HAL_ADC_SAMPLE_12BIT_SATF    ((float)(AM_HAL_ADC_SAMPLE_2N - 1))         // ADC saturation value for 12 bits
 //! @}
 
 // ****************************************************************************

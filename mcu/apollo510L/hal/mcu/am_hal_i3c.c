@@ -50,7 +50,7 @@
 //
 // ${}
 //copyright
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 

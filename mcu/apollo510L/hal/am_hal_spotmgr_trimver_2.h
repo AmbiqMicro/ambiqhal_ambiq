@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SPOTMGR_TRIMVER_2_H
@@ -138,6 +138,17 @@ extern uint32_t am_hal_spotmgr_trimver_2_simobuck_init_bfr_enable(void);
 //
 //*****************************************************************************
 extern uint32_t am_hal_spotmgr_trimver_2_simobuck_init_aft_enable(void);
+
+#if NO_TEMPSENSE_IN_DEEPSLEEP
+//*****************************************************************************
+//
+//! @brief Prepare SPOT manager for suspended tempco during deep sleep
+//!
+//! @return SUCCESS or other Failures.
+//
+//*****************************************************************************
+uint32_t am_hal_spotmgr_trimver_2_tempco_suspend(void);
+#endif
 
 #ifdef __cplusplus
 }

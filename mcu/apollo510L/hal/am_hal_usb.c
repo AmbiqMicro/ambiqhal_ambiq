@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -2027,6 +2027,11 @@ am_hal_usb_fifo_unloading_dma1(USB_Type *pUSB, am_hal_usb_state_t *pState, uint8
         {
             am_hal_usb_intr_out_status_clear(pState, ui8EpNum);
             OUTCSRL_OutPktRdy_Clear(pUSB);
+
+#ifdef AM_HAL_USB_REPORT_ZLP
+            am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32OutCnt, USB_XFER_DONE, NULL);
+            return AM_HAL_STATUS_SUCCESS;
+#endif // AM_HAL_USB_REPORT_ZLP
         }
         else if (ui32OutCnt < OUTMAXP_MaxPayload(pUSB))
         {
@@ -2034,8 +2039,16 @@ am_hal_usb_fifo_unloading_dma1(USB_Type *pUSB, am_hal_usb_state_t *pState, uint8
             am_hal_usb_fifo_unloading(pUSB, ui8EpNum, pucBuf, ui32LenUnload);
             am_hal_usb_intr_out_status_clear(pState, ui8EpNum);
             OUTCSRL_OutPktRdy_Clear(pUSB);
+#ifdef AM_HAL_USB_REPORT_ZLP
             am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32LenUnload, USB_XFER_DONE, NULL);
             return AM_HAL_STATUS_SUCCESS;
+#else
+            if (ui32LenUnload != 0)
+            {
+                am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32LenUnload, USB_XFER_DONE, NULL);
+                return AM_HAL_STATUS_SUCCESS;
+            }
+#endif // AM_HAL_USB_REPORT_ZLP
         }
     }
 
@@ -4186,15 +4199,27 @@ am_hal_usb_out_ep_dma1_handling(am_hal_usb_state_t *pState, USB_Type *pUSB, uint
                 ui32XferLen = ui32AdmaTarAddr - (uint32_t)pXfer->buf + count;
                 am_hal_usb_fifo_unloading(pUSB, ui8EpNum, (uint8_t *)ui32AdmaTarAddr, count);
                 INTROUTE_Disable(pUSB, 0x1 << ui8EpNum);
-                am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32XferLen, USB_XFER_DONE, NULL);
-                OUTCSRL_OutPktRdy_Clear(pUSB);
+#ifdef AM_HAL_USB_REPORT_ZLP
+                if ((count != 0) || (ui32XferLen == 0))
+                {
+                    am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32XferLen, USB_XFER_DONE, NULL);
+                    OUTCSRL_OutPktRdy_Clear(pUSB);
+                }
+#else
+                if (ui32XferLen != 0)
+                {
+                    am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32XferLen, USB_XFER_DONE, NULL);
+                }
+#endif // AM_HAL_USB_REPORT_ZLP
                 return;
             }
+#ifndef AM_HAL_USB_REPORT_ZLP
             else if (count == 0)
             {
                 OUTCSRL_OutPktRdy_Clear(pUSB);
-                return;
             }
+#endif // AM_HAL_USB_REPORT_ZLP
+            return;
         }
 
     }
@@ -4263,8 +4288,14 @@ am_hal_usb_out_ep_dma1_adma_handling(am_hal_usb_state_t *pState, USB_Type *pUSB,
         else
         {
             INTROUTE_Disable(pUSB, 0x1 << ui8EpNum);
+#ifdef AM_HAL_USB_REPORT_ZLP
             am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32XferLen, USB_XFER_DONE, NULL);
-
+#else
+            if (ui32XferLen != 0)
+            {
+                am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32XferLen, USB_XFER_DONE, NULL);
+            }
+#endif // AM_HAL_USB_REPORT_ZLP
         }
         return;
     }

@@ -76,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -147,7 +147,6 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
 {
     bool bSimobuckAct = false;
     bool bReportedDeepSleep = false;
-    bool bBuckIntoLPinDS = false, bBuckIntoACTinDS = false;
     am_hal_pwrctrl_pwrmodctl_cpdlp_t sActCpdlpConfig;
     am_hal_spotmgr_cpu_state_e eCpuSt;
     uint32_t  ui32CpdlpConfig = 0;
@@ -168,7 +167,7 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
     //
     // Clear CPUPWRSTATUS FULLRETCACHE and FUNCRETCACHE status bits
     //
-    PWRCTRL->CPUPWRSTATUS =PWRCTRL_CPUPWRSTATUS_FULLRETCACHE_Msk | PWRCTRL_CPUPWRSTATUS_FUNCRETCACHE_Msk;
+    PWRCTRL->CPUPWRSTATUS = PWRCTRL_CPUPWRSTATUS_FULLRETCACHE_Msk | PWRCTRL_CPUPWRSTATUS_FUNCRETCACHE_Msk;
 
     //
     // Get the current CPDLPSTATE configuration in active mode
@@ -222,9 +221,6 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
         }
         am_hal_pwrctrl_pwrmodctl_cpdlp_config(sDSCpdlpConfig);
 
-#if NO_TEMPSENSE_IN_DEEPSLEEP
-        am_hal_spotmgr_tempco_suspend();
-#endif
         //
         // Prepare clock manager for deepsleep
         //
@@ -234,6 +230,10 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
         // Report CPU state change
         //
         am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_CPU_STATE, false, (void *) &eCpuSt);
+
+#if NO_TEMPSENSE_IN_DEEPSLEEP
+        am_hal_spotmgr_tempco_suspend();
+#endif
         //
         // Prepare the data for reporting CPU status after waking up.
         //
@@ -252,47 +252,23 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
 
         bReportedDeepSleep = true;
 
-        //
-        // Check if SIMOBUCK needs to stay in Active mode in DeepSleep
-        //
-        if ( bSimobuckAct )
+        if (g_bIsTrimver1)
         {
             //
-            // Check if SIMOBUCK would go into LP mode in DeepSleep
+            // Check if SIMOBUCK needs to stay in Active mode in DeepSleep
             //
-            if (g_bIsTrimver2OrNewer)
-            {
-                if (g_bAppFrcBuckAct || g_bFrcBuckAct)
-                {
-                    //
-                    // This implies upon deepsleep, buck can keep in active mode
-                    //
-                    bBuckIntoACTinDS = true;
-
-                    //
-                    // Force buck to go in active mode
-                    //
-                    buck_ldo_update_override(true);
-
-                }
-            }
-            else
+            if ( bSimobuckAct )
             {
                 if (!g_bAppFrcBuckAct && !g_bFrcBuckAct)
                 {
-                    //
-                    // This implies upon deepsleep, buck can transition into LP mode
-                    //
-                    bBuckIntoLPinDS = true;
-
                     //
                     // Remove overrides to allow buck to go in LP mode
                     //
                     buck_ldo_update_override(false);
 
-#if AM_HAL_PWRCTRL_SIMOLP_AUTOSWITCH
+    #if AM_HAL_PWRCTRL_SIMOLP_AUTOSWITCH
                     am_hal_spotmgr_simobuck_lp_autosw_enable();
-#endif
+    #endif
                 }
             }
         }
@@ -300,6 +276,18 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
         // Prepare the core for deepsleep (write 1 to the DEEPSLEEP bit).
         //
         SCB->SCR |= _VAL2FLD(SCB_SCR_SLEEPDEEP, 1);
+#if !AM_HAL_STALL_CPU_HP2WAKE
+        //
+        // If in HP2 mode, we need to wait till SYSPLL is ready and CPU is fully back in HP2 mode, before attempting deep sleep or deeper sleep.
+        //
+        if (PWRCTRL->MCUPERFREQ_b.MCUPERFREQ == AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE2)
+        {
+            while ( PWRCTRL->MCUPERFREQ_b.MCUPERFSTATUS != AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE2 )
+            {
+                am_hal_delay_us(1);
+            }
+        }
+#endif // !AM_HAL_STALL_CPU_HP2WAKE
         //
         // Clear the following bits before entering deepsleep.
         // This is required to reduce the deepsleep power consumption.
@@ -346,7 +334,7 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
     // Wait (up to 1 ms) for either FULLRETCACHE (bit 19) or
     // FUNCRETCACHE (bit 21) in CPUPWRSTATUS to be set.
     //
-    if(sActCpdlpConfig.eElpConfig != AM_HAL_PWRCTRL_ELP_OFF)
+    if ( sActCpdlpConfig.eElpConfig != AM_HAL_PWRCTRL_ELP_OFF )
     {
         am_hal_delay_us_status_check(1000,
                                     (uint32_t) &PWRCTRL->CPUPWRSTATUS,
@@ -354,6 +342,13 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
                                     PWRCTRL_CPUPWRSTATUS_FUNCRETCACHE_Msk,
                                     0,
                                     false);
+    }
+    //
+    // Set SIMOBUCKOVER to 1 before entering deepsleep
+    //
+    if(g_bIsTrimver2OrNewer && bReportedDeepSleep)
+    {
+        MCUCTRL->VRCTRL_b.SIMOBUCKOVER = true;
     }
 
     //
@@ -376,6 +371,15 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
     // Upon wake, execute the Instruction Sync Barrier instruction.
     //
     __ISB();
+
+    //
+    // Set SIMOBUCKOVER back to 0 immediately after exiting deepsleep
+    //
+    if(g_bIsTrimver2OrNewer && bReportedDeepSleep)
+    {
+        MCUCTRL->VRCTRL_b.SIMOBUCKOVER = false;
+        am_hal_sysctrl_sysbus_write_flush();
+    }
     //
     // Set the bits back to 1 immediately after exiting deepsleep
     //
@@ -398,18 +402,19 @@ am_hal_sysctrl_sleep(am_hal_sysctrl_sleep_type_e eSleepType)
         //
         am_hal_clkmgr_private_deepsleep_exit();
     }
-    if ( bBuckIntoACTinDS )
+#if AM_HAL_STALL_CPU_HP2WAKE
+    //
+    // If in HP2 mode, we need to wait till SYSPLL is ready and CPU is fully back in HP2 mode
+    //
+    if ((eSleepType >= AM_HAL_SYSCTRL_SLEEP_DEEP) && (PWRCTRL->MCUPERFREQ_b.MCUPERFREQ == AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE2))
     {
-        //
-        // Disable overrides
-        //
-        MCUCTRL->VRCTRL_b.SIMOBUCKOVER = false;
-        //
-        // Set SCM mode to 2
-        //
-        SCM->SCMCNTRCTRL1 = SCMCNTRCTRL1_SETTING_DEFAULT;
+        while ( PWRCTRL->MCUPERFREQ_b.MCUPERFSTATUS != AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE2 )
+        {
+            am_hal_delay_us(1);
+        }
     }
-    else if ( bBuckIntoLPinDS )
+#endif // AM_HAL_STALL_CPU_HP2WAKE
+    if (g_bIsTrimver1)
     {
         //
         // Re-enable overrides

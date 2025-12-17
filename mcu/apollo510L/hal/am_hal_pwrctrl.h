@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -178,12 +178,12 @@ extern "C"
 #define AM_HAL_PWRCTRL_PERF_SWITCH_WAIT_US  20
 
 //
-//! When waking up from deepsleep to HP mode, CPU will wake up even if not operating on HP mode
+//! When waking up from deepsleep to HP2 mode, CPU will wake up even if not operating on HP2 mode
 //! yet. During the transition period, it will run as LP mode.
 //! Default setting of 0 is better for reducing wakeup latency
-//! Set AM_HAL_STALL_CPU_HPWAKE to 1 if we need to block CPU after wakeup till running in HP mode
+//! Set AM_HAL_STALL_CPU_HP2WAKE to 1 if we need to block CPU after wakeup till running in HP2 mode
 //
-// #define AM_HAL_STALL_CPU_HPWAKE      0
+#define AM_HAL_STALL_CPU_HP2WAKE      0
 
 //
 //! VDDC to VDDC_LV short and VDDS to VDDF short

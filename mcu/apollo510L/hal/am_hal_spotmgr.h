@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SPOTMGR_H
@@ -87,8 +87,8 @@ extern "C"
 //! I2S, PDM, I3C/I3CPHY, DBG, IOM4/5.
 #define DEVPWRST_BOOST_VDDCF_PERIPH_MASK   0xCFFDC0E0
 //! Mask of peripherals which need to boost VDDC only for DEVPWRST, including
-//! IOS, UART, IOM0/1/2/3.
-#define DEVPWRST_BOOST_VDDC_PERIPH_MASK   0x3000061E
+//! IOS, UART, IOM0/1/2/3, ADC.
+#define DEVPWRST_BOOST_VDDC_PERIPH_MASK   0x3000261E
 //! Mask of all available peripherals for AUDSSPWRST
 #define AUDSSPWRST_ALL_PERIPH_MASK 0x44
 //! Mask of DEV peripherals monitored for power state 1
@@ -102,7 +102,7 @@ extern "C"
 //! Mask of AUDSS peripherals monitored by SPOT manager
 #define AUDSSPWRST_MONITOR_PERIPH_MASK AUDSSPWRST_ALL_PERIPH_MASK
 //! Default setting for SCMCNTRCTRL1
-#define SCMCNTRCTRL1_SETTING_DEFAULT (5)
+#define SCMCNTRCTRL1_SETTING_DEFAULT (3)
 //! SCMCNTRCTRL1 setting for forcing buck active before deepsleep
 #define SCMCNTRCTRL1_SETTING_FRCBUCKACT (3)
 //! Default setting for SCM LPTHRESHVDDS register
@@ -117,6 +117,22 @@ extern "C"
 #define SCM_LPTHRESHVDDRF_SETTING_DEFAULT (1)
 //! Default setting for SCM LPSTAT register
 #define SCM_LPSTAT_SETTING_DEFAULT (0x3)
+//! Default setting for SCM ACTTHRESHVDDS register
+#define SCM_ACTTHRESHVDDS_SETTING_DEFAULT (0xFFFF)
+//! Default setting for SCM ACTTHRESHVDDF register
+#define SCM_ACTTHRESHVDDF_SETTING_DEFAULT (0xFFFF)
+//! Default setting for SCM ACTTHRESHVDDC register
+#define SCM_ACTTHRESHVDDC_SETTING_DEFAULT (0xFFFF)
+//! Default setting for SCM ACTTHRESHVDDCLV register
+#define SCM_ACTTHRESHVDDCLV_SETTING_DEFAULT (0xFFFF)
+//! Default setting for SCM ACTTHRESHVDDRF register
+#define SCM_ACTTHRESHVDDRF_SETTING_DEFAULT (0xFFFF)
+//! Default setting for SCM SCMCNTRCTRL2 FCNT2 register
+#define SCM_SCMCNTRCTRL2_FCNT2_SETTING_DEFAULT (1600)
+//! Default setting for SCM SCMCNTRCTRL2 FCNT1 register
+#define SCM_SCMCNTRCTRL2_FCNT1_SETTING_DEFAULT (1600)
+//! Default setting for SCM LPHYSTCNT register
+#define SCM_LPHYSTCNT_SETTING_DEFAULT (0)
 
 //*****************************************************************************
 //
@@ -325,6 +341,8 @@ typedef enum
     AM_HAL_SPOTMGR_STIM_SSRAMPWR, // Place holder - may be used in the future
     //! Initialise MCU power state after SPOTMGR and SIMOBUCK are both initialised
     AM_HAL_SPOTMGR_STIM_INIT_STATE,
+    //! SYSPLL power state
+    AM_HAL_SPOTMGR_STIM_SYSPLL,
 } am_hal_spotmgr_stimulus_e;
 
 

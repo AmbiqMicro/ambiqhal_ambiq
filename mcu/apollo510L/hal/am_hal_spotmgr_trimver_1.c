@@ -74,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -467,6 +467,9 @@ am_hal_spotmgr_trimver_1_power_state_update(am_hal_spotmgr_stimulus_e eStimulus,
                 {
                     ui32Status = AM_HAL_STATUS_INVALID_ARG;
                 }
+                break;
+
+            case AM_HAL_SPOTMGR_STIM_SYSPLL:
                 break;
 
             default:

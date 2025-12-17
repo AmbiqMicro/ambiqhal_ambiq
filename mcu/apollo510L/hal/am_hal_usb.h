@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -543,7 +543,7 @@ extern uint32_t am_hal_usb_disable_sof_intr(void *pHandle);
 //! @brief Macro definitions for the USB hardware information.
 //!
 //! These macros correspond to the definitions in the datasheet of
-//! apollo4 USB peripheral.
+//! Apollo510L USB peripheral.
 //! They may be used with the \e am_hal_usb_get_hw_infor function.
 //!
 //

@@ -43,7 +43,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MCU_INTERRUPT_H
@@ -62,9 +62,6 @@ extern "C"
 #define AM_HAL_INTERRUPT_MAX                (MAX_IRQn - 1)
 
 //
-//! For Apollo4 RevB, a workaround requires masking all interrupts.
-//! This is accomplished by setting a priority of 0, but assumes
-//! any other IRQs have a lower priority (>0).
 //! This will assign a default priority for IRQs.
 //
 #define AM_IRQ_PRIORITY_DEFAULT             4

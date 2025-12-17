@@ -89,7 +89,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -1001,7 +1001,7 @@ am_hal_adc_configure_dma(void *pHandle,
     }
 
     //
-    // Enable DMA Halt on Status (DMAERR or DMACPL) by default. This bit is reserved in apollo4
+    // Enable DMA Halt on Status (DMAERR or DMACPL) by default. This bit is reserved in Apollo510L
     //
 //    ui32Config |= _VAL2FLD(ADC_DMACFG_DMAHONSTAT, ADC_DMACFG_DMAHONSTAT_EN);
 
@@ -1651,6 +1651,15 @@ sample_correction_apply(uint32_t ui32Sample, bool bApplyCorrection)
             // Convert the offset from volts to mv.
             fSampleAdj -= (priv_correction_trims.flt.fADCoffset * 1000.0F);
             fSampleAdj  = fSampleAdj * AM_HAL_ADC_SAMPLE_DIVISORF / AM_HAL_ADC_VREFMVF;
+            // Add overflow and underflow protection
+            if ( fSampleAdj > AM_HAL_ADC_SAMPLE_12BIT_SATF )
+            {
+                fSampleAdj = AM_HAL_ADC_SAMPLE_12BIT_SATF;
+            }
+            if ( fSampleAdj < 0.0F )
+            {
+                fSampleAdj = 0.0F;
+            }
             ui32Sample &= 0xFFF00000;
             ui32Sample |= ((((uint32_t)fSampleAdj) << 6) & AM_HAL_ADC_SAMPLE_MASK_FULL);
         }

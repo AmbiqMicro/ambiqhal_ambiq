@@ -78,7 +78,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -88,7 +88,6 @@
 //#if defined(AM_PART_APOLLO330P_510L)
 #include "am_mcu_apollo.h"
 #include "am_util.h"
-#include "am_bsp.h"
 #include "am_util_pp_ap510L.h"
 
 

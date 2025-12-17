@@ -74,7 +74,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 
@@ -166,6 +166,40 @@ typedef uint32_t (*TransitionSequencePtr)(uint32_t, uint32_t);
 //*****************************************************************************
 //! The default power state for trimver2 is 1.
 static uint32_t g_ui32CurPowerStateStatic = 1;
+//! Static variable for storing SYSPLL status
+static bool g_bSysPllEnableStatic;
+//! Static variable for temperature range
+static am_hal_spotmgr_tempco_range_e g_eCurTempRangeStatic = AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH;
+
+//*****************************************************************************
+//
+//! @brief Update SCMCNTRCTRL1 FORCELP field
+//!
+//! @param ui32PwrState - Target power state.
+//!
+//! @return None.
+//
+//*****************************************************************************
+static inline void
+spotmgr_forcelp_update(uint32_t ui32PwrState)
+{
+    //
+    // Force simobuck into active(FORCELP = 0) if:
+    // 1. Any peripheral on (Power State != 0)
+    // 2. Temperature > 50C
+    // 3. SYSPLL is Enabled
+    //
+    if ((ui32PwrState != 0) ||
+        (g_eCurTempRangeStatic == AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH) ||
+        (g_bSysPllEnableStatic))
+    {
+        SCM->SCMCNTRCTRL1_b.FORCELP = 0;
+    }
+    else
+    {
+        SCM->SCMCNTRCTRL1_b.FORCELP = 1;
+    }
+}
 
 //*****************************************************************************
 //
@@ -176,6 +210,7 @@ static uint32_t g_ui32CurPowerStateStatic = 1;
 static inline uint32_t
 transition_sequence_0(uint32_t ui32PwrState, uint32_t ui32CurPwrState)
 {
+    spotmgr_forcelp_update(ui32PwrState);
     MCUCTRL->SIMOBUCK7_b.VDDCRXCOMPTRIMMINUS = DEFAULT_VDDCRXCOMPTRIMMINUS_PS1_2;
     MCUCTRL->SIMOBUCK6_b.VDDFRXCOMPTRIMMINUS = DEFAULT_VDDFRXCOMPTRIMMINUS_PS1;
     am_hal_delay_us(STEP_UP_VDDC_VDDF_DELAY_IN_US);
@@ -198,6 +233,7 @@ transition_sequence_1(uint32_t ui32PwrState, uint32_t ui32CurPwrState)
     //
     // Disable peripheral, then apply the trims below
     //
+    spotmgr_forcelp_update(ui32PwrState);
     MCUCTRL->SIMOBUCK7_b.VDDCRXCOMPTRIMMINUS = g_sSpotMgrINFO1regs.sPowerState0Trims.PWRSTATE0TRIM_b.VDDCRXCOMPTRIMMINUS;
     MCUCTRL->SIMOBUCK6_b.VDDFRXCOMPTRIMMINUS = g_sSpotMgrINFO1regs.sPowerState0Trims.PWRSTATE0TRIM_b.VDDFRXCOMPTRIMMINUS;
 
@@ -213,6 +249,7 @@ transition_sequence_1(uint32_t ui32PwrState, uint32_t ui32CurPwrState)
 static inline uint32_t
 transition_sequence_2(uint32_t ui32PwrState, uint32_t ui32CurPwrState)
 {
+    spotmgr_forcelp_update(ui32PwrState);
     MCUCTRL->SIMOBUCK7_b.VDDCRXCOMPTRIMMINUS = DEFAULT_VDDCRXCOMPTRIMMINUS_PS1_2;
     am_hal_delay_us(STEP_UP_VDDC_VDDF_DELAY_IN_US);
     //
@@ -234,6 +271,7 @@ transition_sequence_3(uint32_t ui32PwrState, uint32_t ui32CurPwrState)
     //
     // Disable peripheral, then apply the trims below
     //
+    spotmgr_forcelp_update(ui32PwrState);
     MCUCTRL->SIMOBUCK7_b.VDDCRXCOMPTRIMMINUS = g_sSpotMgrINFO1regs.sPowerState0Trims.PWRSTATE0TRIM_b.VDDCRXCOMPTRIMMINUS;
 
     return AM_HAL_STATUS_SUCCESS;
@@ -397,10 +435,11 @@ spotmgr_buck_deepsleep_state_determine(am_hal_spotmgr_power_status_t * psPwrStat
 {
     //
     // Check temperature range and peripherals power status, if there is any
-    // peripheral or SYSPLL enabled in deepsleep, the
+    // peripheral or SYSPLL enabled in deepsleep or temperature range is HIGH, the
     // simobuck must be forced to stay in active mode in deepsleep.
     //
-    if ((psPwrStatus->ui32DevPwrSt & DEVPWRST_MONITOR_PERIPH_MASK)      ||
+    if ((psPwrStatus->eTempRange == AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH)   ||
+        (psPwrStatus->ui32DevPwrSt & DEVPWRST_MONITOR_PERIPH_MASK)      ||
         (psPwrStatus->ui32AudSSPwrSt & AUDSSPWRST_MONITOR_PERIPH_MASK)  ||
         (MCUCTRL->PLLCTL0_b.SYSPLLPDB == MCUCTRL_PLLCTL0_SYSPLLPDB_ENABLE))
     {
@@ -518,6 +557,25 @@ spotmgr_power_state_determine(am_hal_spotmgr_power_status_t * psPwrStatus, uint3
 
 //*****************************************************************************
 //
+//! Inline function to convert temperature in float to temperature range
+//
+//*****************************************************************************
+static inline am_hal_spotmgr_tempco_range_e
+spotmgr_temp_to_range(float fTemp)
+{
+    if ((fTemp < BUCK_LP_TEMP_THRESHOLD) && (fTemp >= LOW_LIMIT))
+    {
+        return AM_HAL_SPOTMGR_TEMPCO_RANGE_LOW;
+    }
+    else if ((fTemp >= BUCK_LP_TEMP_THRESHOLD) && (fTemp < HIGH_LIMIT))
+    {
+        return AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH;
+    }
+    return AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE;
+}
+
+//*****************************************************************************
+//
 //! @brief Power states update
 //!
 //! @param eStimulus - Stimilus for power states transition. For GPU state/power
@@ -574,12 +632,52 @@ am_hal_spotmgr_trimver_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus,
 #ifdef AM_HAL_SPOTMGR_PROFILING
     bool bLogSleepChangeEvt = false;
 #endif
+
     //
     // Check if SIMOBUCK is enabled
     //
     if ((PWRCTRL->VRSTATUS_b.SIMOBUCKST != PWRCTRL_VRSTATUS_SIMOBUCKST_ACT) &&
         (eStimulus != AM_HAL_SPOTMGR_STIM_INIT_STATE))
     {
+        //
+        // If the stimulus is temperature, note it down even if SIMOBUCK is not active
+        //
+        if (eStimulus == AM_HAL_SPOTMGR_STIM_TEMP)
+        {
+            if (pArgs != NULL)
+            {
+                am_hal_spotmgr_tempco_param_t *psTemp = (am_hal_spotmgr_tempco_param_t *)pArgs;
+                g_eCurTempRangeStatic = spotmgr_temp_to_range(psTemp->fTemperature);
+
+                switch(g_eCurTempRangeStatic)
+                {
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_LOW:
+                        psTemp->fRangeLower = LOW_LIMIT;
+                        psTemp->fRangeHigher = BUCK_LP_TEMP_THRESHOLD;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH:
+                        psTemp->fRangeLower = BUCK_LP_TEMP_THRESHOLD - TEMP_HYSTERESIS;
+                        psTemp->fRangeHigher = HIGH_LIMIT;
+                        break;
+                    case AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE:
+                        psTemp->fRangeLower = 0.0f;
+                        psTemp->fRangeHigher = 0.0f;
+                        return AM_HAL_STATUS_INVALID_ARG;
+                }
+            }
+            else
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+        }
+
+        if (eStimulus == AM_HAL_SPOTMGR_STIM_SYSPLL)
+        {
+            g_bSysPllEnableStatic = bOn;
+        }
+        //
+        // Return success when SIMOBUCK is not active
+        //
         return AM_HAL_STATUS_SUCCESS;
     }
     //
@@ -589,10 +687,6 @@ am_hal_spotmgr_trimver_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus,
     {
         return AM_HAL_STATUS_FAIL;
     }
-    //
-    // Static variables for storing the last/current status, initialise them to the default values after MCU powering up.
-    //
-    static am_hal_spotmgr_tempco_range_e eCurTempRangeStatic = AM_HAL_SPOTMGR_TEMPCO_RANGE_LOW;
     static am_hal_spotmgr_cpu_state_e eLastCpuStateStatic = AM_HAL_SPOTMGR_CPUSTATE_ACTIVE_LP;          // The default CPU state after MCU powering up is LP.
     AM_CRITICAL_BEGIN
 #if defined(AM_HAL_SPOTMGR_PROFILING) && defined(AM_HAL_SPOTMGR_PROFILING_VERBOSE)
@@ -637,7 +731,7 @@ am_hal_spotmgr_trimver_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus,
         sPwrStatus.ui32AudSSPwrSt = PWRCTRL->AUDSSPWRSTATUS;
         sPwrStatus.ui32MemPwrSt = PWRCTRL->MEMPWRSTATUS;
         sPwrStatus.ui32SsramPwrSt = PWRCTRL->SSRAMPWRST;
-        sPwrStatus.eTempRange = eCurTempRangeStatic;
+        sPwrStatus.eTempRange = g_eCurTempRangeStatic;
         sPwrStatus.eGpuState = (sPwrStatus.ui32DevPwrSt & PWRCTRL_DEVPWRSTATUS_PWRSTGFX_Msk) ?
                                AM_HAL_SPOTMGR_GPUSTATE_ACTIVE :
                                AM_HAL_SPOTMGR_GPUSTATE_OFF;
@@ -709,12 +803,27 @@ am_hal_spotmgr_trimver_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus,
             case AM_HAL_SPOTMGR_STIM_TEMP:
                 if (pArgs != NULL)
                 {
-                    //
-                    // Do nothing for temperature changes
-                    //
                     am_hal_spotmgr_tempco_param_t *psTempCo = (am_hal_spotmgr_tempco_param_t *)pArgs;
-                    psTempCo->fRangeLower = LOW_LIMIT;
-                    psTempCo->fRangeHigher = HIGH_LIMIT;
+                    sPwrStatus.eTempRange = spotmgr_temp_to_range(psTempCo->fTemperature);
+                    g_eCurTempRangeStatic = sPwrStatus.eTempRange;
+
+                    switch(g_eCurTempRangeStatic)
+                    {
+                        case AM_HAL_SPOTMGR_TEMPCO_RANGE_LOW:
+                            psTempCo->fRangeLower = LOW_LIMIT;
+                            psTempCo->fRangeHigher = BUCK_LP_TEMP_THRESHOLD;
+                            break;
+                        case AM_HAL_SPOTMGR_TEMPCO_RANGE_HIGH:
+                            psTempCo->fRangeLower = BUCK_LP_TEMP_THRESHOLD - TEMP_HYSTERESIS;
+                            psTempCo->fRangeHigher = HIGH_LIMIT;
+                            break;
+                        case AM_HAL_SPOTMGR_TEMPCO_OUT_OF_RANGE:
+                            psTempCo->fRangeLower = 0.0f;
+                            psTempCo->fRangeHigher = 0.0f;
+                            ui32Status = AM_HAL_STATUS_INVALID_ARG;
+                            break;
+                    }
+                    spotmgr_forcelp_update(g_ui32CurPowerStateStatic);
                 }
                 else
                 {
@@ -736,16 +845,6 @@ am_hal_spotmgr_trimver_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus,
                             bLogSleepChangeEvt = true;
                         }
                         #endif
-
-                        //
-                        // If CPU is going to deep or deeper sleep, need to determine the buck state
-                        // in deep sleep.
-                        //
-                        if ( (sPwrStatus.eCpuState == AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEP) ||
-                             (sPwrStatus.eCpuState == AM_HAL_SPOTMGR_CPUSTATE_SLEEP_DEEPER) )
-                        {
-                            spotmgr_buck_deepsleep_state_determine(&sPwrStatus);
-                        }
 
                         eLastCpuStateStatic = sPwrStatus.eCpuState;
                     }
@@ -769,6 +868,15 @@ am_hal_spotmgr_trimver_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus,
                 {
                     ui32Status = AM_HAL_STATUS_INVALID_ARG;
                 }
+                break;
+
+            case AM_HAL_SPOTMGR_STIM_SYSPLL:
+                if (bOn != g_bSysPllEnableStatic)
+                {
+                    g_bSysPllEnableStatic = bOn;
+                    spotmgr_forcelp_update(g_ui32CurPowerStateStatic);
+                }
+                bReqPwrStateChg = false;
                 break;
 
             default:
@@ -851,14 +959,14 @@ am_hal_spotmgr_trimver_2_power_state_update(am_hal_spotmgr_stimulus_e eStimulus,
 //*****************************************************************************
 uint32_t am_hal_spotmgr_trimver_2_simobuck_init_bfr_enable(void)
 {
-    SCM->SCMCNTRCTRL2_b.FCNT2            = g_sSpotMgrINFO1regs.sScmCntrCtrl2.CNTRCTRL2_b.FCNT2;
-    SCM->SCMCNTRCTRL2_b.FCNT1            = g_sSpotMgrINFO1regs.sScmCntrCtrl2.CNTRCTRL2_b.FCNT1;
-    SCM->LPHYSTCNT_b.LPHYSTCNT           = g_sSpotMgrINFO1regs.sScmLpHystCnt.LPHYST_b.LPHYSTCNT;
-    SCM->ACTTHRESH1_b.ACTTHRESHVDDS      = g_sSpotMgrINFO1regs.sScmActThresh1.ACTTHRESH1_b.ACTTHRESHVDDS;
-    SCM->ACTTHRESH1_b.ACTTHRESHVDDF      = g_sSpotMgrINFO1regs.sScmActThresh1.ACTTHRESH1_b.ACTTHRESHVDDF;
-    SCM->ACTTHRESH2_b.ACTTHRESHVDDC      = g_sSpotMgrINFO1regs.sScmActThresh2.ACTTHRESH2_b.ACTTHRESHVDDC;
-    SCM->ACTTHRESH2_b.ACTTHRESHVDDCLV    = g_sSpotMgrINFO1regs.sScmActThresh2.ACTTHRESH2_b.ACTTHRESHVDDCLV;
-    SCM->ACTTHRESH3_b.ACTTHRESHVDDRF     = g_sSpotMgrINFO1regs.sScmActThresh3.ACTTHRESH3_b.ACTTHRESHVDDRF;
+    SCM->SCMCNTRCTRL2_b.FCNT2            = SCM_SCMCNTRCTRL2_FCNT2_SETTING_DEFAULT;
+    SCM->SCMCNTRCTRL2_b.FCNT1            = SCM_SCMCNTRCTRL2_FCNT1_SETTING_DEFAULT;
+    SCM->LPHYSTCNT_b.LPHYSTCNT           = SCM_LPHYSTCNT_SETTING_DEFAULT;
+    SCM->ACTTHRESH1_b.ACTTHRESHVDDS      = SCM_ACTTHRESHVDDS_SETTING_DEFAULT;
+    SCM->ACTTHRESH1_b.ACTTHRESHVDDF      = SCM_ACTTHRESHVDDF_SETTING_DEFAULT;
+    SCM->ACTTHRESH2_b.ACTTHRESHVDDC      = SCM_ACTTHRESHVDDC_SETTING_DEFAULT;
+    SCM->ACTTHRESH2_b.ACTTHRESHVDDCLV    = SCM_ACTTHRESHVDDCLV_SETTING_DEFAULT;
+    SCM->ACTTHRESH3_b.ACTTHRESHVDDRF     = SCM_ACTTHRESHVDDRF_SETTING_DEFAULT;
     SCM->SCMCNTRCTRL1                    = SCMCNTRCTRL1_SETTING_DEFAULT;
     SCM->LPTHRESHVDDS_b.LPTHRESHVDDS     = SCM_LPTHRESHVDDS_SETTING_DEFAULT;
     SCM->LPTHRESHVDDF_b.LPTHRESHVDDF     = SCM_LPTHRESHVDDF_SETTING_DEFAULT;
@@ -894,14 +1002,24 @@ uint32_t am_hal_spotmgr_trimver_2_simobuck_init_aft_enable(void)
     {
         return AM_HAL_STATUS_TIMEOUT;
     }
-    
-    SCM->LPTHRESHVDDS_b.LPTHRESHVDDS     = g_sSpotMgrINFO1regs.sScmLpThreshVdds.LPTHRESH_b.LPTHRESHVDD;
-    SCM->LPTHRESHVDDF_b.LPTHRESHVDDF     = g_sSpotMgrINFO1regs.sScmLpThreshVddf.LPTHRESH_b.LPTHRESHVDD;
-    SCM->LPTHRESHVDDC_b.LPTHRESHVDDC     = g_sSpotMgrINFO1regs.sScmLpThreshVddc.LPTHRESH_b.LPTHRESHVDD;
-    SCM->LPTHRESHVDDCLV_b.LPTHRESHVDDCLV = g_sSpotMgrINFO1regs.sScmLpThreshVddclv.LPTHRESH_b.LPTHRESHVDD;
-    SCM->LPTHRESHVDDRF_b.LPTHRESHVDDRF   = g_sSpotMgrINFO1regs.sScmLpThreshVddrf.LPTHRESH_b.LPTHRESHVDD;
+
     return AM_HAL_STATUS_SUCCESS;
 }
+
+#if NO_TEMPSENSE_IN_DEEPSLEEP
+//*****************************************************************************
+//
+//! @brief Prepare SPOT manager for suspended tempco during deep sleep
+//!
+//! @return SUCCESS or other Failures.
+//
+//*****************************************************************************
+uint32_t am_hal_spotmgr_trimver_2_tempco_suspend(void)
+{
+    SCM->SCMCNTRCTRL1_b.FORCELP = 0;
+    return AM_HAL_STATUS_SUCCESS;
+}
+#endif
 
 //*****************************************************************************
 //
@@ -914,14 +1032,12 @@ uint32_t
 am_hal_spotmgr_trimver_2_init(void)
 {
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
-    uint32_t info1buf[11];
+    uint32_t info1buf[1];
 
 //
 // Helper macros for INFO1 populate.
-// CHK_OFFSET_DELTA: Helper macro to assure continguousness of registers.
 // RD_INFO1: Macro to call am_hal_info1_read() and check return status.
 //
-#define CHK_OFFSET_DELTA(offh, offl, n)     STATIC_ASSERT((((offh - offl) / 4) + 1) != n)
 
 #define RD_INFO1(infospace, wdoffset, numwds, pData)                    \
     ui32Status = am_hal_info1_read(infospace, wdoffset, numwds, pData); \
@@ -936,20 +1052,9 @@ am_hal_spotmgr_trimver_2_init(void)
         return AM_HAL_STATUS_INVALID_OPERATION;
     }
 
-    CHK_OFFSET_DELTA(AM_REG_OTP_INFO1_SCM_ACTTHRESH3_O , AM_REG_OTP_INFO1_POWERSTATE0_O , 11);
-    RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_POWERSTATE0_O  / 4), 11, &info1buf[0]);
+    RD_INFO1(AM_HAL_INFO_INFOSPACE_CURRENT_INFO1, (AM_REG_OTP_INFO1_POWERSTATE0_O  / 4), 1, &info1buf[0]);
 
     g_sSpotMgrINFO1regs.sPowerState0Trims.PWRSTATE0TRIM    = info1buf[0];
-    g_sSpotMgrINFO1regs.sScmCntrCtrl2.CNTRCTRL2            = info1buf[1];
-    g_sSpotMgrINFO1regs.sScmLpThreshVdds.LPTHRESH          = info1buf[2];
-    g_sSpotMgrINFO1regs.sScmLpThreshVddf.LPTHRESH          = info1buf[3];
-    g_sSpotMgrINFO1regs.sScmLpThreshVddc.LPTHRESH          = info1buf[4];
-    g_sSpotMgrINFO1regs.sScmLpThreshVddclv.LPTHRESH        = info1buf[5];
-    g_sSpotMgrINFO1regs.sScmLpThreshVddrf.LPTHRESH         = info1buf[6];
-    g_sSpotMgrINFO1regs.sScmLpHystCnt.LPHYST               = info1buf[7];
-    g_sSpotMgrINFO1regs.sScmActThresh1.ACTTHRESH1          = info1buf[8];
-    g_sSpotMgrINFO1regs.sScmActThresh2.ACTTHRESH2          = info1buf[9];
-    g_sSpotMgrINFO1regs.sScmActThresh3.ACTTHRESH3          = info1buf[10];
 
     //
     // All done, mark the data as valid
@@ -965,6 +1070,11 @@ am_hal_spotmgr_trimver_2_init(void)
     changeLog.args = 0xDEADBEEF;
     am_hal_spotmgr_log_change(&changeLog);
 #endif
+
+    //
+    // Initialise SYSPLL status
+    //
+    g_bSysPllEnableStatic = (MCUCTRL->PLLCTL0_b.SYSPLLPDB == MCUCTRL_PLLCTL0_SYSPLLPDB_ENABLE);
 
     return ui32Status;
 }

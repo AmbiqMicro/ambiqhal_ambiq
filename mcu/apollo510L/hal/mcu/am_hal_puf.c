@@ -53,16 +53,43 @@
 //! - No configuration is required for basic entropy or UID reads beyond
 //!   powering OTP.
 //! - Higher-level consumers may implement additional conditioning if required.
-//! - The Static UID provides 1024 bits (32 Ã— 32-bit words) of device-unique
+//! - The Static UID provides 1024 bits (32 x 32-bit words) of device-unique
 //!   data suitable for fingerprinting and security applications.
 //
 //*****************************************************************************
 
 //*****************************************************************************
 //
-// ${copyright}
+// Copyright (c) 2025, Ambiq Micro, Inc.
+// All rights reserved.
 //
-// This is part of revision ${version} of the AmbiqSuite Development Package.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice,
+// this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the copyright holder nor the names of its
+// contributors may be used to endorse or promote products derived from this
+// software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -150,8 +177,8 @@ uint32_t
 am_hal_puf_get_entropy(uint8_t * buffer, uint16_t length)
 {
     //
-	// Validate input parameters.
-	//
+    // Validate input parameters.
+    //
     if (length == 0 || buffer == NULL)
     {
         return AM_HAL_STATUS_FAIL;
@@ -213,8 +240,8 @@ am_hal_puf_entropy_init(void)
     }
 
     //
-	// Record whether OTP was already enabled before we try to enable it.
-	//
+    // Record whether OTP was already enabled before we try to enable it.
+    //
     g_bPufOtpWasEnabled = bPeripheralEnabled;
 
     //
@@ -255,17 +282,17 @@ am_hal_puf_entropy_deinit(void)
     }
 
     //
-	// If OTP is already off, or OTP was already enabled before our init call,
-    // there is nothing for us to do here â€” return success.
-	//
+    // If OTP is already off, or OTP was already enabled before our init call,
+    // there is nothing for us to do here -- return success.
+    //
     if (!bPeripheralEnabled || g_bPufOtpWasEnabled)
     {
         return AM_HAL_STATUS_SUCCESS;
     }
 
     //
-	// Otherwise, OTP is on and we enabled it during init; disable it now.
-	//
+    // Otherwise, OTP is on and we enabled it during init; disable it now.
+    //
     ui32Status = am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_OTP);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {

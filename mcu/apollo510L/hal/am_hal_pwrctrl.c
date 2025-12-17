@@ -78,7 +78,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -2355,10 +2355,6 @@ buck_ldo_override_init(void)
 void
 buck_ldo_update_override(bool bEnable)
 {
-    if (bEnable && g_bIsTrimver2OrNewer)
-    {
-        SCM->SCMCNTRCTRL1 = SCMCNTRCTRL1_SETTING_FRCBUCKACT;
-    }
     MCUCTRL->VRCTRL_b.SIMOBUCKOVER   = bEnable;
 #if AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL
     MCUCTRL->VRCTRL_b.CORELDOOVER    = bEnable;

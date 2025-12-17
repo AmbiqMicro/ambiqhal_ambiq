@@ -43,7 +43,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_H
@@ -68,6 +68,7 @@
 #include "am_util_stdio.h"
 #include "am_util_string.h"
 #include "am_util_time.h"
+#include "am_util_bootloader.h"
 
 #if defined(AM_PART_APOLLO3_API)
 #include "am_util_ble.h"

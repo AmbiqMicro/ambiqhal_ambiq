@@ -75,7 +75,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -396,6 +396,9 @@ am_hal_spotmgr_init(void)
         g_sSpotMgr.pfnSpotMgrDefaultRst = am_hal_spotmgr_trimver_2_default_reset;
         g_sSpotMgr.pfnSpotMgrSimobuckInitBfrEnable = am_hal_spotmgr_trimver_2_simobuck_init_bfr_enable;
         g_sSpotMgr.pfnSpotMgrSimobuckInitAftEnable = am_hal_spotmgr_trimver_2_simobuck_init_aft_enable;
+        #if NO_TEMPSENSE_IN_DEEPSLEEP
+        g_sSpotMgr.pfnSpotMgrTempcoSuspend = am_hal_spotmgr_trimver_2_tempco_suspend;
+        #endif
         #endif
     }
     //

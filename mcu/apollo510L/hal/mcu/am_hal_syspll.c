@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -884,6 +884,7 @@ am_hal_syspll_enable(void *pHandle)
     //
     // Enable the SystemPLL.
     //
+    am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_SYSPLL, true, NULL);
     SYSPLLn(ui32Module)->PLLCTL0_b.SYSPLLPDB = MCUCTRL_PLLCTL0_SYSPLLPDB_ENABLE;
 
     //
@@ -923,6 +924,7 @@ am_hal_syspll_disable(void *pHandle)
     // Disable the system PLL.
     //
     SYSPLLn(ui32Module)->PLLCTL0_b.SYSPLLPDB = MCUCTRL_PLLCTL0_SYSPLLPDB_DISABLE;
+    am_hal_spotmgr_power_state_update(AM_HAL_SPOTMGR_STIM_SYSPLL, false, NULL);
 
     //
     // Set flag to indicate module is disabled.

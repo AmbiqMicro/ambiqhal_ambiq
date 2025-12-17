@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CARD_H
@@ -487,7 +487,7 @@ extern "C"
 #define MMC_HS200    200000000
 
 //
-// apollo4 SDHC speed limitation settings
+// Apollo510L SDHC speed limitation settings
 //
 #define MMC_HS200_MAX_SPEED_LIMIT   96000000
 #define MMC_HS_MAX_SPEED_LIMIT      48000000

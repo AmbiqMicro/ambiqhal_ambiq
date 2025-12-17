@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5_2_a_2-228a2539a of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5_2_a_3-80ffa398f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MCU_SYSCTRL_H
@@ -193,7 +193,7 @@ extern void am_hal_sysctrl_fpu_stacking_disable(void);
 //
 //! @brief Issue a system wide reset using the AIRCR bit in the M4 system ctrl.
 //!
-//! This function issues a system wide reset (Apollo4P POR level reset).
+//! This function issues a system wide reset (Apollo510L POR level reset).
 //
 //*****************************************************************************
 extern void am_hal_sysctrl_aircr_reset(void);
