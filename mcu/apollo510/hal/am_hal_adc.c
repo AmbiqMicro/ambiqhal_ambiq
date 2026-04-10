@@ -61,7 +61,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -90,7 +90,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -836,7 +836,7 @@ am_hal_adc_configure_dma(void *pHandle,
     }
 
     //
-    // Enable DMA Halt on Status (DMAERR or DMACPL) by default. This bit is reserved in apollo4
+    // Enable DMA Halt on Status (DMAERR or DMACPL) by default. This bit is reserved in apollo510
     //
 //    ui32Config |= _VAL2FLD(ADC_DMACFG_DMAHONSTAT, ADC_DMACFG_DMAHONSTAT_EN);
 
@@ -981,6 +981,23 @@ am_hal_adc_control(void *pHandle,
                     fCalibration_temp    = priv_temp_trims.flt.fCalibrationTemperature;
                     fCalibration_voltage = priv_temp_trims.flt.fCalibrationVoltage;
                     fCalibration_offset  = priv_temp_trims.flt.fCalibrationOffset;
+
+                    //
+                    // For Apollo510, Vmeas and Voff each require an adjustment.
+                    // They are computed as follows:
+                    //  Voffcorrected = K * (Voff + 1.0F) - 1.0F
+                    //   where K = (1200.F * 1024.0F) / (1023.0F * 1190.0F)
+                    //  Vmeas = (float)ADC_code * 1.20F / 1023.0F
+                    //
+                    // The supplied sample will have to be reverse scaled to the
+                    //  original sample code so it can be operated on with the
+                    //  new factors.
+                    //
+#define fKONST      ((1200.0f * 1024.0f) / (1023.0f * 1190.0f))
+                    uint16_t ADCtemp_code;
+                    fCalibration_offset = fKONST * (fCalibration_offset + 1.0f) - 1.0f;
+                    ADCtemp_code = fVoltage * 1024.0f;  // Assumes 10-bit sample
+                    fVoltage = ADCtemp_code / 1023.0f;
 
                     //
                     // Compute the temperature in K
@@ -1451,6 +1468,15 @@ sample_correction_apply(uint32_t ui32Sample, bool bApplyCorrection)
             // Convert the offset from volts to mv.
             fSampleAdj -= (priv_correction_trims.flt.fADCoffset * 1000.0F);
             fSampleAdj  = fSampleAdj * AM_HAL_ADC_SAMPLE_DIVISORF / AM_HAL_ADC_VREFMVF;
+            // Add overflow and underflow protection
+            if ( fSampleAdj > AM_HAL_ADC_SAMPLE_12BIT_SATF )
+            {
+                fSampleAdj = AM_HAL_ADC_SAMPLE_12BIT_SATF;
+            }
+            if ( fSampleAdj < 0.0F )
+            {
+                fSampleAdj = 0.0F;
+            }
             ui32Sample &= 0xFFF00000;
             ui32Sample |= ((((uint32_t)fSampleAdj) << 6) & AM_HAL_ADC_SAMPLE_MASK_FULL);
         }

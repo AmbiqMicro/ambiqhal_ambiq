@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -54,12 +54,12 @@
 //
 #define AM_IMAGE_MAGIC_SBL                0xA3
 #define AM_IMAGE_MAGIC_SECURE             0xC0
-#define AM_IMAGE_MAGIC_OEM_CHAIN          0xCC
-#define AM_IMAGE_MAGIC_NONSECURE          0xCB
-#define AM_IMAGE_MAGIC_INFO0              0xCF
 #define AM_IMAGE_MAGIC_CONTAINER          0xC1
-#define AM_IMAGE_MAGIC_KEYREVOKE          0xCE
+#define AM_IMAGE_MAGIC_NONSECURE          0xCB
+#define AM_IMAGE_MAGIC_OEM_CHAIN          0xCC
 #define AM_IMAGE_MAGIC_DOWNLOAD           0xCD
+#define AM_IMAGE_MAGIC_KEYREVOKE          0xCE
+#define AM_IMAGE_MAGIC_INFO0              0xCF
 //! @}
 
 //
@@ -74,6 +74,7 @@ typedef enum
     AM_PROG_INFO0_MRAM, //program info0 mram
     AM_PROG_INFO0_BOTH // program both info0 opt and info0 mram
 } am_info0_prog_dest_e;
+
 //
 //! OTA Image HDR Info
 //

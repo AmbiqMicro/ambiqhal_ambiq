@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_UART_STREAM_H
@@ -65,6 +65,10 @@ extern "C"
 
 #define AM_HAL_UART_FIFO_MAX 32
 
+//
+//! Clock frequency when using SYSPLL as clock source
+//
+#define AM_HAL_UART_STREAM_PLLCLK_FREQ             49152000
 
 //
 //! Contains computed values from uart config.
@@ -344,7 +348,7 @@ typedef struct
 
     uint8_t     align[2];
 }
-am_hal_uart_stream_rx_params_t;  // @todo change name
+am_hal_uart_stream_rx_params_t;  // TODO FIXME change name
 
 //
 //! enum specifying active dma mode

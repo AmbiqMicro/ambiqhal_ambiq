@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -154,7 +154,8 @@ typedef enum
 typedef enum
 {
     AM_HAL_DSI_DBI_WIDTH_8  = 8,
-    AM_HAL_DSI_DBI_WIDTH_16 = 16,
+    AM_HAL_DSI_DBI_WIDTH_9  = 9,
+    AM_HAL_DSI_DBI_WIDTH_16 = 16
 } am_hal_dsi_dbi_width_e;
 
 //*****************************************************************************
@@ -178,6 +179,53 @@ typedef enum
     LP_MODE = 0,
     HS_MODE
 } am_hal_dsi_speed_e;
+
+//*****************************************************************************
+//
+//! DSI Command mode and video mode structure.
+//
+//*****************************************************************************
+typedef enum
+{
+    DSI_FORMAT_UNSUPPORTED = 0,
+    DSI_FORMAT_RGB565,
+    DSI_FORMAT_RGB666,
+    DSI_FORMAT_RGB666_LOOSELY,
+    DSI_FORMAT_RGB888
+} am_hal_dsi_color_format_e;
+
+typedef enum
+{
+    VIDEO_MODE_RESERVED = 0,
+    VIDEO_MODE_NON_BURST_PULSE,
+    VIDEO_MODE_NON_BURST_EVENTS,
+    VIDEO_MODE_BURST
+} am_hal_dsi_video_mode_e;
+
+typedef struct
+{
+    uint8_t                             ui8LanesNum;
+    am_hal_dsi_dbi_width_e              eDBIBusWidth;       //For command mode
+    am_hal_dsi_freq_trim_e              eFreqTrim;
+    bool                                bSendUlpsPattern;
+    //
+    // Below parameters are mandatory for video mode not for command mode
+    //
+    am_hal_dsi_color_format_e           eFormat;            //For video mode
+    am_hal_dsi_video_mode_e             eMode;              //For video mode
+    struct
+    {
+        uint32_t                        ui32HACT;           //Active pixels per line
+        uint32_t                        ui32HSA;            //Horizontal sync active
+        uint32_t                        ui32HBP;            //Horizontal back porch
+        uint32_t                        ui32HFP;            //Horizontal front porch
+        uint32_t                        ui32VACT;           //Active lines per frame
+        uint32_t                        ui32VSA;            //Vertial sync active
+        uint32_t                        ui32VBP;            //Vertial back porch
+        uint32_t                        ui32VFP;            //Vertial front porch
+        float                           fPCLKFreq;          //For video mode
+    };
+} am_hal_dsi_config_t;
 
 //*****************************************************************************
 //
@@ -234,12 +282,27 @@ extern uint32_t am_hal_dsi_register_ulps_exit_delay_callback(const am_hal_dsi_de
 //
 //! @brief DSI configuration
 //!
+//! @param pDSIConfig          - pointer to support the DSI video & command mode.
+//!
+//! This function is defined to replace previously function am_hal_dsi_para_config()
+//! to support both DSI command mode and video mode.
+//!
+//! @return AM_HAL_STATUS_SUCCESS
+//
+//*****************************************************************************
+extern uint32_t am_hal_dsi_config(am_hal_dsi_config_t *pDSIConfig);
+
+//*****************************************************************************
+//
+//! @brief DSI configuration
+//!
 //! @param ui8LanesNum          - Number of lanes.
 //! @param ui8DBIBusWidth       - Width of DBI bus.
 //! @param ui32FreqTrim         - DPHY output frequency trim.
 //! @param bSendUlpsPattern     - Send ULPS entry/exit pattern or not.
 //!
-//! This function should be called after DSI power is enabled.
+//! This function should be called after DSI power is enabled. it could not
+//! support the DSI video mode.
 //!
 //! @return AM_HAL_STATUS_SUCCESS
 //

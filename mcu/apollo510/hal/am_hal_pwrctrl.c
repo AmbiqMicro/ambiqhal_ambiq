@@ -49,7 +49,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -78,7 +78,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -2339,7 +2339,7 @@ am_hal_pwrctrl_low_power_init(void)
     //
     // Power down Crypto.
     //
-    am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_CRYPTO);
+    am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_CRYPTO_POWERDOWN, NULL);
 
     //
     // Power down OTP.
@@ -2557,7 +2557,7 @@ am_hal_pwrctrl_control(am_hal_pwrctrl_control_e eControl, void *pArgs)
             }
             break;
 
-            // Use am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_CRYPTO_POWERDOWN) if using crypto
+            // Use am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_CRYPTO_POWERDOWN, NULL) if using crypto
         case AM_HAL_PWRCTRL_CONTROL_CRYPTO_POWERDOWN:
             {
                 bool        bEnabled;

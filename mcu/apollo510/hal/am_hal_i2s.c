@@ -48,7 +48,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -553,6 +553,10 @@ uint32_t am_hal_i2s_control(void *pHandle, am_hal_i2s_request_e eReq, void *pArg
     AM_HAL_I2S_CHK_HANDLE(pHandle);
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
+    uint32_t ui32ChannelNumbersForMono = 0;
+    uint32_t ui32FramePeriod = 0;
+    am_hal_i2s_data_format_t* pI2SData = NULL;
+    am_hal_i2s_io_signal_t* pIoConfig = NULL;
     switch (eReq)
     {
         case AM_HAL_I2S_REQ_INTSET:
@@ -576,7 +580,6 @@ uint32_t am_hal_i2s_control(void *pHandle, am_hal_i2s_request_e eReq, void *pArg
         case AM_HAL_I2S_REQ_WRITE_TXLOWERLIMIT:
             I2Sn(ui32Module)->TXLOWERLIMIT = *((uint32_t*)pArgs);
             break;
-
         case AM_HAL_I2S_REQ_SET_CH_NUM_FOR_MONO:
             if (pArgs == NULL)
             {
@@ -584,15 +587,15 @@ uint32_t am_hal_i2s_control(void *pHandle, am_hal_i2s_request_e eReq, void *pArg
             }
 
             // Only 1 or 2 channels are allowed for mono mode.
-            uint32_t ui32ChannelNumbersForMono = *((uint32_t*)pArgs);
+            ui32ChannelNumbersForMono = *((uint32_t*)pArgs);
             if ((ui32ChannelNumbersForMono != 1) && (ui32ChannelNumbersForMono != 2))
             {
                 return AM_HAL_STATUS_INVALID_ARG;
             }
 
-            am_hal_i2s_data_format_t* pI2SData = &(pState->sDataFormat);
-            am_hal_i2s_io_signal_t* pIoConfig = &(pState->sIoConfig);
-            uint32_t ui32FramePeriod = ui32ChannelNumbersForMono * ui32I2sWordLength[pI2SData->eChannelLenPhase1];
+            pI2SData = &(pState->sDataFormat);
+            pIoConfig = &(pState->sIoConfig);
+            ui32FramePeriod = ui32ChannelNumbersForMono * ui32I2sWordLength[pI2SData->eChannelLenPhase1];
             if ((pI2SData->ePhase == AM_HAL_I2S_DATA_PHASE_SINGLE) && (pI2SData->ui32ChannelNumbersPhase1 == 1))
             {
                 I2Sn(ui32Module)->I2SIOCFG_b.FPER = ui32FramePeriod - 1;
@@ -612,7 +615,6 @@ uint32_t am_hal_i2s_control(void *pHandle, am_hal_i2s_request_e eReq, void *pArg
             {
                 return AM_HAL_STATUS_INVALID_OPERATION;
             }
-
             break;
 
         case AM_HAL_I2S_REQ_MAX:

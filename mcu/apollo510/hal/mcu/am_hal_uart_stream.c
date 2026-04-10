@@ -48,7 +48,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -1047,7 +1047,7 @@ am_hal_uart_interrupt_stream_service(void *pUartHandle)
         psState->bBusyWaitEnabled = false;
         while (pUart->FR & UART0_FR_BUSY_Msk)
         {
-            // @todo do we need a timeout here
+            // TODO FIXME do we need a timeout here
         }
         ui32RetStat |= AM_HAL_UART_STREAM_STATUS_BUSY_WAIT_CMPL;
 
@@ -2436,7 +2436,14 @@ config_baudrate(uint32_t ui32Module,
     switch ( UARTn(ui32Module)->CR_b.CLKSEL )
     {
         case UART0_CR_CLKSEL_PLL_CLK:
-            ui32UartClkFreq = 49152000;
+            //
+            // Get the current SYSPLL frequency from clock manager
+            //
+            am_hal_clkmgr_clock_config_get(AM_HAL_CLKMGR_CLK_ID_SYSPLL, &ui32UartClkFreq, NULL);
+            if ( ui32UartClkFreq == 0 )
+            {
+                return AM_HAL_UART_STATUS_CLOCK_NOT_CONFIGURED;
+            }
             break;
 
         case UART0_CR_CLKSEL_HFRC_48MHZ:

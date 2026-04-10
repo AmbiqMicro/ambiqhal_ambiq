@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SYSPLL_H
@@ -65,7 +65,7 @@ extern "C"
 //
 //*****************************************************************************
 #define AM_HAL_SYSPLL_MAX_REFDIV                (63U)
-#define AM_HAL_SYSPLL_MIN_FBDIV_INT_MODE        (4U)
+#define AM_HAL_SYSPLL_MIN_FBDIV_INT_MODE        (10U)
 #define AM_HAL_SYSPLL_MAX_FBDIV_INT_MODE        (960U)
 #define AM_HAL_SYSPLL_MIN_FBDIV_FRAC_MODE       (10U)
 #define AM_HAL_SYSPLL_MAX_FBDIV_FRAC_MODE       (96U)
@@ -118,7 +118,7 @@ typedef enum
 // ****************************************************************************
 typedef enum
 {
-    AM_HAL_SYSPLL_FREFSEL_XTAL32MHz = MCUCTRL_PLLCTL0_FREFSEL_XTAL32MHz,
+    AM_HAL_SYSPLL_FREFSEL_XTAL32MHz = MCUCTRL_PLLCTL0_FREFSEL_XTAL_HS,
     AM_HAL_SYSPLL_FREFSEL_EXTREFCLK = MCUCTRL_PLLCTL0_FREFSEL_EXTREFCLK,
 } am_hal_syspll_frefsel_e;
 

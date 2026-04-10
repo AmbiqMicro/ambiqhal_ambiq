@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_5p1p0beta-2927d425bf of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SPOTMGR_H
@@ -339,8 +339,8 @@ typedef enum
 //
 typedef struct
 {
-    uint32_t ui32DevPwrSt; // Place holder - may be used in the future
-    uint32_t ui32AudSSPwrSt; // Place holder - may be used in the future
+    uint32_t ui32DevPwrSt;
+    uint32_t ui32AudSSPwrSt;
     uint32_t ui32MemPwrSt; // Place holder - may be used in the future
     uint32_t ui32SsramPwrSt; // Place holder - may be used in the future
     am_hal_spotmgr_tempco_range_e eTempRange;
