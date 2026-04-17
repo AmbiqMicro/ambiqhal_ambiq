@@ -55,7 +55,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -84,7 +84,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -101,10 +101,11 @@
 
 // function pointer for printf
 am_util_stdio_print_char_t g_pfnCharPrint;
+am_util_stdio_get_char_t g_pfnCharGet;
 
 // buffer for printf
 #ifdef AM_PART_APOLLO5_API
-static char g_prfbuf[AM_PRINTF_BUFSIZE] __attribute__((aligned(4096)));
+static char g_prfbuf[AM_PRINTF_BUFSIZE * 2] __attribute__((aligned(4096)));
 #else
 static char g_prfbuf[AM_PRINTF_BUFSIZE];
 #endif
@@ -121,6 +122,12 @@ void
 am_util_stdio_printf_init(am_util_stdio_print_char_t pfnCharPrint)
 {
     g_pfnCharPrint = pfnCharPrint;
+}
+
+void
+am_util_stdio_scanf_init(am_util_stdio_get_char_t pfnCharGet)
+{
+    g_pfnCharGet = pfnCharGet;
 }
 
 //*****************************************************************************
@@ -1291,10 +1298,202 @@ am_util_stdio_terminal_clear(void)
     am_util_stdio_printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
 }
 
+static uint64_t hexstr_to_uint64(const char *str, uint32_t *count)
+{
+    uint64_t val = 0;
+    uint32_t c = 0;
+    while ((*str >= '0' && *str <= '9') || (*str >= 'a' && *str <= 'f') || (*str >= 'A' && *str <= 'F'))
+    {
+        val <<= 4;
+        if ( *str >= '0' && *str <= '9' )
+        {
+            val += *str - '0';
+        }
+        else if ( *str >= 'a' && *str <= 'f' )
+        {
+            val += (*str - 'a') + 10;
+        }
+        else
+        {
+            val += (*str - 'A') + 10;
+        }
+        str++;
+        c++;
+    }
+    if (count)
+    {
+        *count = c;
+    }
+    return val;
+}
+
+static float str_to_float(const char *str, uint32_t *count)
+{
+    float result = 0.0f;
+    float sign = 1.0f;
+    float frac = 0.1f;
+    uint32_t c = 0;
+
+    if (*str == '-')
+    {
+        sign = -1.0f;
+        str++;
+        c++;
+    }
+    while (*str >= '0' && *str <= '9')
+    {
+        result = result * 10.0f + (*str - '0');
+        str++;
+        c++;
+    }
+    if (*str == '.')
+    {
+        str++;
+        c++;
+        while (*str >= '0' && *str <= '9')
+        {
+            result += (*str - '0') * frac;
+            frac *= 0.1f;
+            str++;
+            c++;
+        }
+    }
+    if (count)
+    {
+        *count = c;
+    }
+    return result * sign;
+}
+
+uint32_t am_util_stdio_vsscanf(const char *input, const char *fmt, va_list args)
+{
+    uint32_t num_assigned = 0;
+
+    while (*fmt && *input)
+    {
+        if (*fmt == '%')
+        {
+            ++fmt;
+            bool longlong = false;
+            if (*fmt == 'l')
+            {
+                ++fmt;
+                if (*fmt == 'l')
+                {
+                    longlong = true;
+                    ++fmt;
+                }
+            }
+
+            uint32_t count = 0;
+            switch (*fmt)
+            {
+                case 'd': case 'i':
+                    if (longlong)
+                    {
+                        int64_t *p = va_arg(args, int64_t*);
+                        *p = (int64_t)decstr_to_int(input, &count);
+                    }
+                    else
+                    {
+                        int *p = va_arg(args, int*);
+                        *p = (int)decstr_to_int(input, &count);
+                    }
+                    input += count;
+                    num_assigned++;
+                    break;
+                case 'u':
+                    if (longlong)
+                    {
+                        uint64_t *p = va_arg(args, uint64_t*);
+                        *p = (uint64_t)decstr_to_int(input, &count);
+                    }
+                    else
+                    {
+                        unsigned *p = va_arg(args, unsigned*);
+                        *p = (unsigned)decstr_to_int(input, &count);
+                    }
+                    input += count;
+                    num_assigned++;
+                    break;
+                case 'x': case 'X':
+                    if (longlong)
+                    {
+                        uint64_t *p = va_arg(args, uint64_t*);
+                        *p = hexstr_to_uint64(input, &count);
+                    }
+                    else
+                    {
+                        unsigned *p = va_arg(args, unsigned*);
+                        *p = (unsigned)hexstr_to_uint64(input, &count);
+                    }
+                    input += count;
+                    num_assigned++;
+                    break;
+                case 'f':
+                {
+                    float *p = va_arg(args, float*);
+                    *p = str_to_float(input, &count);
+                    input += count;
+                    num_assigned++;
+                    break;
+                }
+                case 's':
+                {
+                    char *p = va_arg(args, char*);
+                    while (*input && *input != ' ' && *input != '\n')
+                    {
+                        *p++ = *input++;
+                        count++;
+                    }
+                    *p = '\0';
+                    num_assigned++;
+                    break;
+                }
+                case 'c':
+                {
+                    char *p = va_arg(args, char*);
+                    *p = *input++;
+                    num_assigned++;
+                    break;
+                }
+                default:
+                    return num_assigned;
+            }
+            ++fmt;
+        }
+        else if (*fmt == *input)
+        {
+            ++fmt;
+            ++input;
+        }
+        else
+        {
+            break;
+        }
+    }
+    return num_assigned;
+}
+
+uint32_t am_util_stdio_scanf(const char *fmt, ...)
+{
+    if (!g_pfnCharGet)
+    {
+        return 0;
+    }
+
+    g_pfnCharGet(g_prfbuf + AM_PRINTF_BUFSIZE);
+
+    va_list args;
+    va_start(args, fmt);
+    uint32_t ret = am_util_stdio_vsscanf((const char *)(g_prfbuf + AM_PRINTF_BUFSIZE), fmt, args);
+    va_end(args);
+    return ret;
+}
+
 //*****************************************************************************
 //
 // End Doxygen group.
 //! @}
 //
 //*****************************************************************************
-

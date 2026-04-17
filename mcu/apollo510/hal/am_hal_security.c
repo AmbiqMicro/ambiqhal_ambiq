@@ -46,7 +46,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -75,7 +75,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-c286075505 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -596,7 +596,7 @@ bl_run_main(uint32_t *vtor)
         "   ldr     r3, [r0, #0]\n\t"   // Load the new stack pointer into R1 and the new reset vector into R2.
         "   ldr     r2, [r0, #4]\n\t"
         "   mov     sp, r3\n\t"         // Set the stack pointer for the new image.
-        "   bx      r2\n\t"            // Jump to the new reset vector.
+        "   bx      r2\n\t"             // Jump to the new reset vector.
     );
 }
 #elif defined(__GNUC_STDC_INLINE__)
@@ -612,7 +612,7 @@ bl_run_main(uint32_t *vtor)
         "   ldr     r3, [r0, #0]\n\t"   // Load the new stack pointer into R1 and the new reset vector into R2.
         "   ldr     r2, [r0, #4]\n\t"
         "   mov     sp, r3\n\t"         // Set the stack pointer for the new image.
-        "   bx      r2\n\t"            // Jump to the new reset vector.
+        "   bx      r2\n\t"             // Jump to the new reset vector.
     );
 }
 #elif defined(__IAR_SYSTEMS_ICC__)
@@ -626,7 +626,7 @@ bl_run_main(uint32_t *vtor)
           "    ldr     r3, [r0, #0]\n"   // Load the new stack pointer into R1 and the new reset vector into R2.
           "    ldr     r2, [r0, #4]\n"
           "    mov     sp, r3\n"         // Set the stack pointer for the new image.
-          "    bx      r2\n"            // Jump to the new reset vector.
+          "    bx      r2\n"             // Jump to the new reset vector.
           );
 }
 #else
@@ -686,7 +686,7 @@ am_hal_bootloader_exit(uint32_t *pImage, bool bEnableDebuggerOnExit)
             uint32_t dhcsr = DCB->DSCSR;
 
             //
-            // Halt the core
+            // Halt the core and enable the debugger
             //
             DCB->DSCSR = (uint32_t)(0xA05FUL << 16) | (dhcsr & 0xFFFF) | 0x3;
 

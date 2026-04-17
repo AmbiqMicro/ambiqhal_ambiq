@@ -47,7 +47,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -196,7 +196,7 @@ am_hal_itm_disable(void)
     //
     ui32Status = am_hal_delay_us_status_change(1000,
                                                (uint32_t)&ITM->TCR,
-                                               (ITM_TCR_ITMENA_Msk & ITM_TCR_BUSY_Msk),
+                                               (ITM_TCR_ITMENA_Msk | ITM_TCR_BUSY_Msk),
                                                0 );
     if ( ui32Status != AM_HAL_STATUS_SUCCESS )
     {

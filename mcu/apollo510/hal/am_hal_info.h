@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_INFO_H
@@ -93,18 +93,24 @@ extern bool am_hal_info0_valid(void);
 
 //*****************************************************************************
 //
-// AM_INFO_FLD2VAL()
-// This macro allows decoding of INFOx register fields, similar
-// to the CMSIS _FLD2VAL macro.
-// Parameters:
-//  info: 0, 1, or C (C must be capitalized)
-//  field: The field of the register.
-//  value: The value of the entire register as read from the INFOx space.
+//! AM_INFO_FLD2VAL_OTP()
+//! AM_INFO_FLD2VAL()
+//! This macro allows decoding of INFOx register fields, similar
+//! to the CMSIS _FLD2VAL macro.
+//! Parameters:
+//!  info: 0, 1, or C (C must be capitalized)
+//!  field: The field of the register.
+//!  value: The value of the entire register as read from the INFOx space.
 //
-// AM_INFO_VAL2FLD() is not provided as the INFOx register definitions already generate these for each register.
+//! AM_INFO_VAL2FLD() is not provided as the INFOx register definitions already
+//!  generate these for each register.
+//
+//! In general, for purposes of extracting fields, it does not matter whether
+//! the 'OTP' or 'MRAM' version is used as the field extractions are the same.
 //
 //*****************************************************************************
-#define AM_INFO_FLD2VAL(info, field, value) (((uint32_t)(value) & AM_REG_INFO ##info## _ ## field ## _Msk) >> AM_REG_INFO ## info ## _ ## field ## _Pos)
+#define AM_INFO_FLD2VAL_OTP(info, field, value) (((uint32_t)(value) & AM_REG_OTP_INFO ##info## _ ## field ## _Msk) >> AM_REG_OTP_INFO ## info ## _ ## field ## _Pos)
+#define AM_INFO_FLD2VAL(info, field, value)     (((uint32_t)(value) & AM_REG_INFO ##info## _ ## field ## _Msk) >> AM_REG_INFO ## info ## _ ## field ## _Pos)
 
 //*****************************************************************************
 //

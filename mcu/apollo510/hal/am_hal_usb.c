@@ -48,7 +48,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -853,6 +853,17 @@ typedef enum
 }
 am_hal_usb_ep_xfer_type_e;
 
+//
+//! USB external clock selection
+//
+typedef enum
+{
+    eUSB_R14_NOCHANGE = 0x7F,   // use default
+    eUSB_R14_X40 = 0,           // use for 24Mhz
+    eUSB_R14_X20 = 1,           // use for 12 Mhz
+
+} usbphy_reg14_state_e;
+
 //*****************************************************************************
 //
 // Static functions
@@ -1600,7 +1611,6 @@ am_hal_usb_dev_speed_e
 am_hal_get_usb_dev_speed(void *pHandle)
 {
     am_hal_usb_state_t *pState = (am_hal_usb_state_t *)pHandle;
-    USB_Type *pUSB = USBn(pState->ui32Module);
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle) )
@@ -1609,14 +1619,7 @@ am_hal_get_usb_dev_speed(void *pHandle)
     }
 #endif
 
-    if(POWER_HSMode(pUSB))
-    {
-        return AM_HAL_USB_SPEED_HIGH;
-    }
-    else
-    {
-        return AM_HAL_USB_SPEED_FULL;
-    }
+    return pState->eDevSpeed;
 }
 
 //*****************************************************************************
@@ -2063,6 +2066,11 @@ am_hal_usb_fifo_unloading_dma1(USB_Type *pUSB, am_hal_usb_state_t *pState, uint8
         {
             am_hal_usb_intr_out_status_clear(pState, ui8EpNum);
             OUTCSRL_OutPktRdy_Clear(pUSB);
+
+#ifdef AM_HAL_USB_REPORT_ZLP
+            am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32OutCnt, USB_XFER_DONE, NULL);
+            return AM_HAL_STATUS_SUCCESS;
+#endif // AM_HAL_USB_REPORT_ZLP
         }
         else if (ui32OutCnt < OUTMAXP_MaxPayload(pUSB))
         {
@@ -2070,8 +2078,16 @@ am_hal_usb_fifo_unloading_dma1(USB_Type *pUSB, am_hal_usb_state_t *pState, uint8
             am_hal_usb_fifo_unloading(pUSB, ui8EpNum, pucBuf, ui32LenUnload);
             am_hal_usb_intr_out_status_clear(pState, ui8EpNum);
             OUTCSRL_OutPktRdy_Clear(pUSB);
+#ifdef AM_HAL_USB_REPORT_ZLP
             am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32LenUnload, USB_XFER_DONE, NULL);
             return AM_HAL_STATUS_SUCCESS;
+#else
+            if (ui32LenUnload != 0)
+            {
+                am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32LenUnload, USB_XFER_DONE, NULL);
+                return AM_HAL_STATUS_SUCCESS;
+            }
+#endif // AM_HAL_USB_REPORT_ZLP
         }
     }
 
@@ -2269,6 +2285,8 @@ am_hal_usb_dma_loading_fifo(USB_Type *pUSB, uint8_t ui8EpNum, uint8_t *pucBuf, u
         .eDir           = AM_HAL_USB_IN_DIR
     };
 
+    INCSRU_AutoSet_Set(pUSB);
+
     AM_HAL_USB_ENTER_CRITICAL;
 
     if ( g_bUSBDMA0Busy )
@@ -2456,8 +2474,8 @@ am_hal_usb_ep0_state_reset(am_hal_usb_state_t *pState)
     am_hal_usb_xfer_reset(&pState->ep0_xfer);
 }
 
-
-void am_hal_usb_ep_state_reset(void *pHandle, uint8_t ui8EpAddr)
+void
+am_hal_usb_ep_state_reset(void *pHandle, uint8_t ui8EpAddr)
 {
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if (!AM_HAL_USB_CHK_HANDLE(pHandle) )
@@ -2487,7 +2505,6 @@ void am_hal_usb_ep_state_reset(void *pHandle, uint8_t ui8EpAddr)
         pXfer = &pState->ep_xfers[ui8EpNum - 1][ui8EpDir];
         am_hal_usb_xfer_reset(pXfer);
     }
-
 }
 
 //*****************************************************************************
@@ -4034,7 +4051,7 @@ am_hal_usb_in_ep_handling(am_hal_usb_state_t *pState, USB_Type *pUSB, uint8_t ui
     }
 
     // In endpoint FIFO is empty
-    if ((INCSRL_FIFONotEmpty(pUSB) == 0) && pXfer->flags.busy)
+    if ((INTRINE_Get(pUSB) & (0x1 << ui8EpNum)) && (INCSRL_FIFONotEmpty(pUSB) == 0) && pXfer->flags.busy)
     {
         // Packet has been sent out
         if (pXfer->remaining == 0x0)
@@ -4326,15 +4343,35 @@ am_hal_usb_out_ep_dma1_handling(am_hal_usb_state_t *pState, USB_Type *pUSB, uint
                 ui32XferLen = ui32AdmaTarAddr - (uint32_t)pXfer->buf + count;
                 am_hal_usb_fifo_unloading(pUSB, ui8EpNum, (uint8_t *)ui32AdmaTarAddr, count);
                 INTROUTE_Disable(pUSB, 0x1 << ui8EpNum);
-                am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32XferLen, USB_XFER_DONE, NULL);
-                OUTCSRL_OutPktRdy_Clear(pUSB);
+#ifdef AM_HAL_USB_REPORT_ZLP
+                if ((count != 0) || (ui32XferLen == 0))
+                {
+                    am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32XferLen, USB_XFER_DONE, NULL);
+                    OUTCSRL_OutPktRdy_Clear(pUSB);
+                }
+#else
+                if (ui32XferLen != 0)
+                {
+                    am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32XferLen, USB_XFER_DONE, NULL);
+                }
+                else
+                {
+                    // Re-enable ADMA which was disabled above and clear
+                    // `OutPktRdy` so the hardware can continue receiving
+                    // the next packet.
+                    pUSB->ADMAEN |= (1 << (ui8EpNum + 4));
+                    OUTCSRL_OutPktRdy_Clear(pUSB);
+                }
+#endif // AM_HAL_USB_REPORT_ZLP
                 return;
             }
+#ifndef AM_HAL_USB_REPORT_ZLP
             else if (count == 0)
             {
                 OUTCSRL_OutPktRdy_Clear(pUSB);
-                return;
             }
+#endif // AM_HAL_USB_REPORT_ZLP
+            return;
         }
 
     }
@@ -4403,8 +4440,14 @@ am_hal_usb_out_ep_dma1_adma_handling(am_hal_usb_state_t *pState, USB_Type *pUSB,
         else
         {
             INTROUTE_Disable(pUSB, 0x1 << ui8EpNum);
+#ifdef AM_HAL_USB_REPORT_ZLP
             am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32XferLen, USB_XFER_DONE, NULL);
-
+#else
+            if (ui32XferLen != 0)
+            {
+                am_hal_usb_xfer_complete(pState, pXfer, ui8EpNum, ui32XferLen, USB_XFER_DONE, NULL);
+            }
+#endif // AM_HAL_USB_REPORT_ZLP
         }
         return;
     }
@@ -4412,13 +4455,13 @@ am_hal_usb_out_ep_dma1_adma_handling(am_hal_usb_state_t *pState, USB_Type *pUSB,
 
 //*****************************************************************************
 //
-// Auto generate clock source and divide ratio if it is not defined by user.
+// Auto configure clock source and divide ratio if it is not defined by user.
 //
 //*****************************************************************************
 static inline void
 am_hal_usb_auto_gen_clk_source(void *pHandle, am_hal_usb_dev_speed_e eSpeed, am_hal_usb_phyclksrc_e *eClkSrc)
 {
-    am_hal_usb_state_t *pState = (am_hal_usb_state_t *) pHandle;
+    usbphy_reg14_state_e reg14State = eUSB_R14_X40;
 
     if (eSpeed == AM_HAL_USB_SPEED_FULL)
     {
@@ -4445,10 +4488,17 @@ am_hal_usb_auto_gen_clk_source(void *pHandle, am_hal_usb_dev_speed_e eSpeed, am_
         {
             *eClkSrc = AM_HAL_USB_PHYCLKSRC_EXTREFCLK;
         }
+        else if (board.ui32ExtRefClkFreq == 12000000)
+        {
+            *eClkSrc = AM_HAL_USB_PHYCLKSRC_EXTREFCLK;
+            reg14State = eUSB_R14_X20;
+        }
         else
         {
             *eClkSrc = AM_HAL_USB_PHYCLKSRC_PLL;
         }
+
+        USBPHY->REG14_b.BF55 = reg14State;
     }
 }
 
@@ -4672,8 +4722,17 @@ am_hal_usb_interrupt_service(void *pHandle,
         if ( pUSB->DMACTRL_b.DMADIR == AM_HAL_USB_IN_DIR )
         {
             // Select the endpoint by index register
-            EP_INDEX_Set(pUSB, pUSB->DMACTRL_b.DMAEP);
-            INCSRL_InPktRdy_Set(pUSB);
+            uint8_t ui8EpNum = pUSB->DMACTRL_b.DMAEP;
+            EP_INDEX_Set(pUSB, ui8EpNum);
+
+            am_hal_usb_ep_xfer_t* pXfer = &pState->ep_xfers[ui8EpNum - 1][AM_HAL_USB_EP_DIR_IN];
+            uint16_t maxpacket = pState->epin_maxpackets[ui8EpNum - 1];
+
+            if (pXfer->len < maxpacket && pXfer->len > 0)
+            {
+                INCSRL_InPktRdy_Set(pUSB);
+            }
+
             INTRINE_Enable(pUSB, 0x1 << pUSB->DMACTRL_b.DMAEP);
         }
         else

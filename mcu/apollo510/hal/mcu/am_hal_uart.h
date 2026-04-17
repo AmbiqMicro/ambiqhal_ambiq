@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-4f5b18673 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -703,19 +703,6 @@ extern uint32_t am_hal_uart_dma_transfer(void *pHandle, am_hal_uart_transfer_t *
 
 //*****************************************************************************
 //
-//! @brief UART DMA transaction completes, clear config and status
-//!
-//! @param pHandle is the UART handle to use.
-//!
-//! This function disables and clears UART DMA.
-//!
-//! @return void.
-//
-//*****************************************************************************
-extern void am_hal_uart_dma_transfer_complete(void *pHandle);
-
-//*****************************************************************************
-//
 //! @brief UART dma full duplex transfer function
 //!
 //! @param pTXHandle       - handle for the TX UART.
@@ -945,6 +932,7 @@ extern uint32_t am_hal_uart_interrupt_status_get(void *pHandle,
 //
 //*****************************************************************************
 extern uint32_t am_hal_uart_interrupt_enable_get(void *pHandle, uint32_t *pui32IntMask);
+
 //*****************************************************************************
 //
 //! @brief transfer data between hardware and software queue in the background.
@@ -962,7 +950,14 @@ extern uint32_t am_hal_uart_interrupt_enable_get(void *pHandle, uint32_t *pui32I
 extern uint32_t am_hal_uart_interrupt_service(void *pHandle,
                                               uint32_t ui32Status);
 
-
+//*****************************************************************************
+//
+//! @brief DMA complete interrupt
+//!
+//! @param pHandle is the handle for the UART to operate on.
+//
+//*****************************************************************************
+extern void am_hal_uart_dma_transfer_complete(void *pHandle);
 #ifdef __cplusplus
 }
 #endif

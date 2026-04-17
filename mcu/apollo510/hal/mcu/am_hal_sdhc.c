@@ -164,7 +164,7 @@ typedef struct
 } am_hal_sdhc_state_t;
 
 //! SDIO interrupts.
-static const IRQn_Type sdio_interrupts[] =
+static const IRQn_Type SDIO0_INTerrupts[] =
 {
     SDIO0_IRQn,
     SDIO1_IRQn,
@@ -1709,8 +1709,8 @@ am_hal_sdhc_enable(void *pHandle)
     //
     // Enable SDIO IRQ only after host is initialized successfully
     //
-    NVIC_SetPriority(sdio_interrupts[pSDHCState->ui32Module], AM_IRQ_PRIORITY_DEFAULT);
-    NVIC_EnableIRQ(sdio_interrupts[pSDHCState->ui32Module]);
+    NVIC_SetPriority(SDIO0_INTerrupts[pSDHCState->ui32Module], AM_IRQ_PRIORITY_DEFAULT);
+    NVIC_EnableIRQ(SDIO0_INTerrupts[pSDHCState->ui32Module]);
 
     //
     // Reset CMD and Data error count
@@ -1758,7 +1758,7 @@ am_hal_sdhc_disable(void *pHandle)
     //
     // Disable SDIO IRQ
     //
-    NVIC_DisableIRQ(sdio_interrupts[pSDHCState->ui32Module]);
+    NVIC_DisableIRQ(SDIO0_INTerrupts[pSDHCState->ui32Module]);
 
     //
     // Disable all interrupts SIGNAL

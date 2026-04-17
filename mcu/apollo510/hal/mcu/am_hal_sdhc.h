@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SDHC_H
@@ -59,13 +59,6 @@ extern "C"
 //*****************************************************************************
 #define SDIO_Type                    SDIO0_Type
 #define SDHCn(n)                     ((SDIO_Type*)(SDIO0_BASE + (n * (SDIO1_BASE - SDIO0_BASE))))
-
-#define SDIO_INTSIG_CARDINTEN_Msk                       SDIO0_INTSIG_CARDINTEN_Msk
-#define SDIO_INTENABLE_CARDINTERRUPTSTATUSENABLE_Msk    SDIO0_INTENABLE_CARDINTERRUPTSTATUSENABLE_Msk
-#define SDIO_INTSIG_CARDINSERTEN_Msk                    SDIO0_INTSIG_CARDINSERTEN_Msk
-#define SDIO_INTENABLE_CARDINSERTIONSTATUSENABLE_Msk    SDIO0_INTENABLE_CARDINSERTIONSTATUSENABLE_Msk
-#define SDIO_INTSIG_CARDREMOVALEN_Msk                   SDIO0_INTSIG_CARDREMOVALEN_Msk
-#define SDIO_INTENABLE_CARDREMOVALSTATUSENABLE_Msk      SDIO0_INTENABLE_CARDREMOVALSTATUSENABLE_Msk
 
 //
 //! SD Host software reset types

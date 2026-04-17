@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_ADC_H
@@ -62,13 +62,11 @@
 //! VREF is needed by applications in order to convert samples to voltages,
 //! as well as to do the sample corrections in the HAL functions.
 //!
-//! Important: It is important to use 1.19v, as opposed to 1.20v, as the
-//! reference voltage.
 //! Ambiq recommends using AM_HAL_ADC_VREF to designate Vref in applications.
 //
 // ****************************************************************************
-#define AM_HAL_ADC_VREF         1.19F
-#define AM_HAL_ADC_VREFMV       1190        // Vref specified in millivolts
+#define AM_HAL_ADC_VREF         1.20F
+#define AM_HAL_ADC_VREFMV       1200        // Vref specified in millivolts
 #define AM_HAL_ADC_VREFMVF      (AM_HAL_ADC_VREF * 1000.0F)
 //! @}
 
@@ -87,6 +85,8 @@
 #define AM_HAL_ADC_SAMPLE_DIVISORF      ((float)AM_HAL_ADC_SAMPLE_2N)               // Divisor for 12 bits
 #define AM_HAL_ADC_SAMPLE_MASK          ((AM_HAL_ADC_SAMPLE_2N - 1) << 6)           // Mask for integer portion of the sample
 #define AM_HAL_ADC_SAMPLE_MASK_FULL     (((1 << (AM_HAL_ADC_SAMPLE_BITS + 6)) - 1)) // Mask for the full sample
+#define AM_HAL_ADC_SAMPLE_12BIT_SAT     (AM_HAL_ADC_SAMPLE_2N - 1)                  // ADC saturation value for 12 bits
+#define AM_HAL_ADC_SAMPLE_12BIT_SATF    ((float)(AM_HAL_ADC_SAMPLE_2N - 1))         // ADC saturation value for 12 bits
 //! @}
 
 // ****************************************************************************
@@ -106,10 +106,10 @@
 
 // ****************************************************************************
 //
-//! @brief Default slope (in degK / V) of the Apollo4 temperature sensor.
+//! @brief Default slope (in degK / V) of the Apollo510 temperature sensor.
 //
 // ****************************************************************************
-#define AM_HAL_ADC_TEMPSENSOR_SLOPE     290.0F
+#define AM_HAL_ADC_TEMPSENSOR_SLOPE     302.11F
 
 // ****************************************************************************
 //

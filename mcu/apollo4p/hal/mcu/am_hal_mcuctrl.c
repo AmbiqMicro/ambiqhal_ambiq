@@ -332,10 +332,13 @@ mcuctrl_ctrl_HFXTAL_normal(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
                                                peCtrlArg->ui32_arg_hfxtal_user_mask);
     }
 
+    //
+    // when true, HFXTAL is already in use, check status 2nd time below
+    //
     bool bHSXTAL_enabled  = am_hal_mcuctrl_EXTCLK_active();
 
     //
-    // is the HFXTAL transitioning to enabled with this call
+    // check if HFXTAL transitioning to enabled with this call
     //
     bool bEnableHFXTAL    = !bHSXTAL_entry_enabled && bHSXTAL_enabled;
 

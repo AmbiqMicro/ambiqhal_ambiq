@@ -53,14 +53,14 @@
 //! - No configuration is required for basic entropy or UID reads beyond
 //!   powering OTP.
 //! - Higher-level consumers may implement additional conditioning if required.
-//! - The Static UID provides 1024 bits (32 × 32-bit words) of device-unique
+//! - The Static UID provides 1024 bits (32 x 32-bit words) of device-unique
 //!   data suitable for fingerprinting and security applications.
 //
 //*****************************************************************************
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -89,7 +89,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-c286075505 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -177,8 +177,8 @@ uint32_t
 am_hal_puf_get_entropy(uint8_t * buffer, uint16_t length)
 {
     //
-	// Validate input parameters.
-	//
+    // Validate input parameters.
+    //
     if (length == 0 || buffer == NULL)
     {
         return AM_HAL_STATUS_FAIL;
@@ -240,8 +240,8 @@ am_hal_puf_entropy_init(void)
     }
 
     //
-	// Record whether OTP was already enabled before we try to enable it.
-	//
+    // Record whether OTP was already enabled before we try to enable it.
+    //
     g_bPufOtpWasEnabled = bPeripheralEnabled;
 
     //
@@ -282,17 +282,17 @@ am_hal_puf_entropy_deinit(void)
     }
 
     //
-	// If OTP is already off, or OTP was already enabled before our init call,
-    // there is nothing for us to do here — return success.
-	//
+    // If OTP is already off, or OTP was already enabled before our init call,
+    // there is nothing for us to do here -- return success.
+    //
     if (!bPeripheralEnabled || g_bPufOtpWasEnabled)
     {
         return AM_HAL_STATUS_SUCCESS;
     }
 
     //
-	// Otherwise, OTP is on and we enabled it during init; disable it now.
-	//
+    // Otherwise, OTP is on and we enabled it during init; disable it now.
+    //
     ui32Status = am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_OTP);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {

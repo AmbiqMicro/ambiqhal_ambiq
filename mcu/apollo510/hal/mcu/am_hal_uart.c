@@ -48,7 +48,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -170,7 +170,7 @@ typedef struct
     //! Pointer to the dma buffer descriptor queue
     //! This is allocated by the calling function in application space
     //! and is attached to this struct via a call to
-    //! am_hal_uart_dmaQueueInit
+    //! am_hal_uart_stream_dmaQueueInit
     //! @note Since it is allocated and passed in, this usually shouldn't be on the stack
     //
     am_hal_uart_dma_config_t *psDmaQueue;
@@ -643,7 +643,6 @@ am_hal_uart_dma_transfer_complete(void *pHandle)
     //
     UARTn(ui32Module)->RSR_b.DMACPL = 0x0;
     UARTn(ui32Module)->RSR_b.DMAERR = 0x0;
-    pState->bDMABusy = false;
 }
 
 //*****************************************************************************
@@ -821,7 +820,6 @@ am_hal_uart_dma_abort(void *pHandle)
     // DMA count cleared.
     //
     UARTn(ui32Module)->COUNT_b.TOTCOUNT = 0x0;
-    pState->bDMABusy = false;
 }
 
 //*****************************************************************************
@@ -944,7 +942,11 @@ config_baudrate(uint32_t ui32Module, uint32_t ui32DesiredBaudrate, uint32_t *pui
     switch ( UARTn(ui32Module)->CR_b.CLKSEL )
     {
         case UART0_CR_CLKSEL_PLL_CLK:
-            ui32UartClkFreq = 49152000;
+            am_hal_clkmgr_clock_config_get(AM_HAL_CLKMGR_CLK_ID_SYSPLL, &ui32UartClkFreq, NULL);
+            if ( ui32UartClkFreq == 0 )
+            {
+                return AM_HAL_UART_STATUS_CLOCK_NOT_CONFIGURED;
+            }
             break;
 
         case UART0_CR_CLKSEL_HFRC_48MHZ:
@@ -2380,6 +2382,7 @@ am_hal_uart_interrupt_service(void *pHandle, uint32_t ui32Status)
             //
             am_hal_uart_dma_transfer_complete(pHandle);
         }
+        pState->bDMABusy = false;
     }
     else
     {

@@ -53,7 +53,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -82,7 +82,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -102,11 +102,11 @@ am_util_delay_cycles(uint32_t ui32Iterations)
     //
     // Call the BOOTROM cycle delay function
     //
-#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
-    am_hal_delay_us( ui32Iterations);
-#else
+#if defined(AM_PART_APOLLO) || defined(AM_PART_APOLLO2) || defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
     am_hal_flash_delay(ui32Iterations);
-#endif // AM_PART_APOLLO4_API || AM_PART_APOLLO5_API
+#else
+    am_hal_delay_us( ui32Iterations);
+#endif
 }
 
 //*****************************************************************************
@@ -117,9 +117,7 @@ am_util_delay_cycles(uint32_t ui32Iterations)
 void
 am_util_delay_ms(uint32_t ui32MilliSeconds)
 {
-#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
-    am_hal_delay_us( ui32MilliSeconds * 1000);
-#else // AM_PART_APOLLO4_API || AM_PART_APOLLO5_API
+#if defined(AM_PART_APOLLO) || defined(AM_PART_APOLLO2) || defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
     uint32_t ui32Loops, ui32HFRC;
 #if AM_APOLLO3_CLKGEN
     am_hal_clkgen_status_t sClkgenStatus;
@@ -134,7 +132,9 @@ am_util_delay_ms(uint32_t ui32MilliSeconds)
     // Call the BOOTROM cycle delay function
     //
     am_hal_flash_delay(ui32Loops);
-#endif // AM_PART_APOLLO4_API || AM_PART_APOLLO5_API
+#else
+    am_hal_delay_us( ui32MilliSeconds * 1000);
+#endif
 }
 
 //*****************************************************************************
@@ -145,9 +145,7 @@ am_util_delay_ms(uint32_t ui32MilliSeconds)
 void
 am_util_delay_us(uint32_t ui32MicroSeconds)
 {
-#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
-    am_hal_delay_us( ui32MicroSeconds );
-#else // AM_PART_APOLLO4_API || AM_PART_APOLLO5_API
+#if defined(AM_PART_APOLLO) || defined(AM_PART_APOLLO2) || defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
     uint32_t ui32Loops, ui32HFRC;
 
 #if AM_APOLLO3_CLKGEN
@@ -163,7 +161,9 @@ am_util_delay_us(uint32_t ui32MicroSeconds)
     // Call the BOOTROM cycle delay function
     //
     am_hal_flash_delay(ui32Loops);
-#endif // AM_PART_APOLLO4_API || AM_PART_APOLLO5_API
+#else
+    am_hal_delay_us( ui32MicroSeconds );
+#endif
 }
 
 //*****************************************************************************

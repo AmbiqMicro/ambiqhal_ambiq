@@ -26,7 +26,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -55,12 +55,34 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-db6e11a12 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
 #ifndef AM_MCU_APOLLO_H
 #define AM_MCU_APOLLO_H
+
+//*****************************************************************************
+//
+// Arm architecture intrinsics and options
+//  Security extensions
+//  Vector extension
+//
+//*****************************************************************************
+#include <arm_cmse.h>               // Include ARM Security Extensions
+
+#if   (__ARM_FEATURE_MVE & 3) == 3  // MVE integer and floating point intrinsics available
+#include <arm_mve.h>                // Include M-Profile Vector Extension aka Helium
+#elif (__ARM_FEATURE_MVE & 1) == 1  // MVE integer intrinsics available
+#include <arm_mve.h>                // Include M-Profile Vector Extension aka Helium
+#else
+// Compiler options for vector extensions are not enabled.
+#ifndef AM_HAL_SKIP_NO_MVE_WARNING
+#ifndef __ZEPHYR__
+#warning MVE intrinsics not available
+#endif
+#endif
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -69,10 +91,15 @@ extern "C"
 
 //*****************************************************************************
 //
-//! AM_PART_APOLLO5_API indicates that this device uses the Apollo5 API.
+//! AM_PART_APOLLO5B is deprecated, for backward compatibility purposes only.
 //
 //*****************************************************************************
+#ifdef AM_PART_APOLLO5B
+#ifndef AM_PART_APOLLO510
 #define AM_PART_APOLLO510
+#endif
+#endif
+
 //*****************************************************************************
 //
 //! AM_PART_APOLLO5_API indicates that this device uses the Apollo5 API.
@@ -102,7 +129,6 @@ extern "C"
 // Apollo CMSIS peripheral registers
 //
 //*****************************************************************************
-#include <arm_cmse.h>
 #include "apollo510.h"
 
 //*****************************************************************************

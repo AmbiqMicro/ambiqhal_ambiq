@@ -48,7 +48,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -1225,7 +1225,7 @@ am_hal_audadc_configure_dma(void *pHandle,
     }
 
     //
-    // Enable DMA Halt on Status (DMAERR or DMACPL) by default. This bit is reserved in apollo4
+    // Enable DMA Halt on Status (DMAERR or DMACPL) by default. This bit is reserved in apollo510
     //
 //    ui32Config |= _VAL2FLD(AUDADC_DMACFG_DMAHONSTAT, AUDADC_DMACFG_DMAHONSTAT_EN);
 

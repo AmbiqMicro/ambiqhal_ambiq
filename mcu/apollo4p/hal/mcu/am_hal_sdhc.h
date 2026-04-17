@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision stable-7da8bae71f of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SDHC_H
@@ -412,21 +412,20 @@ extern uint32_t am_hal_sdhc_interrupt_service(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief Reset SDHC host controller or part of data/command circuit.
+//! @brief SDHC Software Reset
 //!
-//! @param pSDHC          - Pointer to the SDHC register.
-//! @param eSoftwareReset - Software reset type
-//!    AM_HAL_SDHC_SW_RESET_DATA_LINE = 0U, Reset the data circuit only
-//!    AM_HAL_SDHC_SW_RESET_CMD_LINE  = 1U, Reset the command circuit only
-//!    AM_HAL_SDHC_SW_RESET_ALL       = 2U, Reset the whole SD Host controller
+//! @param pSDHC                  - handle for the SDIO Type
+//! @param am_hal_sdhc_sw_reset_e - enum for SW reset
 //!
-//! This function resets SDHC host controller or part of data/command circuit.
+//! This function is designed to be called from within the user defined ISR
+//! in order to service the non-blocking, PIO, SDMA or ADMA processing for a given
+//! module instance.
 //!
 //! @return status      - generic or interface specific status.
 //
 //*****************************************************************************
 extern uint32_t am_hal_sdhc_software_reset(SDIO_Type *pSDHC,
-                                           am_hal_sdhc_sw_reset_e eSoftwareReset);
+                                        am_hal_sdhc_sw_reset_e eSoftwareReset);
 
 #ifdef __cplusplus
 }

@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MCUCTRL_H
@@ -55,10 +55,12 @@ extern "C"
 #define MCUCTRL_CHIPPN_PARTNUM_PN_M             0xFF000000
 #define MCUCTRL_CHIPPN_PARTNUM_PN_S             24
 
-//**********************************************************
-//! MCUCTRL XTALHSCAP defaults for Cooper
-//! Refer to App Note Apollo4 Blue 32MHz Crystal Calibration
-//**********************************************************
+// ****************************************************************************
+//
+//! MCUCTRL XTALHSCAP defaults for Apollo510
+//! Refer to App Note "Apollo510 SoC External HFXTAL Crystal Calibration"
+//
+// ****************************************************************************
 #define XTALHSCAP2TRIM_DEFAULT  44
 #define XTALHSCAPTRIM_DEFAULT   4
 
@@ -205,6 +207,15 @@ typedef enum
     AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_CLKOUT_DISABLE
 } am_hal_mcuctrl_control_e;
 
+//
+// Macros for EXTCLK_HFXTAL naming convention (aliases for EXTCLK32M)
+//
+#define AM_HAL_MCUCTRL_CONTROL_EXTCLK_HFXTAL_KICK_START        AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START
+#define AM_HAL_MCUCTRL_CONTROL_EXTCLK_HFXTAL_NORMAL            AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL
+#define AM_HAL_MCUCTRL_CONTROL_EXTCLK_HFXTAL_DISABLE           AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE
+#define AM_HAL_MCUCTRL_CONTROL_EXTCLK_HFXTAL_CLKOUT_ENABLE     AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_CLKOUT_ENABLE
+#define AM_HAL_MCUCTRL_CONTROL_EXTCLK_HFXTAL_CLKOUT_DISABLE    AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_CLKOUT_DISABLE
+
 //**************************************
 //! MCUCTRL EXT32M status enumerations
 //**************************************
@@ -214,6 +225,13 @@ typedef enum
     AM_HAL_MCUCTRL_EXT32M_STATUS_XTAL,
     AM_HAL_MCUCTRL_EXT32M_STATUS_EXT_CLK,
 }am_hal_mcuctrl_ext32m_status_e;
+
+//
+// Macros for EXTCLK_HFXTAL status naming convention (aliases for EXT32M)
+//
+#define AM_HAL_MCUCTRL_EXTCLK_HFXTAL_STATUS_OFF                AM_HAL_MCUCTRL_EXT32M_STATUS_OFF
+#define AM_HAL_MCUCTRL_EXTCLK_HFXTAL_STATUS_XTAL               AM_HAL_MCUCTRL_EXT32M_STATUS_XTAL
+#define AM_HAL_MCUCTRL_EXTCLK_HFXTAL_STATUS_EXT_CLK            AM_HAL_MCUCTRL_EXT32M_STATUS_EXT_CLK
 
 //**************************************
 //! MCUCTRL EXT32K status enumerations
@@ -381,6 +399,27 @@ typedef struct
 
 //**************************************
 //
+//! MCUCTRL trimver structure
+//! Note, see also am_hal_mcuctrl_feature_t.
+//
+//**************************************
+typedef union                                           // Trim version info
+{
+    uint32_t ui32trimver;
+
+    struct
+    {
+        uint32_t ui8TrimVerMin  : 8;    // [7:0]
+        uint32_t ui8TrimVerMaj  : 8;    // [15:8]
+        uint32_t bTrimVerValid  : 1;    // [16:16] 1 if version data valid
+        uint32_t bTrimVerPCM    : 1;    // [17:17] 1 if PCM numbering
+        uint32_t bTrimVerRsvd18 : 6;    // [23:18]
+        uint32_t bTrimVerRsvd24 : 8;    // [31:24]
+    } trimver_b;
+} am_hal_mcuctrl_trimver_t;
+
+//**************************************
+//
 //! MCUCTRL features available structure
 //
 //**************************************
@@ -397,6 +436,11 @@ typedef struct
     bool                        bSecBootFeature;    // Secure Boot
     bool                        bFPU;               // FPU
     am_hal_mcuctrl_mve_e        eMVECfg;            // MVE
+    //
+    // Declare an anonymous union that is a copy of am_hal_mcuctrl_trimver_t.
+    // This is done so that the union members can be accessed directly as a
+    // member of am_hal_mcuctrl_feature_t.
+    //
     union                                           // Trim version info
     {
         uint32_t ui32trimver;
@@ -412,12 +456,12 @@ typedef struct
     };
 } am_hal_mcuctrl_feature_t;
 
-//**********************************************************
+// ****************************************************************************
 //
-//! MCUCTRL XTALHSCAP Globals for Cooper Device
-//! Refer to App Note Apollo4 Blue 32MHz Crystal Calibration
+//! MCUCTRL XTALHSCAP Globals for Apollo510 Device
+//! Refer to App Note "Apollo510 SoC External HFXTAL Crystal Calibration"
 //
-//**********************************************************
+// ****************************************************************************
 extern uint32_t g_ui32xtalhscap2trim;
 extern uint32_t g_ui32xtalhscaptrim;
 
@@ -484,6 +528,17 @@ extern uint32_t am_hal_mcuctrl_extclk32m_status_get(am_hal_mcuctrl_ext32m_status
 //
 // ****************************************************************************
 extern uint32_t am_hal_mcuctrl_status_get(am_hal_mcuctrl_status_t *psStatus);
+
+// ****************************************************************************
+//
+//! @brief Get trim version information.
+//!
+//! This function returns a data structure of trim revision information.
+//!
+//! @param psTrim - Pointer to the trim structure to receive the data.
+//
+// ****************************************************************************
+extern uint32_t am_hal_mcuctrl_trim_version_get(uint32_t *pui32trimver);
 
 // ****************************************************************************
 //

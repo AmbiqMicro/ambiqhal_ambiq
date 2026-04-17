@@ -1634,15 +1634,15 @@ am_hal_sd_card_enable_card_detect(am_hal_card_t *pCard, am_hal_host_event_cb_t p
         return ui32Status;
     }
 
-    ui32Status = am_hal_sdhc_intr_signal_enable(pHost->pHandle,  SDIO_INTSIG_CARDREMOVALEN_Msk |
-                                                                 SDIO_INTSIG_CARDINSERTEN_Msk);
+    ui32Status = am_hal_sdhc_intr_signal_enable(pHost->pHandle,  SDIO0_INTSIG_CARDREMOVALEN_Msk |
+                                                                 SDIO0_INTSIG_CARDINSERTEN_Msk);
     if ( ui32Status != AM_HAL_STATUS_SUCCESS )
     {
         return ui32Status;
     }
 
-    ui32Status = am_hal_sdhc_intr_status_enable(pHost->pHandle, SDIO_INTENABLE_CARDREMOVALSTATUSENABLE_Msk |
-                                                                SDIO_INTENABLE_CARDINSERTIONSTATUSENABLE_Msk);
+    ui32Status = am_hal_sdhc_intr_status_enable(pHost->pHandle, SDIO0_INTENABLE_CARDREMOVALSTATUSENABLE_Msk |
+                                                                SDIO0_INTENABLE_CARDINSERTIONSTATUSENABLE_Msk);
     if ( ui32Status != AM_HAL_STATUS_SUCCESS )
     {
         return ui32Status;
@@ -1670,17 +1670,17 @@ am_hal_sd_card_disable_card_detect(am_hal_card_t *pCard)
 
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
-    ui32Status = am_hal_sdhc_intr_signal_disable(pHost->pHandle, SDIO_INTSIG_CARDINTEN_Msk |
-                                                             SDIO_INTSIG_CARDREMOVALEN_Msk |
-                                                              SDIO_INTSIG_CARDINSERTEN_Msk);
+    ui32Status = am_hal_sdhc_intr_signal_disable(pHost->pHandle, SDIO0_INTSIG_CARDINTEN_Msk |
+                                                             SDIO0_INTSIG_CARDREMOVALEN_Msk |
+                                                              SDIO0_INTSIG_CARDINSERTEN_Msk);
     if ( ui32Status != AM_HAL_STATUS_SUCCESS )
     {
         return ui32Status;
     }
 
-    ui32Status = am_hal_sdhc_intr_status_disable(pHost->pHandle, SDIO_INTENABLE_CARDINTERRUPTSTATUSENABLE_Msk |
-                                                                   SDIO_INTENABLE_CARDREMOVALSTATUSENABLE_Msk |
-                                                                 SDIO_INTENABLE_CARDINSERTIONSTATUSENABLE_Msk);
+    ui32Status = am_hal_sdhc_intr_status_disable(pHost->pHandle, SDIO0_INTENABLE_CARDINTERRUPTSTATUSENABLE_Msk |
+                                                                   SDIO0_INTENABLE_CARDREMOVALSTATUSENABLE_Msk |
+                                                                 SDIO0_INTENABLE_CARDINSERTIONSTATUSENABLE_Msk);
     if ( ui32Status != AM_HAL_STATUS_SUCCESS )
     {
         return ui32Status;

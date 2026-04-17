@@ -48,7 +48,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -118,8 +118,10 @@ g_am_hal_mcuctrl_sku_mram_size[AM_HAL_MCUCTRL_SKU_MRAM_SIZE_N] =
 };
 
 // ****************************************************************************
+//
 // MCUCTRL XTALHSCAP Globals for Cooper Device
-// Refer to App Note Apollo4 Blue 32MHz Crystal Calibration
+// Refer to App Note "Apollo510 SoC External HFXTAL Crystal Calibration"
+//
 // ****************************************************************************
 uint32_t g_ui32xtalhscap2trim = XTALHSCAP2TRIM_DEFAULT;
 uint32_t g_ui32xtalhscaptrim = XTALHSCAPTRIM_DEFAULT;
@@ -665,22 +667,22 @@ am_hal_mcuctrl_status_get(am_hal_mcuctrl_status_t *psStatus)
 
 } // am_hal_mcuctrl_status_get()
 
-//*****************************************************************************
+// ****************************************************************************
 //
-//! @brief Get TRIM version from INFO1 register.
-//!
-//! @param psFeature - Pointer to feature structure to store trim version.
-//!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success.
-//!
-//! This function reads the trim version information from the INFO1 register
-//! and decodes it according to the chip revision and PCM version.
-//!
-//*****************************************************************************
-static uint32_t
-trim_version_get(am_hal_mcuctrl_feature_t *psFeature)
+//  am_hal_mcuctrl_trim_version_get()
+//  Get TRIM version which is stored in INFO1.
+//
+// ****************************************************************************
+uint32_t
+am_hal_mcuctrl_trim_version_get(uint32_t *pui32TrimVersion)
 {
     uint32_t ui32Ret, ui32TrimVer;
+    am_hal_mcuctrl_trimver_t sTrimVersion;
+
+    if ( pui32TrimVersion == NULL )
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
 
     //
     // Get trim information from the Apollo510 device.
@@ -692,7 +694,7 @@ trim_version_get(am_hal_mcuctrl_feature_t *psFeature)
                                 1,
                                 &ui32TrimVer);
 
-    psFeature->ui32trimver = 0x0;   // Initialize the trim data
+    sTrimVersion.ui32trimver = 0;
     if ( ui32Ret == AM_HAL_STATUS_SUCCESS )
     {
         if ( (MCUCTRL->CHIPREV_b.REVMAJ == MCUCTRL_CHIPREV_REVMAJ_B)    &&
@@ -711,32 +713,34 @@ trim_version_get(am_hal_mcuctrl_feature_t *psFeature)
                 //
                 --ui32TrimVer;
             }
-            psFeature->trimver_b.ui8TrimVerMaj = 2;
-            psFeature->trimver_b.ui8TrimVerMin = (uint8_t)ui32TrimVer;
-            psFeature->trimver_b.bTrimVerPCM   = 1;
-            psFeature->trimver_b.bTrimVerValid = 1;
+            sTrimVersion.trimver_b.ui8TrimVerMin = (uint8_t)ui32TrimVer;
+            sTrimVersion.trimver_b.ui8TrimVerMaj = 2;
+            sTrimVersion.trimver_b.bTrimVerValid = true;
+            sTrimVersion.trimver_b.bTrimVerPCM   = true;
         }
         else
         {
             //
             // Default to non-PCM numbered device.
             //
-            psFeature->trimver_b.ui8TrimVerMaj = 0;
-            psFeature->trimver_b.ui8TrimVerMin = (uint8_t)ui32TrimVer;
-            psFeature->trimver_b.bTrimVerPCM   = 0;
-            psFeature->trimver_b.bTrimVerValid = 1;
+            sTrimVersion.trimver_b.ui8TrimVerMin = (uint8_t)ui32TrimVer;
+            sTrimVersion.trimver_b.ui8TrimVerMaj = 0;
+            sTrimVersion.trimver_b.bTrimVerValid = false;
+            sTrimVersion.trimver_b.bTrimVerPCM   = true;
         }
     }
     else
     {
-        psFeature->trimver_b.ui8TrimVerMaj = 0;
-        psFeature->trimver_b.ui8TrimVerMin = (uint8_t)ui32TrimVer;
-        psFeature->trimver_b.bTrimVerPCM   = 0;
-        psFeature->trimver_b.bTrimVerValid = 0;
+        sTrimVersion.trimver_b.ui8TrimVerMin = (uint8_t)ui32TrimVer;
+        sTrimVersion.trimver_b.ui8TrimVerMaj = 0;
+        sTrimVersion.trimver_b.bTrimVerValid = false;
+        sTrimVersion.trimver_b.bTrimVerPCM   = false;
     }
 
+    *pui32TrimVersion = sTrimVersion.ui32trimver;
+
     return ui32Ret;
-} // trim_version_get()
+} // am_hal_mcuctrl_trim_version_get()
 
 // ****************************************************************************
 //
@@ -795,7 +799,7 @@ am_hal_mcuctrl_info_get(am_hal_mcuctrl_infoget_e eInfoGet, void *pInfo)
             psFeature->bFPU             = (MCUCTRL->SKU_b.SKUFPU > 0);
             psFeature->eMVECfg          = (am_hal_mcuctrl_mve_e)MCUCTRL->SKU_b.SKUMVE;
 
-            trim_version_get(psFeature);
+            am_hal_mcuctrl_trim_version_get(&psFeature->ui32trimver);
             break;
 
         case AM_HAL_MCUCTRL_INFO_DEVICEID:
