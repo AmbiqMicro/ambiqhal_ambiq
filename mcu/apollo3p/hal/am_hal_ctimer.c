@@ -1154,52 +1154,42 @@ am_hal_ctimer_read(uint32_t ui32TimerNumber, uint32_t ui32TimerSegment)
     //
     ui32ClkMsk = g_ui8TmrClkSrcMask[ui8ClkSrc & _FLD2VAL(CTIMER_CTRL0_TMRA0CLK, 0xFFFFFFFF)];
 
-    if ( ui32ClkMsk != 0 )
-    {
-        if ( am_hal_burst_mode_status() == AM_HAL_BURST_MODE )
-        {
-            //
-            // In burst mode, extend the mask by 1 bit.
-            //
-            ui32ClkMsk <<= 1;
-            ui32ClkMsk |= 0x1;
-        }
+	if ( am_hal_burst_mode_status() == AM_HAL_BURST_MODE )
+	{
+		//
+		// In burst mode, extend the mask by 1 bit.
+		//
+		ui32ClkMsk <<= 1;
+		ui32ClkMsk |= 0x1;
+	}
 
-        //
-        // Invert the mask so that the unneeded bits can be masked off.
-        //
-        ui32ClkMsk = ~ui32ClkMsk;
+	//
+	// Invert the mask so that the unneeded bits can be masked off.
+	//
+	ui32ClkMsk = ~ui32ClkMsk;
 
-        //
-        // Read the register into ui32Values[].
-        //
-        am_hal_triple_read(ui32TmrAddr, ui32Values);
+	//
+	// Read the register into ui32Values[].
+	//
+	am_hal_triple_read(ui32TmrAddr, ui32Values);
 
-        //
-        // Now determine which of the three values is the correct value.
-        // If the first 2 match, then the values are both correct and we're done.
-        // Otherwise, the third value is taken to be the correct value.
-        //
-        if ( (ui32Values[0] & ui32ClkMsk)  == (ui32Values[1] & ui32ClkMsk) )
-        {
-            //
-            // If the first two values match, then neither one was a bad read.
-            // We'll take this as the current time.
-            //
-            ui32RetVal = ui32Values[1];
-        }
-        else
-        {
-            ui32RetVal = ui32Values[2];
-        }
-    }
-    else
-    {
-        //
-        // No need for the workaround.  Just read and return the register.
-        //
-        ui32RetVal = AM_REGVAL(ui32TmrAddr);
-    }
+	//
+	// Now determine which of the three values is the correct value.
+	// If the first 2 match, then the values are both correct and we're done.
+	// Otherwise, the third value is taken to be the correct value.
+	//
+	if ( (ui32Values[0] & ui32ClkMsk)  == (ui32Values[1] & ui32ClkMsk) )
+	{
+		//
+		// If the first two values match, then neither one was a bad read.
+		// We'll take this as the current time.
+		//
+		ui32RetVal = ui32Values[1];
+	}
+	else
+	{
+		ui32RetVal = ui32Values[2];
+	}
 
     //
     // Get the correct return value
