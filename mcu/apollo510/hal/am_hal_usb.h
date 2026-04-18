@@ -1046,7 +1046,7 @@ extern void am_hal_usb_interrupt_service(void *pHandle, uint32_t ui32IntrUsbStat
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern void am_hal_usb_ep_state_reset(void *pHandle, uint8_t ui8EpAddr);
+extern uint32_t am_hal_usb_ep_state_reset(void *pHandle, uint8_t ui8EpAddr);
 
 //****************************************************************************
 //
