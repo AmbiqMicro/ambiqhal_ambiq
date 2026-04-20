@@ -219,6 +219,45 @@ extern uint32_t am_hal_crc(uint32_t *pui32StartAddr,
 
 //*****************************************************************************
 //
+//! @brief  Mark the HAL CRC accumulator as initialized (prevent reseed).
+//!
+//! This helper is used by platform drivers that seed the hardware CRC RESULT
+//! register directly before performing chunked CRC computations. Calling this
+//! tells `am_hal_crc32()` not to re-seed the accumulator on subsequent calls.
+//
+//*****************************************************************************
+extern void am_hal_crc_set_init(void);
+
+//*****************************************************************************
+//
+//! @brief  Clear the HAL CRC initialization state.
+//!
+//! This helper resets the tracking state used to prevent automatic reseeding of
+//! the hardware CRC accumulator.
+//
+//*****************************************************************************
+extern void am_hal_crc_finalize(void);
+
+//*****************************************************************************
+//
+//! @brief  Find the next problematic memory boundary a CRC transfer would cross.
+//!
+//! @param  ui32StartAddr  Start address of the transfer (bytes).
+//! @param  ui32SizeBytes  Length of transfer in bytes.
+//!
+//! The function returns the address (byte) of the next boundary that would be
+//! crossed by a transfer starting at `ui32StartAddr` of length `ui32SizeBytes`.
+//! If no problematic boundary will be crossed, the returned value equals
+//! `ui32StartAddr + ui32SizeBytes`.
+//!
+//! @return Address (byte) of the next boundary or the end address if none.
+//
+//*****************************************************************************
+extern uint32_t am_hal_crc_find_next_boundary(uint32_t ui32StartAddr,
+                                              uint32_t ui32SizeBytes);
+
+//*****************************************************************************
+//
 //! @brief  Helper function to Perform exit operations for a secondary bootloader
 //
 //! @param  pImage - The address of the image to give control to

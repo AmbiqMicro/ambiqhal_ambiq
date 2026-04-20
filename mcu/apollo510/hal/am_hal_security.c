@@ -114,7 +114,7 @@ static bool g_bCrcInitialized = false;
 // Set CRC initialization state to true
 //
 //*****************************************************************************
-static inline void
+void
 am_hal_crc_set_init(void)
 {
     g_bCrcInitialized = true;
@@ -125,7 +125,7 @@ am_hal_crc_set_init(void)
 // Set CRC initialization state to false
 //
 //*****************************************************************************
-static inline void
+void
 am_hal_crc_finalize(void)
 {
     g_bCrcInitialized = false;
@@ -394,7 +394,7 @@ am_hal_crc32(uint32_t ui32StartAddr, uint32_t ui32SizeBytes, uint32_t *pui32Crc)
 // Helper function to find the next problematic boundary that would be crossed
 //
 //*****************************************************************************
-static uint32_t
+uint32_t
 am_hal_crc_find_next_boundary(uint32_t ui32StartAddr, uint32_t ui32SizeBytes)
 {
     uint32_t ui32EndAddr = ui32StartAddr + ui32SizeBytes - 1;
