@@ -4,7 +4,9 @@
 //!
 //! @brief Function select information for Apollo510 GPIOs.
 //!
-//! @addtogroup pin_ap510 Pin Functionality
+//! Date: 12/18/2025
+//!
+//! @addtogroup pin_func Pin Functionality
 //! @ingroup apollo510_hal
 //! @{
 //!
@@ -37,14 +39,17 @@
 //!
 //! @section hal_pin_configuration Configuration
 //!
-//! - @b Scripted @b Generation: Use ambiqsuite/scripts/apollo5/generate_funcsel.py
+//! - @b Scripted @b Generation: Use ambiqsuite/scripts/apollo510/generate_funcsel.py
 //! - @b Pin @b Definitions: Update pin definitions in the script as needed
 //! - @b Integration: Ensure this file is included in HAL and board builds
+//
+// This is a generated file, do not modify!
+//
 //*****************************************************************************
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -73,7 +78,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-db6e11a12 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -83,7 +88,7 @@
 
 //*****************************************************************************
 //
-// GPIO function select table.
+//! GPIO function select table.
 //
 //*****************************************************************************
 const uint16_t am_hal_pin_fn_list[AM_HAL_PIN_TOTAL_GPIOS][AM_HAL_PIN_NUMFUNCS] =

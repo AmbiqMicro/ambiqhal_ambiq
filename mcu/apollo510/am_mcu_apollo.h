@@ -165,6 +165,10 @@ extern "C"
 //
 // HAL MCU includes
 //
+#include "hal/mcu/am_hal_cc312.h"
+#include "hal/mcu/am_hal_cc312_aes.h"
+#include "hal/mcu/am_hal_cc312_aes_ccm.h"
+#include "hal/mcu/am_hal_cc312_aes_gcm.h"
 #include "hal/mcu/am_hal_bootrom_helper.h"
 #include "hal/mcu/am_hal_cachectrl.h"
 #include "hal/mcu/am_hal_clkgen.h"

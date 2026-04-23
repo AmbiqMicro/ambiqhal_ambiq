@@ -77,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p2p0-440cb810d of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-db6e11a12 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -87,6 +87,7 @@
 
 #include "am_mcu_apollo.h"
 
+//*****************************************************************************
 //
 //! For Apollo5, the USB controller is sending STATUS stage ACK automatically
 //! when DATA stage of CONTROL_TRANSFER is completed.
@@ -102,11 +103,8 @@
 //!       The USB controller will send STATUS ACK to USB Host regardless of the
 //!       selection.
 //
-// #define AM_HAL_USB_CTRL_XFR_AUTO_STATUS_STATE_ACK
-
-#ifdef __ZEPHYR__
+//*****************************************************************************
 #define AM_HAL_USB_CTRL_XFR_AUTO_STATUS_STATE_ACK
-#endif
 
 //*****************************************************************
 //

@@ -6,7 +6,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-db6e11a12 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -385,14 +385,14 @@
 #define AM_REG_OTP_INFO1_FT2_GDR1_FTVAL_Pos 0
 #define AM_REG_OTP_INFO1_FT2_GDR1_FTVAL_Msk 0xFFFFFFFF
 
-// L_TRIMCODE - L trim code value.
+// L_TRIMCODE - LVT trim code value.
 #define AM_REG_OTP_INFO1_L_TRIMCODE_TRIMCODE_S 0
 #define AM_REG_OTP_INFO1_L_TRIMCODE_TRIMCODE_M 0xFFFFFFFF
 #define AM_REG_OTP_INFO1_L_TRIMCODE_TRIMCODE(n) (((uint32_t)(n) << 0) & 0xFFFFFFFF)
 #define AM_REG_OTP_INFO1_L_TRIMCODE_TRIMCODE_Pos 0
 #define AM_REG_OTP_INFO1_L_TRIMCODE_TRIMCODE_Msk 0xFFFFFFFF
 
-// E_TRIMCODE - E trim code value.
+// E_TRIMCODE - EHVT trim code value.
 #define AM_REG_OTP_INFO1_E_TRIMCODE_TRIMCODE_S 0
 #define AM_REG_OTP_INFO1_E_TRIMCODE_TRIMCODE_M 0xFFFFFFFF
 #define AM_REG_OTP_INFO1_E_TRIMCODE_TRIMCODE(n) (((uint32_t)(n) << 0) & 0xFFFFFFFF)
