@@ -706,6 +706,14 @@ bool am_devices_cooper_get_info1_patch(am_devices_cooper_sbl_update_data_t *pInf
 
 //*****************************************************************************
 //
+//! @brief Returns true when the current boot session performed a Cooper image
+//! update and should restart before continuing with normal operation.
+//
+//*****************************************************************************
+bool am_devices_cooper_upgrade_performed(void);
+
+//*****************************************************************************
+//
 //! @brief Get cooper info0 image from local binary
 //!
 //! @param pInfo0Image
