@@ -41,6 +41,7 @@ zephyr_library_sources(hal/mcu/am_hal_cc312_aes_gcm.c)
 zephyr_library_sources(hal/mcu/am_hal_cc312_chacha.c)
 zephyr_library_sources(hal/mcu/am_hal_cc312_ecc.c)
 zephyr_library_sources(hal/mcu/am_hal_cc312_ecdsa.c)
+zephyr_library_sources(hal/mcu/am_hal_cc312_hmac.c)
 zephyr_library_sources(hal/mcu/am_hal_cc312_pka.c)
 zephyr_library_sources(hal/mcu/am_hal_cc312_sha.c)
 
