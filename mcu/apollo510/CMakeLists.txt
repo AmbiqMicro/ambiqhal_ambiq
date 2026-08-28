@@ -42,6 +42,7 @@ zephyr_library_sources(hal/mcu/am_hal_cc312_ecc.c)
 zephyr_library_sources(hal/mcu/am_hal_cc312_ecdsa.c)
 zephyr_library_sources(hal/mcu/am_hal_cc312_hmac.c)
 zephyr_library_sources(hal/mcu/am_hal_cc312_pka.c)
+zephyr_library_sources(hal/mcu/am_hal_cc312_rsa.c)
 zephyr_library_sources(hal/mcu/am_hal_cc312_sha.c)
 
 if(CONFIG_AMBIQ_HAL_USE_ADC)
