@@ -71,6 +71,24 @@ extern const am_hal_cc312_ecc_domain_t *am_hal_cc312_ecc_domain_secp256r1(void);
 
 //*****************************************************************************
 //
+//! @brief Return the secp384r1 domain parameters.
+//!
+//! @return Pointer to the static domain description.
+//
+//*****************************************************************************
+extern const am_hal_cc312_ecc_domain_t *am_hal_cc312_ecc_domain_secp384r1(void);
+
+//*****************************************************************************
+//
+//! @brief Return the secp521r1 domain parameters.
+//!
+//! @return Pointer to the static domain description.
+//
+//*****************************************************************************
+extern const am_hal_cc312_ecc_domain_t *am_hal_cc312_ecc_domain_secp521r1(void);
+
+//*****************************************************************************
+//
 //! @brief EC scalar multiplication R = scalar * P (affine coordinates).
 //!
 //! Not SCA-protected; intended for public-point operations (e.g. verify, or
