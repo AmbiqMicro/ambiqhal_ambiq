@@ -56,7 +56,9 @@ typedef enum
     CIPHER_ECB        = 0,              //!< Electronic Codebook mode.
     CIPHER_CBC        = 1,              //!< Cipher Block Chaining mode.
     CIPHER_CTR        = 2,              //!< Counter mode.
+    CIPHER_CBC_MAC    = 3,              //!< CBC-MAC mode.
     CIPHER_OFB        = 6,              //!< Output Feedback mode.
+    CIPHER_CMAC       = 7,              //!< CMAC mode.
     CIPHER_RESERVE32B = 0x7FFFFFFF      //!< Reserved for 32-bit enum.
 }
 am_hal_cc312_aes_mode_e;
@@ -391,6 +393,28 @@ extern uint32_t am_hal_aes_crypt_cbc(am_hal_cc312_aes_context_t *ctx,
                                     uint8_t iv[AES_BLOCK_SIZE],
                                     const uint8_t *input,
                                     uint8_t *output);
+
+//*****************************************************************************
+//
+//! @brief AES-CMAC over a complete message.
+//!
+//! This function computes the AES-CMAC of a message in one call. The engine
+//! derives the CMAC sub-keys itself and applies the final block padding, so
+//! the message length is unrestricted. The context must have been given an
+//! encryption key.
+//!
+//! @param ctx     - Pointer to AES context (must be initialized with key).
+//! @param length  - Length of the message in bytes.
+//! @param input   - Pointer to the message.
+//! @param mac     - Pointer to the 16-byte output buffer for the MAC.
+//!
+//! @return Standard HAL status code.
+//
+//*****************************************************************************
+extern uint32_t am_hal_aes_cmac(am_hal_cc312_aes_context_t *ctx,
+                               uint32_t length,
+                               const uint8_t *input,
+                               uint8_t mac[AES_BLOCK_SIZE]);
 
 //*****************************************************************************
 //

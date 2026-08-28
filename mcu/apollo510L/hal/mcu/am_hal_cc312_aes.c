@@ -210,16 +210,24 @@ am_hal_cc312_aes_process(am_hal_cc312_aes_context_t *ctx,
     am_hal_cc312_set_buffer_security(input_info->ui8NonSecure, output_info->ui8NonSecure);
 
     //
-    // Configure destination address and size.
+    // Configure destination address and size. The MAC modes produce no data
+    // stream - the result is left in the IV registers - so they leave the
+    // destination unconfigured.
     //
-    am_hal_cc312_set_dma_destination((am_hal_cc312_dma_addr_type_e)ctx->outputDataAddrType,
-                                     output_info->ui32DataAddr,
-                                     length);
+    if ((ctx->mode != CIPHER_CBC_MAC) && (ctx->mode != CIPHER_CMAC))
+    {
+        am_hal_cc312_set_dma_destination((am_hal_cc312_dma_addr_type_e)ctx->outputDataAddrType,
+                                         output_info->ui32DataAddr,
+                                         length);
+    }
 
     am_hal_cc312_cache_clean_invalidate_region((const void *)(uintptr_t)input_info->ui32DataAddr,
                                                length);
-    am_hal_cc312_cache_clean_invalidate_region((const void *)(uintptr_t)output_info->ui32DataAddr,
-                                               length);
+    if ((ctx->mode != CIPHER_CBC_MAC) && (ctx->mode != CIPHER_CMAC))
+    {
+        am_hal_cc312_cache_clean_invalidate_region((const void *)(uintptr_t)output_info->ui32DataAddr,
+                                                   length);
+    }
 
     //
     // Configure source address and size.
@@ -255,7 +263,8 @@ am_hal_cc312_aes_process(am_hal_cc312_aes_context_t *ctx,
     //
     // Perform DLLI-mode dummy read flush after state capture.
     //
-    if (ctx->outputDataAddrType == DLLI_ADDR)
+    if ((ctx->outputDataAddrType == DLLI_ADDR) &&
+        (ctx->mode != CIPHER_CBC_MAC) && (ctx->mode != CIPHER_CMAC))
     {
         status = am_hal_cc312_flush_dummy_dlli(output_info->ui32DataAddr, length);
         if (status != AM_HAL_STATUS_SUCCESS)
@@ -433,7 +442,9 @@ am_hal_cc312_aes_init(am_hal_cc312_aes_context_t *ctx)
         case CIPHER_ECB:
         case CIPHER_CBC:
         case CIPHER_CTR:
+        case CIPHER_CBC_MAC:
         case CIPHER_OFB:
+        case CIPHER_CMAC:
             break;
         default:
             return AM_HAL_STATUS_INVALID_ARG;
@@ -489,9 +500,17 @@ am_hal_cc312_aes_init(am_hal_cc312_aes_context_t *ctx)
     CRYPTO->AESREMAININGBYTES = 0;
 
     //
-    // Configure AES direction.
+    // Configure AES direction. The MAC modes only ever run the forward
+    // cipher, so force encrypt regardless of what the caller asked for.
     //
-    dir = ctx->dir;
+    if ((ctx->mode == CIPHER_CBC_MAC) || (ctx->mode == CIPHER_CMAC))
+    {
+        dir = CRYPTO_DIRECTION_ENCRYPT;
+    }
+    else
+    {
+        dir = ctx->dir;
+    }
 
     //
     // Configure AES control register.
@@ -500,6 +519,14 @@ am_hal_cc312_aes_init(am_hal_cc312_aes_context_t *ctx)
     CRYPTO->AESCONTROL_b.DECKEY0 = dir;
     CRYPTO->AESCONTROL_b.MODEKEY0 = ctx->mode;
     CRYPTO->AESCONTROL_b.NKKEY0 = ctx->keySizeId;
+
+    //
+    // Start the CMAC sub-key derivation.
+    //
+    if (ctx->mode == CIPHER_CMAC)
+    {
+        CRYPTO->AESCMACINIT = 0x1;
+    }
 
     return AM_HAL_STATUS_SUCCESS;
 }
@@ -574,6 +601,8 @@ am_hal_cc312_aes_load_iv(am_hal_cc312_aes_context_t *ctx)
             CRYPTO->AESCTR03 = ctx->ivBuf[3];
             break;
         case CIPHER_CBC:
+        case CIPHER_CBC_MAC:
+        case CIPHER_CMAC:
             CRYPTO->AESIV00 = ctx->ivBuf[0];
             CRYPTO->AESIV01 = ctx->ivBuf[1];
             CRYPTO->AESIV02 = ctx->ivBuf[2];
@@ -614,6 +643,8 @@ am_hal_cc312_aes_store_iv(am_hal_cc312_aes_context_t *ctx)
             ctx->ivBuf[3] = CRYPTO->AESCTR03;
             break;
         case CIPHER_CBC:
+        case CIPHER_CBC_MAC:
+        case CIPHER_CMAC:
             ctx->ivBuf[0] = CRYPTO->AESIV00;
             ctx->ivBuf[1] = CRYPTO->AESIV01;
             ctx->ivBuf[2] = CRYPTO->AESIV02;
@@ -853,6 +884,64 @@ am_hal_aes_crypt_cbc(am_hal_cc312_aes_context_t *ctx,
     // Hand back the chaining value for the next call.
     //
     memcpy(iv, ctx->ivBuf, AES_BLOCK_SIZE);
+
+    return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+// AES-CMAC over a complete message.
+//
+//*****************************************************************************
+uint32_t
+am_hal_aes_cmac(am_hal_cc312_aes_context_t *ctx,
+                uint32_t length,
+                const uint8_t *input,
+                uint8_t mac[AES_BLOCK_SIZE])
+{
+    uint32_t status;
+    am_hal_cc312_buffer_t input_info;
+    am_hal_cc312_buffer_t output_info;
+
+    if (ctx == NULL || mac == NULL)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    if (length != 0 && input == NULL)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    //
+    // CMAC only runs the forward cipher; the engine derives the sub-keys and
+    // pads the final block itself.
+    //
+    if (ctx->dir != CRYPTO_DIRECTION_ENCRYPT)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    ctx->mode = CIPHER_CMAC;
+    memset(ctx->ivBuf, 0, AES_BLOCK_SIZE);
+
+    status = am_hal_cc312_aes_set_data_buffers_info(input, &input_info,
+                                                    NULL, &output_info);
+    if (status != AM_HAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    status = am_hal_cc312_aes_process(ctx, &input_info, &output_info, length);
+    if (status != AM_HAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    //
+    // The MAC is left in the IV registers.
+    //
+    memcpy(mac, ctx->ivBuf, AES_BLOCK_SIZE);
 
     return AM_HAL_STATUS_SUCCESS;
 }
