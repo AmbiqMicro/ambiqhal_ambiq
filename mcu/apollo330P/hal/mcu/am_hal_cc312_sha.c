@@ -61,6 +61,16 @@ static const uint32_t g_am_hal_sha1_iv[5] =
 };
 
 //
+//! SHA-224 initial hash value (H0..H7). SHA-224 runs on the SHA-256 datapath
+//! and differs only in the initial value and the truncated digest.
+//
+static const uint32_t g_am_hal_sha224_iv[8] =
+{
+    0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939,
+    0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4
+};
+
+//
 //! SHA-256 initial hash value (H0..H7).
 //
 static const uint32_t g_am_hal_sha256_iv[8] =
@@ -75,13 +85,28 @@ static const uint32_t g_am_hal_sha256_iv[8] =
 //!
 //! @param mode SHA mode selector.
 //!
-//! @return 5 for SHA-1, 8 for SHA-256.
+//! @return 5 for SHA-1, 7 for SHA-224, 8 for SHA-256.
 //
 //*****************************************************************************
 static uint32_t
 am_hal_cc312_sha_digest_words(am_hal_cc312_sha_mode_e mode)
 {
-    return (mode == AM_HAL_CC312_SHA1) ? 5U : 8U;
+    uint32_t words;
+
+    switch (mode)
+    {
+        case AM_HAL_CC312_SHA1:
+            words = 5U;
+            break;
+        case AM_HAL_CC312_SHA224:
+            words = 7U;
+            break;
+        default:
+            words = 8U;
+            break;
+    }
+
+    return words;
 }
 
 //*****************************************************************************
@@ -130,6 +155,9 @@ am_hal_cc312_sha_context_init(am_hal_cc312_sha_context_t *ctx,
         case AM_HAL_CC312_SHA1:
             memcpy(ctx->digest, g_am_hal_sha1_iv, sizeof(g_am_hal_sha1_iv));
             break;
+        case AM_HAL_CC312_SHA224:
+            memcpy(ctx->digest, g_am_hal_sha224_iv, sizeof(g_am_hal_sha224_iv));
+            break;
         case AM_HAL_CC312_SHA256:
             memcpy(ctx->digest, g_am_hal_sha256_iv, sizeof(g_am_hal_sha256_iv));
             break;
@@ -174,7 +202,9 @@ am_hal_cc312_sha_init(am_hal_cc312_sha_context_t *ctx)
     //
     // Verify a valid hash mode.
     //
-    if ((ctx->mode != AM_HAL_CC312_SHA1) && (ctx->mode != AM_HAL_CC312_SHA256))
+    if ((ctx->mode != AM_HAL_CC312_SHA1) &&
+        (ctx->mode != AM_HAL_CC312_SHA224) &&
+        (ctx->mode != AM_HAL_CC312_SHA256))
     {
         return AM_HAL_STATUS_INVALID_ARG;
     }
@@ -224,6 +254,7 @@ am_hal_cc312_sha_load_state(am_hal_cc312_sha_context_t *ctx)
         case AM_HAL_CC312_SHA1:
             hashCtrl = HW_HASH_CTL_SHA1_VAL;
             break;
+        case AM_HAL_CC312_SHA224:
         case AM_HAL_CC312_SHA256:
             hashCtrl = HW_HASH_CTL_SHA256_VAL;
             break;
@@ -242,7 +273,7 @@ am_hal_cc312_sha_load_state(am_hal_cc312_sha_context_t *ctx)
     // can only be written once the hash mode has been selected.
     //
     CRYPTO->HASHCONTROL = hashCtrl;
-    if (ctx->mode == AM_HAL_CC312_SHA256)
+    if (ctx->mode != AM_HAL_CC312_SHA1)
     {
         CRYPTO->HASHH7 = ctx->digest[7];
         CRYPTO->HASHH6 = ctx->digest[6];
@@ -270,7 +301,7 @@ am_hal_cc312_sha_store_state(am_hal_cc312_sha_context_t *ctx)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 
-    if (ctx->mode == AM_HAL_CC312_SHA256)
+    if (ctx->mode != AM_HAL_CC312_SHA1)
     {
         ctx->digest[7] = CRYPTO->HASHH7;
         ctx->digest[6] = CRYPTO->HASHH6;

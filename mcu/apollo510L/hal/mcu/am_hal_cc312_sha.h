@@ -35,6 +35,7 @@ extern "C"
 //*****************************************************************************
 #define AM_HAL_SHA_BLOCK_SIZE           64  //!< HASH data block size (bytes).
 #define AM_HAL_SHA1_DIGEST_SIZE         20  //!< SHA-1 digest size (bytes).
+#define AM_HAL_SHA224_DIGEST_SIZE       28  //!< SHA-224 digest size (bytes).
 #define AM_HAL_SHA256_DIGEST_SIZE       32  //!< SHA-256 digest size (bytes).
 #define AM_HAL_SHA_MAX_DIGEST_WORDS     8   //!< Maximum digest size (32-bit words).
 
@@ -49,6 +50,7 @@ typedef enum
 {
     AM_HAL_CC312_SHA1           = 1,            //!< SHA-1   (HW_HASH_CTL_SHA1_VAL).
     AM_HAL_CC312_SHA256         = 2,            //!< SHA-256 (HW_HASH_CTL_SHA256_VAL).
+    AM_HAL_CC312_SHA224         = 3,            //!< SHA-224 (SHA-256 datapath, SHA-224 IV).
     AM_HAL_CC312_SHA_RESERVE32B = 0x7FFFFFFF    //!< Reserved for 32-bit enum.
 }
 am_hal_cc312_sha_mode_e;
