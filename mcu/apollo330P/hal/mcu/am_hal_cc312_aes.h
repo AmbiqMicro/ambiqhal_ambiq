@@ -54,6 +54,7 @@ typedef enum
 {
     CIPHER_NULL_MODE  = -1,             //!< No cipher mode selected.
     CIPHER_ECB        = 0,              //!< Electronic Codebook mode.
+    CIPHER_CBC        = 1,              //!< Cipher Block Chaining mode.
     CIPHER_CTR        = 2,              //!< Counter mode.
     CIPHER_OFB        = 6,              //!< Output Feedback mode.
     CIPHER_RESERVE32B = 0x7FFFFFFF      //!< Reserved for 32-bit enum.
@@ -362,6 +363,32 @@ extern uint32_t am_hal_aes_crypt_ctr(am_hal_cc312_aes_context_t *ctx,
                                     uint32_t length,
                                     uint32_t *nc_off,
                                     uint8_t nonce_counter[AES_BLOCK_SIZE],
+                                    const uint8_t *input,
+                                    uint8_t *output);
+
+//*****************************************************************************
+//
+//! @brief AES-CBC buffer encryption/decryption.
+//!
+//! This function performs AES-CBC (Cipher Block Chaining) mode encryption or
+//! decryption. The engine chains each block with the previous ciphertext
+//! block, so the length must be a multiple of the AES block size. On return
+//! the IV holds the chaining value for the next call.
+//!
+//! @param ctx     - Pointer to AES context (must be initialized with key).
+//! @param mode    - AM_HAL_AES_ENCRYPT or AM_HAL_AES_DECRYPT.
+//! @param length  - Length of input/output data in bytes (multiple of 16).
+//! @param iv      - Pointer to 16-byte IV, updated on return.
+//! @param input   - Pointer to input data.
+//! @param output  - Pointer to output buffer.
+//!
+//! @return Standard HAL status code.
+//
+//*****************************************************************************
+extern uint32_t am_hal_aes_crypt_cbc(am_hal_cc312_aes_context_t *ctx,
+                                    int32_t mode,
+                                    uint32_t length,
+                                    uint8_t iv[AES_BLOCK_SIZE],
                                     const uint8_t *input,
                                     uint8_t *output);
 

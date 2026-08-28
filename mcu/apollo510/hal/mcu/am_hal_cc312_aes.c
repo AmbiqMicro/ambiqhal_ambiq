@@ -431,6 +431,7 @@ am_hal_cc312_aes_init(am_hal_cc312_aes_context_t *ctx)
     switch (ctx->mode)
     {
         case CIPHER_ECB:
+        case CIPHER_CBC:
         case CIPHER_CTR:
         case CIPHER_OFB:
             break;
@@ -572,6 +573,12 @@ am_hal_cc312_aes_load_iv(am_hal_cc312_aes_context_t *ctx)
             CRYPTO->AESCTR02 = ctx->ivBuf[2];
             CRYPTO->AESCTR03 = ctx->ivBuf[3];
             break;
+        case CIPHER_CBC:
+            CRYPTO->AESIV00 = ctx->ivBuf[0];
+            CRYPTO->AESIV01 = ctx->ivBuf[1];
+            CRYPTO->AESIV02 = ctx->ivBuf[2];
+            CRYPTO->AESIV03 = ctx->ivBuf[3];
+            break;
         case CIPHER_ECB:
             //
             // ECB doesn't use IV.
@@ -605,6 +612,12 @@ am_hal_cc312_aes_store_iv(am_hal_cc312_aes_context_t *ctx)
             ctx->ivBuf[1] = CRYPTO->AESCTR01;
             ctx->ivBuf[2] = CRYPTO->AESCTR02;
             ctx->ivBuf[3] = CRYPTO->AESCTR03;
+            break;
+        case CIPHER_CBC:
+            ctx->ivBuf[0] = CRYPTO->AESIV00;
+            ctx->ivBuf[1] = CRYPTO->AESIV01;
+            ctx->ivBuf[2] = CRYPTO->AESIV02;
+            ctx->ivBuf[3] = CRYPTO->AESIV03;
             break;
         case CIPHER_ECB:
             //
@@ -773,6 +786,76 @@ am_hal_aes_crypt_ecb(am_hal_cc312_aes_context_t *ctx,
     return am_hal_cc312_aes_process(ctx, &input_info, &output_info, AES_BLOCK_SIZE);
 }
 
+
+//*****************************************************************************
+//
+// AES-CBC buffer encryption/decryption.
+//
+//*****************************************************************************
+uint32_t
+am_hal_aes_crypt_cbc(am_hal_cc312_aes_context_t *ctx,
+                     int32_t mode,
+                     uint32_t length,
+                     uint8_t iv[AES_BLOCK_SIZE],
+                     const uint8_t *input,
+                     uint8_t *output)
+{
+    uint32_t status;
+    am_hal_cc312_buffer_t input_info;
+    am_hal_cc312_buffer_t output_info;
+
+    if (length == 0)
+    {
+        return AM_HAL_STATUS_SUCCESS;
+    }
+
+    if (ctx == NULL || iv == NULL || input == NULL || output == NULL)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    //
+    // CBC chains whole blocks only.
+    //
+    if ((length % AES_BLOCK_SIZE) != 0)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    if (mode != AM_HAL_AES_DECRYPT && mode != AM_HAL_AES_ENCRYPT)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    if ((mode == AM_HAL_AES_ENCRYPT && ctx->dir != CRYPTO_DIRECTION_ENCRYPT) ||
+        (mode == AM_HAL_AES_DECRYPT && ctx->dir != CRYPTO_DIRECTION_DECRYPT))
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    ctx->mode = CIPHER_CBC;
+    memcpy(ctx->ivBuf, iv, AES_BLOCK_SIZE);
+
+    status = am_hal_cc312_aes_set_data_buffers_info(input, &input_info,
+                                                    output, &output_info);
+    if (status != AM_HAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    status = am_hal_cc312_aes_process(ctx, &input_info, &output_info, length);
+    if (status != AM_HAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    //
+    // Hand back the chaining value for the next call.
+    //
+    memcpy(iv, ctx->ivBuf, AES_BLOCK_SIZE);
+
+    return AM_HAL_STATUS_SUCCESS;
+}
 
 //*****************************************************************************
 //
