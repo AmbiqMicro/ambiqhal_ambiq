@@ -90,6 +90,10 @@ typedef enum
 {
     AM_HAL_PKA_LEN_ID_N_BITS          = 0,  //!< Modulus size (EC).
     AM_HAL_PKA_LEN_ID_N_PKA_REG_BITS  = 1,  //!< Operation size (EC).
+    AM_HAL_PKA_LEN_ID_PQ_BITS         = 2,  //!< P and Q size (RSA CRT).
+    AM_HAL_PKA_LEN_ID_PQ_PKA_REG_BITS = 3,  //!< Operation size on P and Q (RSA CRT).
+    AM_HAL_PKA_LEN_ID_AUX_PRIME_BITS  = 4,  //!< Auxiliary prime size (RSA keygen).
+    AM_HAL_PKA_LEN_ID_AUX_PRIME_PKA_REG_BITS = 5, //!< Operation size on auxiliary primes.
     AM_HAL_PKA_LEN_ID_NP_BITS         = 6,  //!< Size used for Np (Barrett) calc.
     AM_HAL_PKA_LEN_ID_MAX_BITS        = 7,  //!< Full PKA register size.
     AM_HAL_PKA_LEN_ID_MAX             = 8   //!< Out-of-range marker.
@@ -534,6 +538,22 @@ extern void am_hal_cc312_pka_copy_reg_into_be_bytes(uint8_t *dst,
 //! @param countOfRegs - Number of registers to clear.
 //
 //*****************************************************************************
+//*****************************************************************************
+//
+//! @brief Zero the tail of a PKA register.
+//!
+//! Clears from @p wordOffset to the end of the register, leaving the low
+//! words untouched. Operations that change size class - RSA CRT moves
+//! between the P/Q size and the modulus size - leave junk in the high words
+//! of a register, and the next operation at the wider size would consume it.
+//!
+//! @param reg        - Virtual register number.
+//! @param wordOffset - First 32-bit word to clear.
+//
+//*****************************************************************************
+extern void am_hal_cc312_pka_clear_reg_words(uint32_t reg,
+                                             uint32_t wordOffset);
+
 extern void am_hal_cc312_pka_clear_block_of_regs(uint32_t firstReg,
                                                  uint32_t countOfRegs);
 

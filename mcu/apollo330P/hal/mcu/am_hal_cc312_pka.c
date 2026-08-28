@@ -324,6 +324,34 @@ am_hal_cc312_pka_finish(void)
 
 //*****************************************************************************
 //
+// Zero the tail of a PKA register.
+//
+//*****************************************************************************
+void
+am_hal_cc312_pka_clear_reg_words(uint32_t reg, uint32_t wordOffset)
+{
+    uint32_t addr;
+    uint32_t regSizeWords;
+
+    //
+    // The register spans the full PKA register width, so the tail runs from
+    // the offset up to that size.
+    //
+    regSizeWords = (am_hal_cc312_pka_get_reg_size(AM_HAL_PKA_LEN_ID_MAX_BITS) +
+                    31U) / 32U;
+
+    if (regSizeWords <= wordOffset)
+    {
+        return;
+    }
+
+    addr = am_hal_cc312_pka_get_reg_address(reg) + wordOffset;
+
+    pka_hw_clear_mem(addr, regSizeWords - wordOffset);
+}
+
+//*****************************************************************************
+//
 // Clear a block of PKA registers (plus the two temp registers).
 //
 //*****************************************************************************
