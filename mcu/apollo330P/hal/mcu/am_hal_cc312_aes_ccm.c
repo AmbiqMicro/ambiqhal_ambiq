@@ -1226,7 +1226,7 @@ am_hal_aes_ccm_auth_decrypt(am_hal_cc312_aes_ccm_context_t *ctx,
                             const uint8_t *tag,
                             uint32_t tag_len)
 {
-    uint8_t localMacBuf[AM_HAL_AES_CCM_BLOCK_SIZE] __attribute__((aligned(AM_HAL_CC312_DMA_ALIGNMENT)));
+    static uint8_t localMacBuf[AM_HAL_AES_CCM_BLOCK_SIZE] __attribute__((aligned(AM_HAL_CC312_DMA_ALIGNMENT)));
 
     if (tag_len > AM_HAL_AES_CCM_BLOCK_SIZE)
     {
@@ -1289,7 +1289,7 @@ am_hal_aes_ccm_star_auth_decrypt(am_hal_cc312_aes_ccm_context_t *ctx,
                                  const uint8_t *tag,
                                  uint32_t tag_len)
 {
-    uint8_t localMacBuf[AM_HAL_AES_CCM_BLOCK_SIZE] __attribute__((aligned(AM_HAL_CC312_DMA_ALIGNMENT)));
+    static uint8_t localMacBuf[AM_HAL_AES_CCM_BLOCK_SIZE] __attribute__((aligned(AM_HAL_CC312_DMA_ALIGNMENT)));
 
     if (tag_len > AM_HAL_AES_CCM_BLOCK_SIZE)
     {

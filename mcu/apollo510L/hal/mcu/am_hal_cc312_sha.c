@@ -533,7 +533,11 @@ am_hal_cc312_sha1(const uint8_t *input,
             uint8_t output[AM_HAL_SHA1_DIGEST_SIZE])
 {
     uint32_t status;
-    am_hal_cc312_sha_context_t ctx;
+    //
+    // am_hal_cc312_sha_context_t is more strictly aligned (32 bytes) than the
+    // stack (8 bytes). Declare it static to avoid the compiler error.
+    //
+    static am_hal_cc312_sha_context_t ctx;
     //
     // Full-width scratch buffer: am_hal_cc312_sha_finish() emits a mode-sized
     // digest, so give it a worst-case (SHA-256) buffer and copy out the SHA-1
@@ -575,7 +579,11 @@ am_hal_cc312_sha256(const uint8_t *input,
               uint8_t output[AM_HAL_SHA256_DIGEST_SIZE])
 {
     uint32_t status;
-    am_hal_cc312_sha_context_t ctx;
+    //
+    // am_hal_cc312_sha_context_t is more strictly aligned (32 bytes) than the
+    // stack (8 bytes). Declare it static to avoid the compiler error.
+    //
+    static am_hal_cc312_sha_context_t ctx;
 
     status = am_hal_cc312_sha_context_init(&ctx, AM_HAL_CC312_SHA256);
     if (status != AM_HAL_STATUS_SUCCESS)
