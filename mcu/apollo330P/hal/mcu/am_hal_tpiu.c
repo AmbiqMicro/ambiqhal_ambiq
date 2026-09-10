@@ -140,23 +140,23 @@ am_hal_tpiu_config(uint32_t ui32DbgTpiuClksel,  // MCUCTRL_DBGCTRL_DBGTPIUCLKSEL
         // TPIU formatter & flush control register.
         // Disable continuous formatting (EnFCont bit1).
         //
-        TPI->FFCR = ui32FFCR;
+        TPIU->FFCR = ui32FFCR;
 
         //
         // Set the Current Parallel Port Size (note - only 1 bit can be set).
         //
-        TPI->CSPSR = ui32CSPSR;
+        TPIU->CSPSR = ui32CSPSR;
 
 
         //
         // Set the scaler value.
         //
-        TPI->ACPR = _VAL2FLD(TPI_ACPR_SWOSCALER, ui32SWOscaler);
+        TPIU->ACPR = _VAL2FLD(TPI_ACPR_SWOSCALER, ui32SWOscaler);
 
         //
         // Set the Pin Protocol.
         //
-        TPI->SPPR = _VAL2FLD( TPI_SPPR_TXMODE, ui32PinProtocol);
+        TPIU->SPPR = _VAL2FLD( TPIU_SPPR_TXMODE, ui32PinProtocol);
     }
 
     AM_CRITICAL_END
