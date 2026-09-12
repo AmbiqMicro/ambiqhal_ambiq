@@ -205,6 +205,17 @@ am_hal_cc312_aes_process(am_hal_cc312_aes_context_t *ctx,
     }
 
     //
+    // CMAC: re-derive K1/K2 after the key is loaded, then program the remaining
+    // byte count so the engine can apply the final-block sub-key. Matches Arm
+    // CC312 finalizeCmac() and am_hal_aes_ccm_process().
+    //
+    if (ctx->mode == CIPHER_CMAC)
+    {
+        CRYPTO->AESCMACINIT = 0x1;
+        CRYPTO->AESREMAININGBYTES = length;
+    }
+
+    //
     // Configure the HW with the correct data buffer attributes.
     //
     am_hal_cc312_set_buffer_security(input_info->ui8NonSecure, output_info->ui8NonSecure);
@@ -230,20 +241,32 @@ am_hal_cc312_aes_process(am_hal_cc312_aes_context_t *ctx,
     }
 
     //
-    // Configure source address and size.
+    // Empty CMAC (NIST empty-message case): kick the size-0 path instead of DMA.
+    // The engine updates the IV registers synchronously for size-0; there is no
+    // SYM DMA completion to wait on.
     //
-    am_hal_cc312_set_dma_source((am_hal_cc312_dma_addr_type_e)ctx->inputDataAddrType,
-                                input_info->ui32DataAddr,
-                                length);
-
-    //
-    // Set DMA completion bit in IRR and wait.
-    //
-    irr_val |= CRYPTO_HOSTRGFIRR_SYMDMACOMPLETED_Msk;
-    status = am_hal_cc312_wait_interrupt(irr_val);
-    if (status != AM_HAL_STATUS_SUCCESS)
+    if ((ctx->mode == CIPHER_CMAC) && (length == 0U))
     {
-        goto process_exit;
+        CRYPTO->AESCMACSIZE0KICK = 0x1;
+    }
+    else
+    {
+        //
+        // Configure source address and size.
+        //
+        am_hal_cc312_set_dma_source((am_hal_cc312_dma_addr_type_e)ctx->inputDataAddrType,
+                                    input_info->ui32DataAddr,
+                                    length);
+
+        //
+        // Set DMA completion bit in IRR and wait.
+        //
+        irr_val |= CRYPTO_HOSTRGFIRR_SYMDMACOMPLETED_Msk;
+        status = am_hal_cc312_wait_interrupt(irr_val);
+        if (status != AM_HAL_STATUS_SUCCESS)
+        {
+            goto process_exit;
+        }
     }
 
     //
@@ -521,12 +544,9 @@ am_hal_cc312_aes_init(am_hal_cc312_aes_context_t *ctx)
     CRYPTO->AESCONTROL_b.NKKEY0 = ctx->keySizeId;
 
     //
-    // Start the CMAC sub-key derivation.
+    // CMAC K1/K2 derivation must run after the key is in the engine (see
+    // am_hal_cc312_aes_process). Do not AESCMACINIT here.
     //
-    if (ctx->mode == CIPHER_CMAC)
-    {
-        CRYPTO->AESCMACINIT = 0x1;
-    }
 
     return AM_HAL_STATUS_SUCCESS;
 }
