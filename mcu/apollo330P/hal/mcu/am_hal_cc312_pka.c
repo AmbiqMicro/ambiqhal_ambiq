@@ -394,7 +394,17 @@ am_hal_cc312_pka_copy_data_into_reg(uint32_t dstReg,
 
     pka_hw_load_block(currAddr, src, sizeWords);
 
+    //
+    // PKA SRAM is addressed in 64-bit words. An odd 32-bit count leaves a
+    // half-word that must be zeroed - same padding the BE loader already did.
+    // Without it, leftover bits in NP (3 words) or Poly1305 DATA (5 words)
+    // corrupt Barrett reduction / modular add.
+    //
     alignedWords = pka_round_up_to_pka_word(sizeWords);
+    if (alignedWords > sizeWords)
+    {
+        pka_hw_clear_mem(currAddr + sizeWords, alignedWords - sizeWords);
+    }
     currAddr += alignedWords;
 
     regSize = am_hal_cc312_pka_get_reg_size(lenId);
