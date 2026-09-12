@@ -62,14 +62,6 @@ static const uint32_t g_am_hal_poly_prime[POLY_PRIME_WORDS] =
 };
 
 //
-//! Barrett tag for the prime. Constant because the modulus is.
-//
-static const uint32_t g_am_hal_poly_np[3] =
-{
-    0x00000000, 0x00000000, 0x00000080
-};
-
-//
 //! Clamp applied to r, per RFC 8439: the top four bits of each of the four
 //! words are cleared, and the low two bits of the upper three.
 //
@@ -193,16 +185,17 @@ poly_start(const uint8_t *key)
     }
 
     //
-    // The prime and its tag are fixed, so both are loaded rather than
-    // derived.
+    // Load the prime and derive Barrett Np (same path as X25519 / Ed25519).
+    // A hardcoded tag used to be loaded with a 3-word LE copy that left the
+    // PKA half-word dirty - calc_np clears and builds Np correctly.
     //
     am_hal_cc312_pka_copy_data_into_reg(POLY_REG_PRIME,
                                         AM_HAL_PKA_LEN_ID_MAX_BITS,
                                         g_am_hal_poly_prime,
                                         POLY_PRIME_WORDS);
-    am_hal_cc312_pka_copy_data_into_reg(POLY_REG_NP,
-                                        AM_HAL_PKA_LEN_ID_MAX_BITS,
-                                        g_am_hal_poly_np, 3);
+    am_hal_cc312_pka_calc_np(AM_HAL_PKA_LEN_ID_N_BITS, POLY_PRIME_BITS,
+                             POLY_REG_PRIME, POLY_REG_NP,
+                             POLY_REG_DATA, POLY_REG_ACC);
 
     //
     // r is clamped before use; s is taken as it stands.
@@ -220,6 +213,8 @@ poly_start(const uint8_t *key)
 
     AM_HAL_PKA_CLEAR(AM_HAL_PKA_LEN_ID_MAX_BITS, POLY_REG_ACC);
     AM_HAL_PKA_CLEAR(AM_HAL_PKA_LEN_ID_MAX_BITS, POLY_REG_DATA);
+    AM_HAL_PKA_CLEAR(AM_HAL_PKA_LEN_ID_MAX_BITS, AM_HAL_PKA_REG_T0);
+    AM_HAL_PKA_CLEAR(AM_HAL_PKA_LEN_ID_MAX_BITS, AM_HAL_PKA_REG_T1);
 
     am_hal_cc312_context_clear(r, sizeof(r));
     am_hal_cc312_context_clear(s, sizeof(s));
@@ -240,9 +235,10 @@ poly_finish(uint8_t *mac)
 
     //
     // The final addition of s is a plain add: the result is taken modulo
-    // 2^128 by keeping only the low four words.
+    // 2^128 by keeping only the low four words. Use the full register length
+    // so a carry out of bit 129 is not lost before that truncation.
     //
-    AM_HAL_PKA_ADD(AM_HAL_PKA_LEN_ID_N_BITS, POLY_REG_ACC,
+    AM_HAL_PKA_ADD(AM_HAL_PKA_LEN_ID_MAX_BITS, POLY_REG_ACC,
                    POLY_REG_ACC, POLY_REG_KEY_S);
 
     am_hal_cc312_pka_copy_data_from_reg(acc, POLY_BLOCK_WORDS, POLY_REG_ACC);
@@ -270,6 +266,7 @@ am_hal_cc312_poly1305(const uint8_t *key,
                       uint8_t *mac)
 {
     uint32_t status;
+    uint8_t keyLocal[AM_HAL_POLY1305_KEY_SIZE];
 
     if ((key == NULL) || (mac == NULL))
     {
@@ -281,7 +278,13 @@ am_hal_cc312_poly1305(const uint8_t *key,
         return AM_HAL_STATUS_INVALID_ARG;
     }
 
-    status = poly_start(key);
+    //
+    // Clamp/load from SRAM. Keys are often const in MRAM.
+    //
+    memcpy(keyLocal, key, AM_HAL_POLY1305_KEY_SIZE);
+
+    status = poly_start(keyLocal);
+    am_hal_cc312_context_clear(keyLocal, sizeof(keyLocal));
     if (status != AM_HAL_STATUS_SUCCESS)
     {
         return status;
@@ -308,6 +311,7 @@ am_hal_cc312_poly1305_aead(const uint8_t *key,
 {
     uint32_t status;
     uint8_t lengths[AM_HAL_POLY1305_BLOCK_SIZE];
+    uint8_t keyLocal[AM_HAL_POLY1305_KEY_SIZE];
 
     if ((key == NULL) || (mac == NULL))
     {
@@ -320,7 +324,10 @@ am_hal_cc312_poly1305_aead(const uint8_t *key,
         return AM_HAL_STATUS_INVALID_ARG;
     }
 
-    status = poly_start(key);
+    memcpy(keyLocal, key, AM_HAL_POLY1305_KEY_SIZE);
+
+    status = poly_start(keyLocal);
+    am_hal_cc312_context_clear(keyLocal, sizeof(keyLocal));
     if (status != AM_HAL_STATUS_SUCCESS)
     {
         return status;
