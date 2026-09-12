@@ -103,28 +103,6 @@ am_hal_cc312_ecc_domain_secp256r1(void)
     return &g_am_hal_ecc_secp256r1;
 }
 
-//*****************************************************************************
-//
-// Return the secp384r1 domain parameters.
-//
-//*****************************************************************************
-const am_hal_cc312_ecc_domain_t *
-am_hal_cc312_ecc_domain_secp384r1(void)
-{
-    return &g_am_hal_ecc_secp384r1;
-}
-
-//*****************************************************************************
-//
-// Return the secp521r1 domain parameters.
-//
-//*****************************************************************************
-const am_hal_cc312_ecc_domain_t *
-am_hal_cc312_ecc_domain_secp521r1(void)
-{
-    return &g_am_hal_ecc_secp521r1;
-}
-
 static const am_hal_cc312_ecc_domain_t g_am_hal_ecc_secp384r1 =
 {
     .modSizeInBits = 384,
@@ -184,6 +162,28 @@ static const am_hal_cc312_ecc_domain_t g_am_hal_ecc_secp521r1 =
               0x2C7D1BD9, 0x5C8A5FB4, 0x9A3BC004, 0x39296A78,
               0x00000118},
 };
+
+//*****************************************************************************
+//
+// Return the secp384r1 domain parameters.
+//
+//*****************************************************************************
+const am_hal_cc312_ecc_domain_t *
+am_hal_cc312_ecc_domain_secp384r1(void)
+{
+    return &g_am_hal_ecc_secp384r1;
+}
+
+//*****************************************************************************
+//
+// Return the secp521r1 domain parameters.
+//
+//*****************************************************************************
+const am_hal_cc312_ecc_domain_t *
+am_hal_cc312_ecc_domain_secp521r1(void)
+{
+    return &g_am_hal_ecc_secp521r1;
+}
 
 //*****************************************************************************
 //
