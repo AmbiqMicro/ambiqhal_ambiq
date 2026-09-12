@@ -17,10 +17,11 @@
 //! own routine because specialising the same formula to P = Q removes four
 //! multiplications.
 //!
-//! Every operation reduces. The unreduced multiply is available and would be
-//! faster, but the sequence below is an operation-for-operation image of a
-//! model checked against RFC 8032, and keeping every intermediate a proper
-//! residue is what makes that correspondence hold.
+//! Point add/double follow the CryptoCell Edwards PKA sequence: ordinary
+//! ADD/SUB through 4*p (so intermediates stay positive) and Barrett multiply
+//! without a final reduction (MOD_MUL_NFR). Modular ADD/SUB on partially
+//! reduced field elements is what the earlier ladder got wrong; X25519 and
+//! Arm's pka_ec_edw.c use the same N4 + NFR pattern.
 //!
 //! Scalar multiplication is a ladder that performs one addition and one
 //! doubling per bit whatever the bit is, selecting between the two
@@ -72,25 +73,26 @@
 #define ED_REG_N        AM_HAL_PKA_REG_N    //!< Modulus in use.
 #define ED_REG_NP       AM_HAL_PKA_REG_NP   //!< Barrett tag for it.
 #define ED_REG_D2       2                   //!< 2 * d, the curve constant.
-#define ED_REG_T1       3                   //!< Temporary.
-#define ED_REG_T2       4                   //!< Temporary.
-#define ED_REG_T3       5                   //!< Temporary.
-#define ED_REG_T4       6                   //!< Temporary.
-#define ED_REG_T5       7                   //!< Temporary.
-#define ED_REG_T6       8                   //!< Temporary.
-#define ED_REG_AX       9                   //!< First accumulator.
-#define ED_REG_AY       10
-#define ED_REG_AZ       11
-#define ED_REG_AT       12
-#define ED_REG_BX       13                  //!< Second accumulator.
-#define ED_REG_BY       14
-#define ED_REG_BZ       15
-#define ED_REG_BT       16
-#define ED_REG_QX       17                  //!< Input point.
-#define ED_REG_QY       18
-#define ED_REG_QZ       19
-#define ED_REG_QT       20
-#define ED_REG_COUNT    21                  //!< Registers to scrub on exit.
+#define ED_REG_N4       3                   //!< 4 * p, for signed field adds.
+#define ED_REG_T3       4                   //!< Temporary (Arm EDW naming).
+#define ED_REG_T4       5                   //!< Temporary.
+#define ED_REG_T5       6                   //!< Temporary.
+#define ED_REG_T6       7                   //!< Temporary.
+#define ED_REG_T1       8                   //!< Scratch (scalar path / encode).
+#define ED_REG_T2       9                   //!< Scratch (scalar path / encode).
+#define ED_REG_AX       10                  //!< First accumulator.
+#define ED_REG_AY       11
+#define ED_REG_AZ       12
+#define ED_REG_AT       13
+#define ED_REG_BX       14                  //!< Second accumulator.
+#define ED_REG_BY       15
+#define ED_REG_BZ       16
+#define ED_REG_BT       17
+#define ED_REG_QX       18                  //!< Input point.
+#define ED_REG_QY       19
+#define ED_REG_QZ       20
+#define ED_REG_QT       21
+#define ED_REG_COUNT    22                  //!< Registers to scrub on exit.
 //! @}
 
 //*****************************************************************************
@@ -335,6 +337,13 @@ ed_pka_start(const uint32_t *modulus, uint32_t modulusBits)
     am_hal_cc312_pka_calc_np(ED_LEN_N, modulusBits, ED_REG_N, ED_REG_NP,
                              ED_REG_T1, ED_REG_T2);
 
+    //
+    // 4 * p for the Edwards ADD/SUB sequence. Harmless on the scalar-modulus
+    // session, which never reads N4.
+    //
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_N4, ED_REG_N, ED_REG_N);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_N4, ED_REG_N4, ED_REG_N4);
+
     return AM_HAL_STATUS_SUCCESS;
 }
 
@@ -354,86 +363,67 @@ ed_pka_finish(void)
 //
 //! @brief Double a point in extended coordinates.
 //!
-//! The addition formula specialised to P = Q. Every source coordinate has
-//! been consumed into a temporary before the first result is written, so the
-//! destination may be the source.
+//! Arm PkaEcEdwDoublExtExt: ADD/SUB through 4*p and MOD_MUL_NFR. In-place is
+//! safe - T is consumed before it is overwritten with E.
 //
 //*****************************************************************************
 static void
 ed_double(const ed_point_t *r, const ed_point_t *p)
 {
-    AM_HAL_PKA_MOD_SUB(ED_LEN_N, ED_REG_T3, p->y, p->x);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T5, ED_REG_T3, ED_REG_T3);
-    AM_HAL_PKA_MOD_ADD(ED_LEN_N, ED_REG_T3, p->x, p->y);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T6, ED_REG_T3, ED_REG_T3);
-
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T3, p->t, p->t);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T3, ED_REG_T3, ED_REG_D2);
-    AM_HAL_PKA_MOD_ADD(ED_LEN_N, ED_REG_T4, p->z, p->z);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T4, ED_REG_T4, p->z);
-
-    AM_HAL_PKA_MOD_SUB(ED_LEN_N, ED_REG_T1, ED_REG_T6, ED_REG_T5);
-    AM_HAL_PKA_MOD_ADD(ED_LEN_N, ED_REG_T6, ED_REG_T6, ED_REG_T5);
-    AM_HAL_PKA_MOD_SUB(ED_LEN_N, ED_REG_T5, ED_REG_T4, ED_REG_T3);
-    AM_HAL_PKA_MOD_ADD(ED_LEN_N, ED_REG_T4, ED_REG_T4, ED_REG_T3);
-
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, r->x, ED_REG_T1, ED_REG_T5);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, r->y, ED_REG_T4, ED_REG_T6);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, r->z, ED_REG_T5, ED_REG_T4);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, r->t, ED_REG_T1, ED_REG_T6);
+    AM_HAL_PKA_SUB(ED_LEN_REG, ED_REG_T3, ED_REG_N4, p->x);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T3, ED_REG_T3, p->y);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, ED_REG_T5, ED_REG_T3, ED_REG_T3);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T3, p->y, p->x);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, ED_REG_T6, ED_REG_T3, ED_REG_T3);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, ED_REG_T3, p->t, p->t);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, ED_REG_T3, ED_REG_T3, ED_REG_D2);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T4, p->z, p->z);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, ED_REG_T4, ED_REG_T4, p->z);
+    AM_HAL_PKA_SUB(ED_LEN_REG, r->t, ED_REG_N4, ED_REG_T5);
+    AM_HAL_PKA_ADD(ED_LEN_REG, r->t, r->t, ED_REG_T6);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T6, ED_REG_T6, ED_REG_T5);
+    AM_HAL_PKA_SUB(ED_LEN_REG, ED_REG_T5, ED_REG_N4, ED_REG_T3);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T5, ED_REG_T5, ED_REG_T4);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T4, ED_REG_T4, ED_REG_T3);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, r->x, r->t, ED_REG_T5);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, r->y, ED_REG_T4, ED_REG_T6);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, r->z, ED_REG_T5, ED_REG_T4);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, r->t, r->t, ED_REG_T6);
 }
 
 //*****************************************************************************
 //
 //! @brief Add two points in extended coordinates.
 //!
-//! Complete for this curve, so it is also correct when the two points are
-//! equal or one of them is the neutral element. All four results are built
-//! in temporaries and copied out last, so the destination may be either
-//! source.
+//! Arm PkaEcEdwAddExtExtExt. Complete for this curve. Destination may alias
+//! either source; T2 is read before dest->t is overwritten with E.
 //
 //*****************************************************************************
 static void
 ed_add(const ed_point_t *r, const ed_point_t *p, const ed_point_t *q)
 {
-    //
-    // A = (Y1 - X1)(Y2 - X2), B = (Y1 + X1)(Y2 + X2).
-    //
-    AM_HAL_PKA_MOD_SUB(ED_LEN_N, ED_REG_T1, p->y, p->x);
-    AM_HAL_PKA_MOD_SUB(ED_LEN_N, ED_REG_T2, q->y, q->x);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T1, ED_REG_T1, ED_REG_T2);
-    AM_HAL_PKA_MOD_ADD(ED_LEN_N, ED_REG_T2, p->y, p->x);
-    AM_HAL_PKA_MOD_ADD(ED_LEN_N, ED_REG_T3, q->y, q->x);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T2, ED_REG_T2, ED_REG_T3);
-
-    //
-    // C = 2d * T1 * T2, D = 2 * Z1 * Z2.
-    //
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T3, p->t, ED_REG_D2);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T3, ED_REG_T3, q->t);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T4, p->z, q->z);
-    AM_HAL_PKA_MOD_ADD(ED_LEN_N, ED_REG_T4, ED_REG_T4, ED_REG_T4);
-
-    //
-    // E = B - A, F = D - C, G = D + C, H = B + A.
-    //
-    AM_HAL_PKA_MOD_SUB(ED_LEN_N, ED_REG_T5, ED_REG_T2, ED_REG_T1);
-    AM_HAL_PKA_MOD_SUB(ED_LEN_N, ED_REG_T6, ED_REG_T4, ED_REG_T3);
-    AM_HAL_PKA_MOD_ADD(ED_LEN_N, ED_REG_T4, ED_REG_T4, ED_REG_T3);
-    AM_HAL_PKA_MOD_ADD(ED_LEN_N, ED_REG_T2, ED_REG_T2, ED_REG_T1);
-
-    //
-    // X3 = E*F, Z3 = F*G, Y3 = G*H, T3 = E*H.
-    //
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T1, ED_REG_T5, ED_REG_T6);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T6, ED_REG_T6, ED_REG_T4);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T3, ED_REG_T4, ED_REG_T2);
-    AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T5, ED_REG_T5, ED_REG_T2);
-
-    AM_HAL_PKA_COPY(ED_LEN_REG, r->x, ED_REG_T1);
-    AM_HAL_PKA_COPY(ED_LEN_REG, r->y, ED_REG_T3);
-    AM_HAL_PKA_COPY(ED_LEN_REG, r->z, ED_REG_T6);
-    AM_HAL_PKA_COPY(ED_LEN_REG, r->t, ED_REG_T5);
+    AM_HAL_PKA_SUB(ED_LEN_REG, ED_REG_T3, ED_REG_N4, p->x);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T3, ED_REG_T3, p->y);
+    AM_HAL_PKA_SUB(ED_LEN_REG, ED_REG_T4, ED_REG_N4, q->x);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T4, ED_REG_T4, q->y);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, ED_REG_T5, ED_REG_T3, ED_REG_T4);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T3, p->y, p->x);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T4, q->y, q->x);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, ED_REG_T6, ED_REG_T3, ED_REG_T4);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, ED_REG_T3, p->t, q->t);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, ED_REG_T3, ED_REG_T3, ED_REG_D2);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T4, p->z, p->z);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, ED_REG_T4, ED_REG_T4, q->z);
+    AM_HAL_PKA_SUB(ED_LEN_REG, r->t, ED_REG_N4, ED_REG_T5);
+    AM_HAL_PKA_ADD(ED_LEN_REG, r->t, r->t, ED_REG_T6);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T6, ED_REG_T6, ED_REG_T5);
+    AM_HAL_PKA_SUB(ED_LEN_REG, ED_REG_T5, ED_REG_N4, ED_REG_T3);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T5, ED_REG_T5, ED_REG_T4);
+    AM_HAL_PKA_ADD(ED_LEN_REG, ED_REG_T4, ED_REG_T4, ED_REG_T3);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, r->x, r->t, ED_REG_T5);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, r->y, ED_REG_T4, ED_REG_T6);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, r->z, ED_REG_T5, ED_REG_T4);
+    AM_HAL_PKA_MOD_MUL_NFR(ED_LEN_N, r->t, r->t, ED_REG_T6);
 }
 
 //*****************************************************************************
@@ -509,16 +499,21 @@ ed_encode(const ed_point_t *p, uint8_t *out)
 
     //
     // Affine: divide through by Z. The field prime is prime, so the inverse
-    // is an exponentiation and needs no separate inversion path.
+    // is an exponentiation and needs no separate inversion path. Barrett
+    // products can sit in [0, 2p); REDUCE brings them into [0, p) before
+    // the wire encoding, matching am_hal_cc312_ecc_jacobian_to_affine().
     //
     AM_HAL_PKA_MOD_INV_W_EXP(ED_REG_T2, p->z, ED_REG_T1);
     AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T3, p->x, ED_REG_T2);
     AM_HAL_PKA_MOD_MUL(ED_LEN_N, ED_REG_T4, p->y, ED_REG_T2);
+    AM_HAL_PKA_REDUCE(ED_LEN_N, ED_REG_T3, ED_REG_T3);
+    AM_HAL_PKA_REDUCE(ED_LEN_N, ED_REG_T4, ED_REG_T4);
 
     parity = am_hal_cc312_pka_read_word_from_reg(ED_REG_T3, 0) & 1U;
 
     am_hal_cc312_pka_copy_data_from_reg(words, ED_WORDS, ED_REG_T4);
     ed_words_to_bytes(out, words);
+    out[ED_BYTES - 1U] &= 0x7FU;
     out[ED_BYTES - 1U] |= (uint8_t)(parity << 7);
 
     am_hal_cc312_context_clear(words, sizeof(words));
@@ -798,8 +793,15 @@ ed_expand_seed(const uint8_t *seed, uint8_t *scalar, uint8_t *prefix)
 {
     uint32_t status;
     uint8_t digest[AM_HAL_SHA512_DIGEST_SIZE];
+    uint8_t seedLocal[AM_HAL_ED25519_SEED_SIZE];
 
-    status = am_hal_cc312_sha512(AM_HAL_CC312_SHA512, seed,
+    //
+    // Hash from a SRAM copy. Callers often pass a const seed in MRAM/XIP;
+    // keeping the digest input in local RAM matches the rest of the HAL.
+    //
+    memcpy(seedLocal, seed, AM_HAL_ED25519_SEED_SIZE);
+
+    status = am_hal_cc312_sha512(AM_HAL_CC312_SHA512, seedLocal,
                                  AM_HAL_ED25519_SEED_SIZE, digest);
     if (status != AM_HAL_STATUS_SUCCESS)
     {
@@ -815,6 +817,7 @@ ed_expand_seed(const uint8_t *seed, uint8_t *scalar, uint8_t *prefix)
 
 expand_exit:
     am_hal_cc312_context_clear(digest, sizeof(digest));
+    am_hal_cc312_context_clear(seedLocal, sizeof(seedLocal));
 
     return status;
 }
