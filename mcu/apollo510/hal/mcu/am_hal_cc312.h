@@ -201,22 +201,103 @@ am_hal_cc312_set_data_flow(uint32_t flow_config)
 
 //*****************************************************************************
 //
-// Clear/initialize a crypto context structure.
+//! @name Secure memory helpers
+//! @{
+//!
+//! Libc memcpy/memset are not safe for secret material in this HAL:
+//!
+//! - Compilers may dead-store-eliminate a memset that clears a buffer the
+//!   abstract machine no longer reads (the classic "wiped key" bug).
+//! - Inlined word copies from memcpy may likewise be proven unused and
+//!   deleted, or reordered relative to later scrubbing.
+//!
+//! These helpers touch every byte through volatile pointers so the accesses
+//! remain observable, matching the intent of mbedtls_platform_zeroize() for
+//! wipe and the same discipline for copy/set. They do not use the CryptoCell
+//! datapath; use am_hal_cc312_bypass_copy() when DMA ownership is required.
+//!
+//! CC312 .c translation units define AM_HAL_CC312_C before including
+//! am_mcu_apollo.h so the libc names below are redirected to these helpers.
+//!
+//*****************************************************************************
+
+//*****************************************************************************
+//
+//! @brief Copy @e n bytes from @e src to @e dst via volatile byte accesses.
+//
+//*****************************************************************************
+static inline void *
+am_hal_cc312_memcpy(void *dst, const void *src, uint32_t n)
+{
+    volatile uint8_t *d;
+    const volatile uint8_t *s;
+
+    if ((dst == NULL) || (src == NULL) || (n == 0U))
+    {
+        return dst;
+    }
+
+    d = (volatile uint8_t *)dst;
+    s = (const volatile uint8_t *)src;
+
+    while (n-- != 0U)
+    {
+        *d++ = *s++;
+    }
+
+    return dst;
+}
+
+//*****************************************************************************
+//
+//! @brief Set @e n bytes at @e dst to @e c via volatile byte accesses.
+//
+//*****************************************************************************
+static inline void *
+am_hal_cc312_memset(void *dst, int c, uint32_t n)
+{
+    volatile uint8_t *d;
+    uint8_t v;
+
+    if ((dst == NULL) || (n == 0U))
+    {
+        return dst;
+    }
+
+    d = (volatile uint8_t *)dst;
+    v = (uint8_t)c;
+
+    while (n-- != 0U)
+    {
+        *d++ = v;
+    }
+
+    return dst;
+}
+
+//*****************************************************************************
+//
+//! @brief Wipe @e size bytes at @e ctx (secure zeroize).
+//!
+//! Equivalent to am_hal_cc312_memset(ctx, 0, size). Prefer this name at
+//! scrub sites so reviewers see intentional secret destruction.
 //
 //*****************************************************************************
 static inline void
 am_hal_cc312_context_clear(void *ctx, uint32_t size)
 {
-    if (ctx != NULL)
-    {
-        volatile uint8_t *p = (volatile uint8_t *)ctx;
-
-        while (size-- != 0U)
-        {
-            *p++ = 0U;
-        }
-    }
+    (void)am_hal_cc312_memset(ctx, 0, size);
 }
+
+#ifdef AM_HAL_CC312_C
+#undef memcpy
+#undef memset
+#define memcpy(dst, src, n) am_hal_cc312_memcpy((dst), (src), (uint32_t)(n))
+#define memset(dst, c, n)   am_hal_cc312_memset((dst), (c), (uint32_t)(n))
+#endif
+
+//! @}
+//*****************************************************************************
 
 //*****************************************************************************
 //

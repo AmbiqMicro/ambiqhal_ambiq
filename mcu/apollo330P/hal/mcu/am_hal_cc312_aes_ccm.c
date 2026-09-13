@@ -48,6 +48,9 @@
 //
 //*****************************************************************************
 
+// Redirect libc memcpy/memset to volatile helpers in am_hal_cc312.h.
+#define AM_HAL_CC312_C
+
 #include "am_mcu_apollo.h"
 #include <string.h>
 #include <stdint.h>
