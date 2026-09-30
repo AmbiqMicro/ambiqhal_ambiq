@@ -264,6 +264,25 @@ extern uint32_t am_hal_cc312_aes_setkey_dec(am_hal_cc312_aes_context_t *ctx,
 
 //*****************************************************************************
 //
+//! @brief Select a hardware AES key (no software key bytes).
+//!
+//! Configures the context to use a CryptoCell hardware key source such as
+//! RKEK (device root / HUK). The key is sampled into the engine at
+//! am_hal_cc312_aes_load_key() time via HOSTCRYPTOKEYSEL + AESSK.
+//!
+//! @param ctx      - Pointer to AES context structure.
+//! @param key_type - Hardware key type (currently RKEK_KEY only).
+//! @param key_bits - Key size in bits (RKEK uses 256).
+//!
+//! @return Standard HAL status code.
+//
+//*****************************************************************************
+extern uint32_t am_hal_cc312_aes_setkey_hw(am_hal_cc312_aes_context_t *ctx,
+                                           am_hal_cc312_aes_key_type_e key_type,
+                                           uint32_t key_bits);
+
+//*****************************************************************************
+//
 //! @brief Initialize AES hardware registers for current context.
 //!
 //! @param ctx - Pointer to AES context structure.

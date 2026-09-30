@@ -567,6 +567,30 @@ am_hal_cc312_aes_load_key(am_hal_cc312_aes_context_t *ctx)
         return AM_HAL_STATUS_INVALID_ARG;
     }
 
+    if (ctx->cryptoKey == RKEK_KEY)
+    {
+        //
+        // Sample the device root key (KDR/HUK) into AES_KEY0. Matches Arm
+        // CryptoCell LoadAesKey(RKEK): check KDR integrity and fatal-error
+        // lockout, select RKEK, then pulse AESSK. Key bytes never enter SW.
+        //
+        if (CRYPTO->LCSREG_b.ERRORKDRZEROCNT != 0U)
+        {
+            return AM_HAL_STATUS_FAIL;
+        }
+
+        if (CRYPTO->HOSTAOLOCKBITS_b.HOSTFATALERR != 0U)
+        {
+            return AM_HAL_STATUS_FAIL;
+        }
+
+        CRYPTO->HOSTCRYPTOKEYSEL_b.SELCRYPTOKEY =
+            CRYPTO_HOSTCRYPTOKEYSEL_SELCRYPTOKEY_RKEK;
+        CRYPTO->AESSK = 1U;
+
+        return AM_HAL_STATUS_SUCCESS;
+    }
+
     if (ctx->cryptoKey != USER_KEY)
     {
         return AM_HAL_STATUS_INVALID_ARG;
@@ -782,6 +806,47 @@ am_hal_cc312_aes_setkey_enc(am_hal_cc312_aes_context_t *ctx,
                             uint32_t key_bits)
 {
     return am_hal_cc312_aes_setkey(ctx, key, key_bits, CRYPTO_DIRECTION_ENCRYPT);
+}
+
+//*****************************************************************************
+//
+// Select a hardware AES key (no software key material).
+//
+//*****************************************************************************
+uint32_t
+am_hal_cc312_aes_setkey_hw(am_hal_cc312_aes_context_t *ctx,
+                           am_hal_cc312_aes_key_type_e key_type,
+                           uint32_t key_bits)
+{
+    uint32_t status;
+    uint32_t keySizeId;
+
+    if (ctx == NULL)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    //
+    // Only RKEK is enabled via load_key today; other HW key types remain
+    // reserved until KCP/KCE/etc. provisioning paths are validated.
+    //
+    if (key_type != RKEK_KEY)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    status = am_hal_cc312_validate_key_size(key_bits, &keySizeId);
+    if (status != AM_HAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    ctx->dir = CRYPTO_DIRECTION_ENCRYPT;
+    ctx->cryptoKey = key_type;
+    ctx->keySizeId = (am_hal_cc312_aes_key_size_e)keySizeId;
+    memset(ctx->keyBuf, 0, sizeof(ctx->keyBuf));
+
+    return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************

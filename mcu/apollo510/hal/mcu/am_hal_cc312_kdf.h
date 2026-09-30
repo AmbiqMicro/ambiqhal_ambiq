@@ -116,6 +116,44 @@ extern uint32_t am_hal_cc312_hkdf(am_hal_cc312_sha_mode_e mode,
                                   uint8_t *okm,
                                   uint32_t okmLen);
 
+//*****************************************************************************
+//
+//! Maximum label / context / derived-key sizes for root CMAC-KDF
+//! (NIST SP 800-108 / Arm CC util KDF).
+//
+//*****************************************************************************
+#define AM_HAL_CC312_ROOT_KDF_MAX_LABEL_BYTES      64U
+#define AM_HAL_CC312_ROOT_KDF_MAX_CONTEXT_BYTES    64U
+#define AM_HAL_CC312_ROOT_KDF_MAX_DERIVED_BYTES    4080U
+#define AM_HAL_CC312_ROOT_KDF_CMAC_BYTES           16U
+
+//*****************************************************************************
+//
+//! @brief NIST SP 800-108 counter-mode KDF using AES-CMAC and the device
+//!        root key (RKEK / HUK).
+//!
+//! Semantics match Arm
+//! mbedtls_util_key_derivation_cmac(CC_UTIL_ROOT_KEY, NULL, ...).
+//! The HUK is never software-readable; the derived key is written to
+//! @p derivedKey (caller must zeroize after use).
+//!
+//! @param pLabel       - Purpose label (1..64 bytes, required).
+//! @param labelSize    - Label length in bytes.
+//! @param pContext     - Context / domain-separation data (1..64 bytes).
+//! @param contextSize  - Context length in bytes.
+//! @param pDerivedKey  - Output buffer for derived keying material.
+//! @param derivedKeySize - Number of bytes to derive (1..4080).
+//!
+//! @return Standard HAL status code.
+//
+//*****************************************************************************
+extern uint32_t am_hal_cc312_root_kdf_cmac(const uint8_t *pLabel,
+                                           uint32_t labelSize,
+                                           const uint8_t *pContext,
+                                           uint32_t contextSize,
+                                           uint8_t *pDerivedKey,
+                                           uint32_t derivedKeySize);
+
 #ifdef __cplusplus
 }
 #endif

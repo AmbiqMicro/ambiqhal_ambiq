@@ -257,6 +257,121 @@ hkdf_exit:
 
 //*****************************************************************************
 //
+// Root-key (RKEK/HUK) CMAC-KDF — NIST SP 800-108 counter mode.
+// Matches mbedtls_util_key_derivation_cmac(CC_UTIL_ROOT_KEY, ...).
+//
+//*****************************************************************************
+uint32_t
+am_hal_cc312_root_kdf_cmac(const uint8_t *pLabel,
+                           uint32_t labelSize,
+                           const uint8_t *pContext,
+                           uint32_t contextSize,
+                           uint8_t *pDerivedKey,
+                           uint32_t derivedKeySize)
+{
+    uint32_t status;
+    uint32_t i;
+    uint32_t dataSize;
+    uint32_t numIteration;
+    uint32_t iterationNum;
+    uint32_t bytesToCopy;
+    uint32_t remaining;
+    uint32_t lengthBits;
+    am_hal_cc312_aes_context_t aesCtx;
+    uint8_t dataIn[1U + AM_HAL_CC312_ROOT_KDF_MAX_LABEL_BYTES + 1U +
+                   AM_HAL_CC312_ROOT_KDF_MAX_CONTEXT_BYTES + 2U];
+    uint8_t cmac[AM_HAL_CC312_ROOT_KDF_CMAC_BYTES];
+
+    if ((pDerivedKey == NULL) || (derivedKeySize == 0U) ||
+        (derivedKeySize > AM_HAL_CC312_ROOT_KDF_MAX_DERIVED_BYTES))
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    if ((pLabel == NULL) || (labelSize == 0U) ||
+        (labelSize > AM_HAL_CC312_ROOT_KDF_MAX_LABEL_BYTES))
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    if ((pContext == NULL) || (contextSize == 0U) ||
+        (contextSize > AM_HAL_CC312_ROOT_KDF_MAX_CONTEXT_BYTES))
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    //
+    // dataIn = counter || Label || 0x00 || Context || L
+    // where L is the derived key length in bits (1 or 2 bytes).
+    //
+    lengthBits = derivedKeySize * 8U;
+    i = 1U;
+    memcpy(&dataIn[i], pLabel, labelSize);
+    i += labelSize;
+    dataIn[i++] = 0x00;
+    memcpy(&dataIn[i], pContext, contextSize);
+    i += contextSize;
+
+    if (lengthBits > 0xFFU)
+    {
+        dataIn[i++] = (uint8_t)((lengthBits >> 8) & 0xFFU);
+        dataIn[i++] = (uint8_t)(lengthBits & 0xFFU);
+    }
+    else
+    {
+        dataIn[i++] = (uint8_t)lengthBits;
+    }
+
+    dataSize = i;
+    numIteration = (derivedKeySize + AM_HAL_CC312_ROOT_KDF_CMAC_BYTES - 1U) /
+                   AM_HAL_CC312_ROOT_KDF_CMAC_BYTES;
+    remaining = derivedKeySize;
+
+    status = am_hal_cc312_aes_context_init(&aesCtx);
+    if (status != AM_HAL_STATUS_SUCCESS)
+    {
+        return status;
+    }
+
+    //
+    // Arm util uses 256-bit RKEK for ROOT_KEY CMAC-KDF.
+    //
+    status = am_hal_cc312_aes_setkey_hw(&aesCtx, RKEK_KEY, 256U);
+    if (status != AM_HAL_STATUS_SUCCESS)
+    {
+        (void)am_hal_cc312_aes_free(&aesCtx);
+        return status;
+    }
+
+    for (iterationNum = 0U; iterationNum < numIteration; iterationNum++)
+    {
+        dataIn[0] = (uint8_t)(iterationNum + 1U);
+
+        status = am_hal_aes_cmac(&aesCtx, dataSize, dataIn, cmac);
+        if (status != AM_HAL_STATUS_SUCCESS)
+        {
+            am_hal_cc312_context_clear(cmac, sizeof(cmac));
+            am_hal_cc312_context_clear(dataIn, sizeof(dataIn));
+            (void)am_hal_cc312_aes_free(&aesCtx);
+            return status;
+        }
+
+        bytesToCopy = (remaining > AM_HAL_CC312_ROOT_KDF_CMAC_BYTES) ?
+                      AM_HAL_CC312_ROOT_KDF_CMAC_BYTES : remaining;
+        memcpy(&pDerivedKey[iterationNum * AM_HAL_CC312_ROOT_KDF_CMAC_BYTES],
+               cmac, bytesToCopy);
+        remaining -= bytesToCopy;
+    }
+
+    am_hal_cc312_context_clear(cmac, sizeof(cmac));
+    am_hal_cc312_context_clear(dataIn, sizeof(dataIn));
+    (void)am_hal_cc312_aes_free(&aesCtx);
+
+    return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
 // End Doxygen group.
 //! @}
 //
