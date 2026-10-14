@@ -135,6 +135,44 @@ static nema_ringbuffer_t ring_buffer_str = {
 	.offset = 0,
 };
 
+/**
+ * @brief True if @p last_executed_cl_id has reached @p cl_id in 24-bit
+ *        circular CL-ID space (SUBMISSION_ID_MASK).
+ *
+ * Uses RFC 1982-style serial comparison so wrap from 0xFFFFFF → 0 does not
+ * look like "already complete" (which would free GC resources too early) or
+ * stall waits forever.
+ */
+static bool nema_cl_id_reached(int last_executed_cl_id, int cl_id)
+{
+	uint32_t last;
+	uint32_t id;
+	uint32_t dist;
+
+	/* Match nema_get_cl_status / legacy signed wait: negative target IDs are
+	 * treated as already complete (e.g. unbound / never-submitted CL).
+	 */
+	if (cl_id < 0) {
+		return true;
+	}
+
+	if (last_executed_cl_id < 0) {
+		return false;
+	}
+
+	last = (uint32_t)last_executed_cl_id & SUBMISSION_ID_MASK;
+	id = (uint32_t)cl_id & SUBMISSION_ID_MASK;
+	dist = (last - id) & SUBMISSION_ID_MASK;
+
+	/* Pending depth is << 2^23, so the forward half-space is unambiguous. */
+	return dist < ((SUBMISSION_ID_MASK + 1U) / 2U);
+}
+
+/* Defined with the GC implementation below; used on retain-state wake. */
+static int nema_next_submission_cl_id(void);
+static void nema_gc_flush_submitted(void);
+static void nema_gc_rebase_pending(int new_cl_id);
+
 int32_t nema_sys_init(void)
 {
 #if defined(GPU_AMBIQ_ZEPHYR_DRIVER)
@@ -193,13 +231,15 @@ int nema_wait_irq_cl(int cl_id)
 	// Set a generous retry counter to prevent infinite loops.
 	int max_retries = CONFIG_NEMAGFX_WAIT_GPU_IRQ_TIMEOUT_MS * 2;
 
-	while (gpu_ambiq_get_last_cl_id(gpu_dev) < cl_id) {
+	while (!nema_cl_id_reached(gpu_ambiq_get_last_cl_id(gpu_dev), cl_id)) {
 		ret = nema_wait_irq();
 		if (ret != 0) {
 			// If waiting for the interrupt itself timed out, return the error.
 			LOG_ERR("nema_wait_irq timed out while waiting for CL ID %d", cl_id);
 			return ret;
 		}
+
+		nema_gc_run();
 
 		if (--max_retries == 0) {
 			LOG_ERR("Timeout waiting for command list ID %d to complete. Last "
@@ -208,6 +248,8 @@ int nema_wait_irq_cl(int cl_id)
 			return -ETIMEDOUT;
 		}
 	}
+
+	nema_gc_run();
 
 	return 0;
 }
@@ -430,9 +472,10 @@ am_hal_status_e nema_get_cl_status(int32_t cl_id)
 		return AM_HAL_STATUS_SUCCESS;
 	}
 
-	// Check if the last completed ID is greater than or equal to the requested ID.
+	/* Circular compare: last completed ID has reached the requested ID. */
 	int last_completed_cl_id = (int)nema_reg_read(NEMA_CLID);
-	if (last_completed_cl_id >= cl_id) {
+
+	if (nema_cl_id_reached(last_completed_cl_id, cl_id)) {
 		return AM_HAL_STATUS_SUCCESS;
 	}
 
@@ -443,20 +486,33 @@ bool nema_rb_check_full(void)
 {
 	uint32_t total_pending_cl = 0;
 	int last_executed_cl_id = gpu_ambiq_get_last_cl_id(gpu_dev);
+	int last_submission_id = ring_buffer_str.last_submission_id;
+	uint32_t max_pending = CONFIG_NEMAGFX_MAX_PENDING_COMMAND_LIST;
 
-	if (ring_buffer_str.last_submission_id > last_executed_cl_id) {
-		total_pending_cl = ring_buffer_str.last_submission_id - last_executed_cl_id;
-	} else if (ring_buffer_str.last_submission_id < last_executed_cl_id) {
-		// This handles the wrap-around case for the command list IDs.
-		if (last_executed_cl_id == 0xFFFFFF) {
-			total_pending_cl = ring_buffer_str.last_submission_id + 1;
+	if (last_submission_id < 0) {
+		/* Ring buffer not initialized / nothing submitted yet. */
+		total_pending_cl = 0;
+	} else if (last_executed_cl_id < 0) {
+		/* last_cl_id is -1 after init, gpu_ambiq_reset_last_cl_id(), or PM
+		 * resume. After rb_reset, last_submission_id is the number of CLs
+		 * submitted in this epoch. Cap at max_pending so a stale pre-reset
+		 * ID reports full until the first completion IRQ updates
+		 * last_cl_id — keeps backpressure without a permanent wedge.
+		 */
+		if (nema_reg_read(NEMA_STATUS) == 0) {
+			total_pending_cl = 0;
 		} else {
-			// This case should ideally not be reached if CL IDs wrap around correctly.
-			LOG_WRN("Unexpected CL ID wrap-around state.");
+			uint32_t candidate = (uint32_t)last_submission_id;
+
+			total_pending_cl = (candidate > max_pending) ? max_pending : candidate;
 		}
+	} else {
+		/* Circular distance covers the 0xFFFFFF → 0 wrap case. */
+		total_pending_cl = ((uint32_t)last_submission_id - (uint32_t)last_executed_cl_id) &
+				   SUBMISSION_ID_MASK;
 	}
 
-	return (total_pending_cl >= CONFIG_NEMAGFX_MAX_PENDING_COMMAND_LIST);
+	return (total_pending_cl >= max_pending);
 }
 
 int nema_get_last_cl_id(void)
@@ -549,8 +605,19 @@ uint32_t nemagfx_power_control(am_hal_sysctrl_power_state_e ePowerState, bool bR
 
 					nema_get_error(); // clear raster graphics error
 
+					/* GPU was idle before power-down: submitted CLs are done.
+					 * Free their GC nodes, but keep buffers owned by a CL
+					 * still being built on the CPU (see nema_gc_add).
+					 */
+					nema_gc_flush_submitted();
 					gpu_ambiq_reset_last_cl_id(gpu_dev);
 					nema_reinit();
+					/* rb_reset restarts submission IDs (0 or -1). Always
+					 * retarget kept in-build nodes to the next CL id for
+					 * this epoch — same rule as nema_gc_add — so gc_run
+					 * cannot free early or stall on pre-reset IDs.
+					 */
+					nema_gc_rebase_pending(nema_next_submission_cl_id());
 					ui32ErrorCode = nema_get_error();
 					if (ui32ErrorCode != NEMA_ERR_NO_ERROR) {
 						ui32Status = AM_HAL_STATUS_FAIL;
@@ -613,4 +680,212 @@ uint32_t nemagfx_power_control(am_hal_sysctrl_power_state_e ePowerState, bool bR
 	}
 
 	return ui32Status;
+}
+
+//*****************************************************************************
+//
+// NemaGFX Garbage Collection (GC) Mechanism Implementation
+//
+//*****************************************************************************
+
+/**
+ * @brief Node for NemaGFX Garbage Collection
+ */
+typedef struct nema_gc_node_t {
+	int cl_id;               // Command List ID when submitted
+	void *resource;          // Pointer to the memory to free
+	void (*free_cb)(void *); // Callback to free the memory
+	struct nema_gc_node_t *next; // Pointer to the next node in the list
+} nema_gc_node_t;
+
+/* Static pool avoids host-heap failure that would force a choice between
+ * leaking GPU-owned buffers and freeing them while still referenced by a CL.
+ */
+#define NEMA_GC_NODE_POOL_SIZE (CONFIG_NEMAGFX_MAX_PENDING_COMMAND_LIST * 4)
+
+static nema_gc_node_t nema_gc_pool[NEMA_GC_NODE_POOL_SIZE];
+static nema_gc_node_t *nema_gc_free_list;
+static bool nema_gc_pool_ready;
+
+// The head and tail of the custom linked list for tracking GC nodes
+static nema_gc_node_t *nema_gc_head = NULL;
+static nema_gc_node_t *nema_gc_tail = NULL;
+
+static void nema_gc_pool_init_once(void)
+{
+	int i;
+
+	if (nema_gc_pool_ready) {
+		return;
+	}
+
+	for (i = 0; i < NEMA_GC_NODE_POOL_SIZE - 1; i++) {
+		nema_gc_pool[i].next = &nema_gc_pool[i + 1];
+	}
+	nema_gc_pool[NEMA_GC_NODE_POOL_SIZE - 1].next = NULL;
+	nema_gc_free_list = &nema_gc_pool[0];
+	nema_gc_pool_ready = true;
+}
+
+static nema_gc_node_t *nema_gc_node_alloc(void)
+{
+	nema_gc_node_t *node;
+
+	nema_gc_pool_init_once();
+	node = nema_gc_free_list;
+	if (node != NULL) {
+		nema_gc_free_list = node->next;
+		node->next = NULL;
+	}
+
+	return node;
+}
+
+static void nema_gc_node_free(nema_gc_node_t *node)
+{
+	node->next = nema_gc_free_list;
+	nema_gc_free_list = node;
+}
+
+void nema_gc_add(void *resource, void (*free_cb)(void *))
+{
+	nema_gc_node_t *node;
+
+	nema_gc_run(); // Opportunistically run GC to keep memory footprint low
+
+	if (!resource || !free_cb) {
+		return;
+	}
+
+	node = nema_gc_node_alloc();
+	while (node == NULL && nema_reg_read(NEMA_STATUS) != 0) {
+		/* Reclaim completed nodes as the GPU retires CLs. Stop if the
+		 * wait times out — do not free_cb (use-after-free); prefer leak.
+		 */
+		if (nema_wait_irq() != 0) {
+			break;
+		}
+		nema_gc_run();
+		node = nema_gc_node_alloc();
+	}
+
+	if (node == NULL) {
+		/* Resource may still be referenced by the CL being built or in
+		 * flight — do not free_cb here (use-after-free). Prefer leak.
+		 */
+		LOG_ERR("nema_gc_add: GC node pool exhausted");
+		return;
+	}
+
+	/* Tag with the CL id that the in-build list will get on submit. */
+	node->cl_id = nema_next_submission_cl_id();
+	node->resource = resource;
+	node->free_cb = free_cb;
+	node->next = NULL;
+
+	// Append to the tail of the list in O(1) time
+	if (nema_gc_tail == NULL) {
+		nema_gc_head = node;
+		nema_gc_tail = node;
+	} else {
+		nema_gc_tail->next = node;
+		nema_gc_tail = node;
+	}
+}
+
+void nema_gc_run(void)
+{
+	int last_executed_cl_id = nema_get_last_cl_id();
+
+	/* List is ordered by submission time; only the head can become ready next.
+	 * Use circular CL-ID compare so wrap-around cannot free early or stall.
+	 */
+	while (nema_gc_head != NULL) {
+		nema_gc_node_t *curr = nema_gc_head;
+
+		if (!nema_cl_id_reached(last_executed_cl_id, curr->cl_id)) {
+			break;
+		}
+
+		nema_gc_head = curr->next;
+		curr->free_cb(curr->resource);
+		nema_gc_node_free(curr);
+	}
+
+	if (nema_gc_head == NULL) {
+		nema_gc_tail = NULL;
+	}
+}
+
+void nema_gc_reset(void)
+{
+	// Forcefully free everything remaining in the GC list and clear the list.
+	// Ensure you have waited for GPU idle before triggering this!
+	nema_gc_node_t *curr = nema_gc_head;
+
+	while (curr) {
+		nema_gc_node_t *next = curr->next;
+
+		curr->free_cb(curr->resource);
+		nema_gc_node_free(curr);
+		curr = next;
+	}
+
+	nema_gc_head = NULL;
+	nema_gc_tail = NULL;
+}
+
+/**
+ * @brief CL id the next submit will use (24-bit wrap; -1 → 0).
+ *
+ * Must stay identical for nema_gc_add tagging and post-reinit rebase.
+ */
+static int nema_next_submission_cl_id(void)
+{
+	uint32_t next_submission_id = (uint32_t)(nema_get_last_submission_id() + 1);
+
+	return next_submission_id > SUBMISSION_ID_MASK ? 0 : (int)next_submission_id;
+}
+
+/**
+ * @brief Free GC nodes for CLs that were already submitted.
+ *
+ * Safe only when the GPU is idle (all submitted work is done). Nodes tagged
+ * with the next submission id (CL still being built) stay on the list.
+ */
+static void nema_gc_flush_submitted(void)
+{
+	int last_sub = ring_buffer_str.last_submission_id;
+
+	if (last_sub < 0) {
+		return;
+	}
+
+	while (nema_gc_head != NULL) {
+		nema_gc_node_t *curr = nema_gc_head;
+
+		if (!nema_cl_id_reached(last_sub, curr->cl_id)) {
+			break;
+		}
+
+		nema_gc_head = curr->next;
+		curr->free_cb(curr->resource);
+		nema_gc_node_free(curr);
+	}
+
+	if (nema_gc_head == NULL) {
+		nema_gc_tail = NULL;
+	}
+}
+
+/**
+ * @brief Retarget remaining GC nodes after submission IDs restart (rb_reset).
+ */
+static void nema_gc_rebase_pending(int new_cl_id)
+{
+	nema_gc_node_t *node;
+
+	for (node = nema_gc_head; node != NULL; node = node->next) {
+		node->cl_id = new_cl_id;
+	}
 }
