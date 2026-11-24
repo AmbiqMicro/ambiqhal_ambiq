@@ -47,7 +47,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision v5.2.0-zephyr-685438d73f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -86,6 +86,17 @@
 #include <math.h>
 
 #define FORWARD_REVERSE     1                   // 1 for forward, 4 for reverse.
+
+// AFE trim bit definitions (private)
+#define AM_HAL_DSI_AFETRIM0_CONTDET_DIS     0x00000800U  // trim_0<11>: disable contention detector
+#define AM_HAL_DSI_AFETRIM0_B1_PLUS         0x00020000U  // trim_0<17>: required for B1 and later silicon
+#define AM_HAL_DSI_AFETRIM1_DATA_LANE_EN    0x00002000U  // trim_1<13>: data lane enable
+#define AM_HAL_DSI_AFETRIM1_ULPS_DATALANE  0x00000200U  // trim_1<9>: ULPS data lane control
+#define AM_HAL_DSI_AFETRIM2_1LANE_CFG       0x00480000U  // trim_2<22,19>: 1-lane TX configuration
+#define AM_HAL_DSI_AFETRIM2_2LANE_CFG       0x00400000U  // trim_2<22>: power-up Data Lane 1 for 2-lane TX
+#define AM_HAL_DSI_AFETRIM2_ULPS_LP_EN      0x0000001CU  // trim_2<2:4>: ULPS LP lines enable
+#define AM_HAL_DSI_AFETRIM3_ULPS_PATTERN    0x00030000U  // trim_3<16:17>: ULPS pattern enable
+#define AM_HAL_DSI_AFETRIM3_ULPS_LP_EN2    0x00038000U  // trim_3<15:17>: ULPS LP lines enable
 
 //
 // Transmitted length of any Low-Power state period
@@ -155,7 +166,7 @@ typedef struct
     // This structure members are valid or not.
     //
     bool                                    bisValid;
-}am_hal_dsi_state_t;
+} am_hal_dsi_state_t;
 
 //*****************************************************************************
 //
@@ -268,6 +279,7 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
         double fTEotMax = 105 + FORWARD_REVERSE * 12 * fUI;
 
         //
+        // MIPI D-PHY 1.x 6.4.1: T_HS-PREPARE = 40ns + 4*UI (min), 85ns + 6*UI (max).
         // The minimum time of HS prepare is 40 + 4 * UI, the maximum is 85 + 6 * UI.
         //
         fDataTHSPrepareMin = 40 + 4 * fUI;
@@ -321,6 +333,7 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
         ui8DataHSPrep = ui8S7 << 6 | ui8R7;
 
         //
+        // MIPI D-PHY 1.x 6.4.1: T_HS-PREPARE + T_HS-ZERO >= 145ns + 10*UI.
         // The minimum value of HS prepare + HS zero is 145 + 10 * UI.
         //
         fDataTHSPrepareAddTHSZeroMin = 145 + 10 * fUI;
@@ -328,6 +341,7 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
         ui8DataHSZero = (int8_t)ceil(fTemp);
 
         //
+        // MIPI D-PHY 1.x 6.4.1: T_HS-TRAIL = max(n*8*UI, 60ns + n*4*UI) where n=1 for forward.
         // The max(n*8*UI,  60 ns + n*4*UI) value is the minimum time of HS trail
         //
         fDataTHSTrailMin = (FORWARD_REVERSE * 8 * fUI > 60 + FORWARD_REVERSE * 4 * fUI) ? FORWARD_REVERSE * 8 * fUI : 60 + FORWARD_REVERSE * 4 * fUI;
@@ -337,10 +351,12 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
         fDataTHSTrailMax = (fTEotMax - 2 * 8 * fUI) / 8 / fUI;
         ui8DataHSTrail = (i8Temp + (int8_t)floor(fDataTHSTrailMax)) / 2;
 
+        // MIPI D-PHY 1.x 6.4.1: T_HS-EXIT >= 100ns.
         fTemp = (fDataTHSExitMin - 8 * fUI) / 8 / fUI;
         ui8DataHSExit = (int8_t)ceil(fTemp);
 
         //
+        // MIPI D-PHY 1.x 6.5.1: T_CLK-PREPARE = 38ns (min), 95ns (max).
         // Calculate DPHY CLK timing parameters
         //
         //
@@ -398,23 +414,22 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
 
 //*****************************************************************************
 //
-// Initialize the DSI
+// Initialize the DSI for Command mode or video mode.
 //
 //*****************************************************************************
 uint32_t
-am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui32FreqTrim, bool bSendUlpsPattern)
+am_hal_dsi_config(am_hal_dsi_config_t *pDSIConfig)
 {
-
     //
     // ui32DSIFuncPrg_REG (DATA_WIDTH, RESERVED, FMT_VIDEO, CH_NO_CM, CH_NO_VM, DATA_LANE_CNT)
     //                     [15:13]     [12:10]   [9:7]      [6:5]     [4:3]     [2:0]
     //
-    uint32_t ui32DSIFuncPrg = 0;
+    uint32_t ui32DSIFuncPrg = 0, ui32DSICLKFreq = 0, ui32PixelFormat = 0, ui32VideoMode = 0;
 
     //
     // check number of lanes parameters
     //
-    switch (ui8LanesNum)
+    switch (pDSIConfig->ui8LanesNum)
     {
         case DSI_DSIFUNCPRG_DATALANES_DATAL1:
             //
@@ -438,25 +453,64 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
     }
 
     //
+    // virtual channel 0 for video mode
+    //
+    ui32DSIFuncPrg |= _VAL2FLD(DSI_DSIFUNCPRG_CHNUMVM, DSI_DSIFUNCPRG_CHNUMVM_VVCH0);
+
+    //
+    // Virtual channel 0 for command mode
+    //
+    ui32DSIFuncPrg |= _VAL2FLD(DSI_DSIFUNCPRG_CHNUMCMODE, DSI_DSIFUNCPRG_CHNUMCMODE_VCCH0);
+
+    //
+    // Supported format in video mode
+    //
+    switch (pDSIConfig->eFormat)
+    {
+        case DSI_FORMAT_RGB565:
+          ui32DSIFuncPrg |= _VAL2FLD(DSI_DSIFUNCPRG_SUPCOLVIDMODE, DSI_DSIFUNCPRG_SUPCOLVIDMODE_FMTVMODE1);
+          ui32PixelFormat = 16;
+          break;
+
+        case DSI_FORMAT_RGB666:
+          ui32DSIFuncPrg |= _VAL2FLD(DSI_DSIFUNCPRG_SUPCOLVIDMODE, DSI_DSIFUNCPRG_SUPCOLVIDMODE_FMTVMODE2);
+          ui32PixelFormat = 18;
+          break;
+
+        case DSI_FORMAT_RGB666_LOOSELY:
+          ui32DSIFuncPrg |= _VAL2FLD(DSI_DSIFUNCPRG_SUPCOLVIDMODE, DSI_DSIFUNCPRG_SUPCOLVIDMODE_FMTVMODE3); //RGB666 loosely packed format.
+          ui32PixelFormat = 24;
+          break;
+
+        case DSI_FORMAT_RGB888:
+          ui32DSIFuncPrg |= _VAL2FLD(DSI_DSIFUNCPRG_SUPCOLVIDMODE, DSI_DSIFUNCPRG_SUPCOLVIDMODE_FMTVMODE4);
+          ui32PixelFormat = 24;
+          break;
+
+        default:
+          break;
+    }
+
+    //
     // check DBI bus width parameter
     //
-    switch (ui8DBIBusWidth)
+    switch (pDSIConfig->eDBIBusWidth)
     {
-        case 8:
+        case AM_HAL_DSI_DBI_WIDTH_8:
             //
             // The 8bit Interface of DBI-Type B output formats
             //
             ui32DSIFuncPrg |= _VAL2FLD(DSI_DSIFUNCPRG_REGNAME, DSI_DSIFUNCPRG_REGNAME_8BIT);
         break;
 
-        case 9:
+        case AM_HAL_DSI_DBI_WIDTH_9:
             //
             // The 9bit Interface of DBI-Type B output formats
             //
             ui32DSIFuncPrg |= _VAL2FLD(DSI_DSIFUNCPRG_REGNAME, DSI_DSIFUNCPRG_REGNAME_9BIT);
         break;
 
-        case 16:
+        case AM_HAL_DSI_DBI_WIDTH_16:
             //
             // There are two options for 16 bit interface of DBI-Type B output formats. We use option 1 as the default.
             //
@@ -492,12 +546,12 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
     //
     // write into TURN AROUND TIMEOUT REGISTER
     //
-    DSI->TURNARNDTO = _VAL2FLD(DSI_TURNARNDTO_TIMOUT, 0x1F);
+    DSI->TURNARNDTO = _VAL2FLD(DSI_TURNARNDTO_TIMOUT, 0x3F);
 
     //
     // write into DEVICE RESET TIMER REGISTER
     //
-    DSI->DEVICERESETTIMER = _VAL2FLD(DSI_DEVICERESETTIMER_TIMOUT, 0xFF);
+    DSI->DEVICERESETTIMER = _VAL2FLD(DSI_DEVICERESETTIMER_TIMOUT, 0xFFFF);
 
     //
     // write into HIGH TO LOW SWITCH COUNT REGISTER
@@ -505,27 +559,121 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
     DSI->DATALANEHILOSWCNT = _VAL2FLD(DSI_DATALANEHILOSWCNT_DATALHLSWCNT, 0xFFFF);
     DSI->INITCNT = _VAL2FLD(DSI_INITCNT_MSTR, 0x7d0);
 
+    //
+    // check video mode format
+    //
+    switch (pDSIConfig->eMode)
+    {
+        case VIDEO_MODE_NON_BURST_PULSE:
+          DSI->VIDEOMODEFMT = _VAL2FLD(DSI_VIDEOMODEFMT_VIDEMDFMT, DSI_VIDEOMODEFMT_VIDEMDFMT_NONBURSTPULSE);
+          ui32VideoMode = 1;
+          break;
+
+        case VIDEO_MODE_NON_BURST_EVENTS:
+          DSI->VIDEOMODEFMT = _VAL2FLD(DSI_VIDEOMODEFMT_VIDEMDFMT, DSI_VIDEOMODEFMT_VIDEMDFMT_NONBURSTEVENTS);
+          ui32VideoMode = 1;
+          break;
+
+        case VIDEO_MODE_BURST:
+          DSI->VIDEOMODEFMT = _VAL2FLD(DSI_VIDEOMODEFMT_VIDEMDFMT, DSI_VIDEOMODEFMT_VIDEMDFMT_BURST);
+          ui32VideoMode = 2;
+          break;
+
+        default:
+          break;
+    }
+
+    if (fabs(pDSIConfig->fPCLKFreq) > 0.01)
+    {
+        //
+        // Calculate frequency of the txbyteclkhs
+        //
+        float fRatio = (float)ui32PixelFormat * ui32VideoMode / (2 * pDSIConfig->ui8LanesNum) / 4;
+        //
+        // DPI Resolution
+        //
+        DSI->DPIRESOLUTION = _VAL2FLD(DSI_DPIRESOLUTION_DPIRESOLUTION, pDSIConfig->ui32VACT << 16 | pDSIConfig->ui32HACT);
+
+        DSI->HSYNCCNT = _VAL2FLD(DSI_HSYNCCNT_HORZCNT, (uint32_t)lroundf(pDSIConfig->ui32HSA * fRatio));
+        DSI->HORIZBKPORCHCNT = _VAL2FLD(DSI_HORIZBKPORCHCNT_HORZBKPCNT, (uint32_t)lroundf(pDSIConfig->ui32HBP * fRatio));
+        DSI->HORIZFPORCHCNT = _VAL2FLD(DSI_HORIZFPORCHCNT_HORZFTPCNT, (uint32_t)lroundf(pDSIConfig->ui32HFP * fRatio));
+        DSI->HORZACTIVEAREACNT = _VAL2FLD(DSI_HORZACTIVEAREACNT_HORACTCNT, (uint32_t)lroundf(pDSIConfig->ui32HACT * fRatio));
+
+        DSI->VSYNCCNT = _VAL2FLD(DSI_VSYNCCNT_VSC, pDSIConfig->ui32VSA);
+        DSI->VERTBKPORCHCNT = _VAL2FLD(DSI_VERTBKPORCHCNT_VBPSC, pDSIConfig->ui32VBP);
+        DSI->VERTFPORCHCNT = _VAL2FLD(DSI_VERTFPORCHCNT_VFPSC, pDSIConfig->ui32VFP);
+
+        //
+        // Calculate DSI clock frequency.
+        //
+        fRatio *= pDSIConfig->fPCLKFreq * 4;
+
+        if (CLKGEN->DISPCLKCTRL_b.PLLCLKSEL == CLKGEN_DISPCLKCTRL_PLLCLKSEL_HFRC_12MHz)
+        {
+            //
+            // Check whether the DSI frequency can be divided by the PLL reference frequency or not.
+            //
+            if ( fmodf(fRatio, 12.0f) > 0.01f && (12.0f - fmodf(fRatio, 12.0f)) > 0.01f )
+            {
+                return AM_HAL_STATUS_INVALID_ARG;
+            }
+
+            ui32DSICLKFreq = (uint32_t)fRatio;
+            //
+            // Check whether the DSI frequency exceeds the limit.
+            //
+            if (ui32DSICLKFreq > 384)
+            {
+                return AM_HAL_STATUS_OUT_OF_RANGE;
+            }
+            //
+            // Convert the DSI frequency to the trim value used by IP.
+            //
+            if (ui32DSICLKFreq / 12 % 2)
+            {
+                pDSIConfig->eFreqTrim = (am_hal_dsi_freq_trim_e)(ui32DSICLKFreq / 24 + 0x40);
+            }
+            else
+            {
+                pDSIConfig->eFreqTrim = (am_hal_dsi_freq_trim_e)(ui32DSICLKFreq / 24);
+            }
+        }
+        else
+        {
+            //
+            // The software only supports HFRC12 until now.
+            //
+            return AM_HAL_STATUS_INVALID_ARG;
+        }
+    }
+
+    DSI->POLARITY = _VAL2FLD(DSI_POLARITY_PBITS, 0);
+    DSI->ERRORAUTORCOV = 0;
+    DSI->DATALANEPOLSWAP = _VAL2FLD(DSI_DATALANEPOLSWAP_DATALNPOLSWAP, 0);
+
     DSI->CLKEOT = _VAL2FLD(DSI_CLKEOT_CLOCK, 1);
     DSI->CLKEOT |= _VAL2FLD(DSI_CLKEOT_EOT, 1);
-    am_hal_dsi_timing(ui32FreqTrim);
-    DSI->AFETRIM2 = _VAL2FLD(DSI_AFETRIM2_AFETRIM2, 0x10000000);
-    if (ui8LanesNum == 1)
-    {
-        DSI->AFETRIM2 |= _VAL2FLD(DSI_AFETRIM2_AFETRIM2, 0x00480000); // trim_2<22> and trim_2<19> need to be set for DSI TX in 1-lane configuration.
-    }
-    else if (ui8LanesNum == 2)
-    {
-        DSI->AFETRIM2 |= _VAL2FLD(DSI_AFETRIM2_AFETRIM2, 0x00400000); // clear power down bit for Data lane 1 to support DSI TX in 2lanes configuration.
-    }
-    DSI->AFETRIM1 |= _VAL2FLD(DSI_AFETRIM1_AFETRIM1, 0x00002000); // trim_1<13> needs to be set
+    DSI->CLKEOT |= _VAL2FLD(DSI_CLKEOT_BTA, 0x1);
 
-    if (bSendUlpsPattern)
+    am_hal_dsi_timing((uint32_t)pDSIConfig->eFreqTrim);
+    DSI->AFETRIM2 = _VAL2FLD(DSI_AFETRIM2_AFETRIM2, 0x10000000);
+    if (pDSIConfig->ui8LanesNum == 1)
     {
-        DSI->AFETRIM3 |= _VAL2FLD(DSI_AFETRIM3_AFETRIM3, 0x00030000);
+        DSI->AFETRIM2 |= _VAL2FLD(DSI_AFETRIM2_AFETRIM2, AM_HAL_DSI_AFETRIM2_1LANE_CFG); // trim_2<22> and trim_2<19> need to be set for DSI TX in 1-lane configuration.
+    }
+    else if (pDSIConfig->ui8LanesNum == 2)
+    {
+        DSI->AFETRIM2 |= _VAL2FLD(DSI_AFETRIM2_AFETRIM2, AM_HAL_DSI_AFETRIM2_2LANE_CFG); // clear power down bit for Data lane 1 to support DSI TX in 2lanes configuration.
+    }
+    DSI->AFETRIM1 |= _VAL2FLD(DSI_AFETRIM1_AFETRIM1, AM_HAL_DSI_AFETRIM1_DATA_LANE_EN); // trim_1<13> needs to be set
+
+    if (pDSIConfig->bSendUlpsPattern)
+    {
+        DSI->AFETRIM3 |= _VAL2FLD(DSI_AFETRIM3_AFETRIM3, AM_HAL_DSI_AFETRIM3_ULPS_PATTERN);
     }
     if (!APOLLO5_B0)
     {
-        DSI->AFETRIM0 |= _VAL2FLD(DSI_AFETRIM0_AFETRIM0, 0x00020000); // trim_0<17> needs to be set for B1 and later version.
+        DSI->AFETRIM0 |= _VAL2FLD(DSI_AFETRIM0_AFETRIM0, AM_HAL_DSI_AFETRIM0_B1_PLUS); // trim_0<17> needs to be set for B1 and later version.
     }
 #ifdef DISABLE_ERROR_AUTORECOVERY
     //
@@ -558,7 +706,7 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
         DSI->INTRSTAT_b.LOWC = 1;
     }
 
-    if (bSendUlpsPattern)
+    if (pDSIConfig->bSendUlpsPattern)
     {
         //
         // ULPS Exit sequence
@@ -569,6 +717,22 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
     // Return the status.
     //
     return AM_HAL_STATUS_SUCCESS;
+
+}
+//*****************************************************************************
+//
+// Initialize the DSI
+//
+//*****************************************************************************
+uint32_t
+am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui32FreqTrim, bool bSendUlpsPattern)
+{
+    am_hal_dsi_config_t config = {0};
+    config.ui8LanesNum = ui8LanesNum;
+    config.eDBIBusWidth = (am_hal_dsi_dbi_width_e)ui8DBIBusWidth;
+    config.eFreqTrim = (am_hal_dsi_freq_trim_e)ui32FreqTrim;
+    config.bSendUlpsPattern = bSendUlpsPattern;
+    return am_hal_dsi_config(&config);
 }
 
 //*****************************************************************************
@@ -579,7 +743,8 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
 uint32_t
 am_hal_dsi_init(void)
 {
-    am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_DISPPHY);
+    uint32_t ui32Status = am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_DISPPHY);
+    if (ui32Status != AM_HAL_STATUS_SUCCESS) { return ui32Status; }
     DSI->RSTENBDFE = _VAL2FLD(DSI_RSTENBDFE_ENABLE, 0);
 
     //
@@ -590,7 +755,7 @@ am_hal_dsi_init(void)
         external_vdd18_callback(true);
     }
 
-    am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_HFRC96, NULL);
+    am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_HFRC192, NULL);
     am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DBICLKDIV2EN_DISABLE, NULL);
     am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DBICLKSEL_DBIB_CLK, NULL);
     am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DCCLK_ENABLE, NULL);
@@ -639,9 +804,9 @@ am_hal_dsi_deinit(bool bCheckStopState)
         external_vdd18_callback(false);
     }
 
-    am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_DISPPHY);
-
-    return am_hal_clkmgr_clock_release(AM_HAL_CLKMGR_CLK_ID_HFRC, AM_HAL_CLKMGR_USER_ID_DSI);
+    uint32_t ui32PwrStatus = am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_DISPPHY);
+    uint32_t ui32ClkStatus = am_hal_clkmgr_clock_release(AM_HAL_CLKMGR_CLK_ID_HFRC, AM_HAL_CLKMGR_USER_ID_DSI);
+    return (ui32PwrStatus != AM_HAL_STATUS_SUCCESS) ? ui32PwrStatus : ui32ClkStatus;
 }
 
 //*****************************************************************************
@@ -653,11 +818,11 @@ uint32_t
 am_hal_dsi_ulps_entry(void)
 {
     DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_LOW_POWER;
-    DSI->AFETRIM0 |= _VAL2FLD(DSI_AFETRIM0_AFETRIM0, 0x00000800); //  trim_0<11> needs to be set - contention detector disabled
+    DSI->AFETRIM0 |= _VAL2FLD(DSI_AFETRIM0_AFETRIM0, AM_HAL_DSI_AFETRIM0_CONTDET_DIS); //  trim_0<11> needs to be set - contention detector disabled
     am_hal_delay_us(10);
-    DSI->AFETRIM1 |= _VAL2FLD(DSI_AFETRIM1_AFETRIM1, 0x00000200); //  trim_1<9> needs to be set
-    DSI->AFETRIM2 |= _VAL2FLD(DSI_AFETRIM2_AFETRIM2, 0x0000001C); //  trim_2<2>, trim_2<3> & trim_2<4> need to be set
-    DSI->AFETRIM3 |= _VAL2FLD(DSI_AFETRIM3_AFETRIM3, 0x00038000); //  trim_3<15>, trim_3<16>, and trim_3<17> need to be set
+    DSI->AFETRIM1 |= _VAL2FLD(DSI_AFETRIM1_AFETRIM1, AM_HAL_DSI_AFETRIM1_ULPS_DATALANE); //  trim_1<9> needs to be set
+    DSI->AFETRIM2 |= _VAL2FLD(DSI_AFETRIM2_AFETRIM2, AM_HAL_DSI_AFETRIM2_ULPS_LP_EN); //  trim_2<2>, trim_2<3> & trim_2<4> need to be set
+    DSI->AFETRIM3 |= _VAL2FLD(DSI_AFETRIM3_AFETRIM3, AM_HAL_DSI_AFETRIM3_ULPS_LP_EN2); //  trim_3<15>, trim_3<16>, and trim_3<17> need to be set
 
     return AM_HAL_STATUS_SUCCESS;
 }
@@ -672,9 +837,9 @@ am_hal_dsi_ulps_exit(void)
 {
     DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_LOW_POWER;
     am_hal_delay_us(10);
-    DSI->AFETRIM3 &= _VAL2FLD(DSI_AFETRIM3_AFETRIM3, ~0x00038000); //  trim_3<15>, trim_3<16>, and trim_3<17> need to be cleared
-    DSI->AFETRIM2 &= _VAL2FLD(DSI_AFETRIM2_AFETRIM2, ~0x0000001C); //  trim_2<2>, trim_2<3> & trim_2<4> need to be cleared
-    DSI->AFETRIM1 &= _VAL2FLD(DSI_AFETRIM1_AFETRIM1, ~0x00000200); //  trim_1<9> needs to be cleared
+    DSI->AFETRIM3 &= _VAL2FLD(DSI_AFETRIM3_AFETRIM3, ~AM_HAL_DSI_AFETRIM3_ULPS_LP_EN2); //  trim_3<15>, trim_3<16>, and trim_3<17> need to be cleared
+    DSI->AFETRIM2 &= _VAL2FLD(DSI_AFETRIM2_AFETRIM2, ~AM_HAL_DSI_AFETRIM2_ULPS_LP_EN); //  trim_2<2>, trim_2<3> & trim_2<4> need to be cleared
+    DSI->AFETRIM1 &= _VAL2FLD(DSI_AFETRIM1_AFETRIM1, ~AM_HAL_DSI_AFETRIM1_ULPS_DATALANE); //  trim_1<9> needs to be cleared
     DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_EXIT;
     //
     // Twakeup time should not be less than 1ms.
@@ -688,7 +853,7 @@ am_hal_dsi_ulps_exit(void)
         delay_function_callback(1);
     }
     DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_This;
-    DSI->AFETRIM0 &= _VAL2FLD(DSI_AFETRIM0_AFETRIM0, ~0x00000800); //  trim_0<11> needs to be cleared - contention detector enable
+    DSI->AFETRIM0 &= _VAL2FLD(DSI_AFETRIM0_AFETRIM0, ~AM_HAL_DSI_AFETRIM0_CONTDET_DIS); //  trim_0<11> needs to be cleared - contention detector enable
 
     return AM_HAL_STATUS_SUCCESS;
 }
@@ -853,7 +1018,14 @@ uint32_t
 am_hal_dsi_power_control(am_hal_sysctrl_power_state_e ePowerState,
                          bool bRetainState)
 {
-    static am_hal_dsi_state_t sDSIState = {0};
+    static am_hal_dsi_state_t sDSIState =
+    {
+        .eTrim    = (am_hal_dsi_freq_trim_e) 0,
+        .eWidth   = (am_hal_dsi_dbi_width_e) 0,
+        .ui8Lanes = 0,
+        .bisValid = false,
+    };
+
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
     bool bStatus;
     am_hal_pwrctrl_periph_enabled(AM_HAL_PWRCTRL_PERIPH_DISPPHY, &bStatus);

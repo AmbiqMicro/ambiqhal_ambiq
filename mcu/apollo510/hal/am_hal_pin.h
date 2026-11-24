@@ -4,15 +4,19 @@
 //!
 //! @brief Function select information for Apollo510 GPIOs.
 //!
-//! @addtogroup pin_ap510 Pin Functionality
+//! Date: 12/18/2025
+//!
+//! @addtogroup pin_func Pin Functionality
 //! @ingroup apollo510_hal
 //! @{
+//
+// This is a generated file, do not modify!
 //
 //*****************************************************************************
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +45,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-db6e11a12 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -56,7 +60,7 @@ extern "C"
 
 //*****************************************************************************
 //
-// Define the number of actual and virtual GPIOs
+//! Define the number of actual and virtual GPIOs
 //
 //*****************************************************************************
 #define AM_HAL_PIN_TOTAL_GPIOS                  (224)
@@ -65,14 +69,14 @@ extern "C"
 
 //*****************************************************************************
 //
-// Define the number of functions per GPIO.
+//! Define the number of functions per GPIO.
 //
 //*****************************************************************************
 #define AM_HAL_PIN_NUMFUNCS                     16
 
 //*****************************************************************************
 //
-// Function select macros by pin.
+//! Function select macros by pin.
 //
 //*****************************************************************************
 // PIN 0 functions
@@ -4109,7 +4113,7 @@ extern "C"
 
 //*****************************************************************************
 //
-// List of all function selects.
+//! List of all function selects.
 //
 //*****************************************************************************
 typedef enum
@@ -4869,7 +4873,7 @@ typedef enum
 
 //*****************************************************************************
 //
-// Function selects by pin.
+//! Function selects by pin.
 //
 //*****************************************************************************
 extern const uint16_t am_hal_pin_fn_list[AM_HAL_PIN_TOTAL_GPIOS][AM_HAL_PIN_NUMFUNCS];

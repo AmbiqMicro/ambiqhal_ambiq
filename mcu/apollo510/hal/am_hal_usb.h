@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk5p2p0-db6e11a12 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -529,7 +529,7 @@ extern uint32_t am_hal_usb_disable_sof_intr(void *pHandle);
 //! @brief Macro definitions for the USB hardware information.
 //!
 //! These macros correspond to the definitions in the datasheet of
-//! apollo4 USB peripheral.
+//! apollo510 USB peripheral.
 //! They may be used with the \e am_hal_usb_get_hw_infor function.
 //!
 //
@@ -663,6 +663,21 @@ extern uint32_t am_hal_usb_ep_stall(void *pHandle, uint8_t ui8EpAddr);
 //
 //*****************************************************************************
 extern uint32_t am_hal_usb_ep_clear_stall(void *pHandle, uint8_t ui8EpAddr);
+
+//*****************************************************************************
+//
+//! @brief Abort the endpoint transfer
+//!
+//! @param pHandle Pointer to the USB handle
+//! @param ui8EpAddr Endpoint address
+//!
+//! This function is used by the upper layer USB stack to abort the endpoint
+//! transfer when the endpoint is closed.
+//!
+//! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
+//
+//*****************************************************************************
+extern uint32_t am_hal_usb_ep_xfer_abort(void *pHandle, uint8_t ui8EpAddr);
 
 //*****************************************************************************
 //
@@ -1036,6 +1051,18 @@ extern uint32_t am_hal_usb_intr_status_get(void *pHandle, uint32_t *ui32IntrUsbS
 extern void am_hal_usb_interrupt_service(void *pHandle, uint32_t ui32IntrUsbStatus, uint32_t ui32IntrInStatus, uint32_t ui32IntrOutStatus,
                                         uint32_t ui32IntrDMAStatus, uint32_t ui32IntrAutoDMAStatus);
 
+//*****************************************************************************
+//
+//! @brief Reset EP State
+//!
+//! @param pHandle   - handle for the module instance.
+//! @param ui8EpAddr - USB endpoint address for state reset
+//!
+//! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
+//
+//*****************************************************************************
+extern uint32_t am_hal_usb_ep_state_reset(void *pHandle, uint8_t ui8EpAddr);
+
 //****************************************************************************
 //
 //! @brief Macro to read and handle USB interrupts
@@ -1085,7 +1112,10 @@ extern uint32_t am_hal_usb_set_xfer_mode(void *pHandle, am_hal_usb_xfer_mode_e e
 //!
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_enable_ep_double_buffer(void *pHandle, uint8_t epnum, am_hal_usb_xfer_dir_e dir, bool enable);
+extern uint32_t am_hal_usb_enable_ep_double_buffer(void *pHandle,
+                                                   uint8_t epnum,
+												   am_hal_usb_xfer_dir_e dir,
+												   bool enable);
 
 //*****************************************************************************
 //

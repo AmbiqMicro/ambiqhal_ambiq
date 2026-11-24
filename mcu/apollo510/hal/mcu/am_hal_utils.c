@@ -43,11 +43,12 @@
 //! - @b Status @b Monitoring: Set up timeout values and status checking
 //! - @b Memory @b Access: Configure memory read operations
 //! - @b Burst @b Mode: Set up burst mode operations
+//
 //*****************************************************************************
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -76,7 +77,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision v5.2.0-zephyr-685438d73f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -109,22 +110,16 @@ typedef enum
 
 //*****************************************************************************
 //
-//! @brief Given an integer number of microseconds, convert to a value representing
-//! the number of cycles that will provide that amount
-//! of delay.  This macro is designed to take into account some of the call
-//! overhead and latencies.
-//! The BOOTROM_CYCLES_US macro assumes:
-//!  - Burst or normal mode operation.
-//!  - If cache is not enabled, use BOOTROM_CYCLES_US_NOCACHE() instead.
+//! @brief Defines the number of br_util_delay_cycles() iterations required to
+//! achieve a 1-microsecond delay at different CPU frequencies.
 //!
-//! @name BootROM_CYCLES
-//! @{
+//! Note: If the CPU frequency (in MHz) is not evenly divisible by 3, the
+//! remainder introduced by integer division must be compensated for in the
+//! delay function to ensure accurate timing.
 //
 //*****************************************************************************
-#define CYCLESPERITER                 ((float)AM_HAL_CLKGEN_FREQ_MAX_MHZ / 3)
-#define BOOTROM_CYCLES_US(n)          ((uint32_t)((n) * CYCLESPERITER) + 0)
-#define BOOTROM_CYCLES_US_NOCACHE(n)  ( (n == 0) ? 0 : (uint32_t)(n * CYCLESPERITER) - 5)
-//! @}
+#define ITERATIONS_PER_MICROSEC_FOR_96M     (32)
+#define ITERATIONS_PER_MICROSEC_FOR_250M    (83)
 
 //*****************************************************************************
 //
@@ -159,8 +154,12 @@ br_util_delay_cycles(uint32_t ui32Cycles)
 void
 am_hal_delay_us(uint32_t ui32us)
 {
+#if (AM_HAL_CLKGEN_FREQ_HP250_MHZ != 250) || \
+    (AM_HAL_CLKGEN_FREQ_MAX_MHZ   != 96)
+#error "If the nominal frequency changes, the following formula should also be changed accordingly."
+#endif
 
-    register uint32_t ui32Iterations = BOOTROM_CYCLES_US(ui32us);
+    register uint32_t ui32Iterations;
     register uint32_t ui32CycleCntAdj;
 
     //
@@ -169,18 +168,18 @@ am_hal_delay_us(uint32_t ui32us)
     if (PWRCTRL->MCUPERFREQ_b.MCUPERFSTATUS == AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE)
     {
         //
-        // Use float instead of uint32_t, otherwise saturation may occur.
+        // The delay in seconds should be less than 51.5 to avoid saturation of ui32Iterations.
         //
-        ui32Iterations = (uint32_t)(ui32Iterations * 1.0f * AM_HAL_CLKGEN_FREQ_HP250_MHZ / AM_HAL_CLKGEN_FREQ_MAX_MHZ);
-
-        //
-        // There's an additional shift to account for.
-        //
-        ui32CycleCntAdj = ((13 * AM_HAL_CLKGEN_FREQ_HP250_MHZ / AM_HAL_CLKGEN_FREQ_MAX_MHZ) + 40) / 3;
+        ui32Iterations = ui32us * ITERATIONS_PER_MICROSEC_FOR_250M + (ui32us + 1) / 3;
+        ui32CycleCntAdj = 25;
     }
     else
     {
-        ui32CycleCntAdj = ((13 * 1) + 32) / 3;
+        //
+        // The delay in seconds should be less than 134.2 to avoid saturation of ui32Iterations.
+        //
+        ui32Iterations = ui32us * ITERATIONS_PER_MICROSEC_FOR_96M;
+        ui32CycleCntAdj = 15;
     }
 
     //

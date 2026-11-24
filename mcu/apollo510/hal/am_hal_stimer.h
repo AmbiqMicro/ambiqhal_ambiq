@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision v5.2.0-zephyr-685438d73f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_STIMER_H
@@ -156,6 +156,11 @@ extern "C"
 //
 //*****************************************************************************
 #define AM_HAL_STIMER_MIN_DELTA         4
+
+//! Number of STIMER clock cycles for SCAPCTRL capture-enable writes to take
+//! effect (same class of latency as COMPARE). am_hal_stimer_capture_start()
+//! waits this many cycles before returning so early edges are not missed
+#define AM_HAL_STIMER_CAPTURE_SETTLE_CYCLES  3
 //! @}
 
 //*****************************************************************************
@@ -311,6 +316,15 @@ extern uint32_t am_hal_stimer_compare_get(uint32_t ui32CmprInstance);
 //!                   true  (1) = Capture on high to low transition.
 //!
 //! Use this function to start capturing.
+//!
+//! @note Writes to SCAPCTRL take AM_HAL_STIMER_CAPTURE_SETTLE_CYCLES (3)
+//!       STIMER clock cycles to become effective (same latency class as
+//!       COMPARE). When STIMER is already running, this function blocks
+//!       until that settle completes so edges immediately after return
+//!       are not missed. If STIMER is not yet running, no wait is
+//!       performed (avoids hang); wait at least
+//!       AM_HAL_STIMER_CAPTURE_SETTLE_CYCLES after starting the timer
+//!       before stimulating edges.
 //
 //*****************************************************************************
 extern void     am_hal_stimer_capture_start(uint32_t ui32CaptureNum,

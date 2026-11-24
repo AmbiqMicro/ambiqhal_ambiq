@@ -12,7 +12,7 @@
 
 // ****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision v5.2.0-zephyr-685438d73f of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 #ifndef AM_HAL_CACHECTRL_H
@@ -86,10 +86,10 @@ typedef enum
 
 // ****************************************************************************
 //
-//! @brief Power control for caches
+//! @brief Set or clear MSCR.ICACTIVE and MSCR.DCACTIVE
 //!
-//! @param bPowerup - TRUE: Power up caches.
-//!                   FALSE: Power down caches.
+//! @param bPowerup - TRUE: Set MSCR.ICACTIVE and MSCR.DCACTIVE
+//!                   FALSE: Clear MSCR.ICACTIVE and MSCR.DCACTIVE
 //!
 //! @return Status.
 //

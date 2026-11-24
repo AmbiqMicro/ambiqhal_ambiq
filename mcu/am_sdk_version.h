@@ -71,7 +71,7 @@ extern "C"
 #define AM_HAL_VERSION_REV      0
 #elif defined(AM_PART_APOLLO5_API)
 #define AM_HAL_VERSION_MAJ      5
-#define AM_HAL_VERSION_MIN      1
+#define AM_HAL_VERSION_MIN      2
 #define AM_HAL_VERSION_REV      0
 #elif defined(AM_PART_APOLLO2_API)
 #define AM_HAL_VERSION_MAJ      2

@@ -52,7 +52,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -81,7 +81,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision stable-add55ed0181 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -147,6 +147,7 @@
 //! Need both CMDCMP & DCMP, as for Read we need to wait for DCMP after CMDCMP
 //
 #define AM_HAL_IOM_INT_DMAMODE  (AM_HAL_IOM_INT_CMDCMP | AM_HAL_IOM_INT_DCMP | AM_HAL_IOM_INT_ERR)
+#define AM_HAL_IOM_INT_FDNBMODE (AM_HAL_IOM_INT_THR    | AM_HAL_IOM_INT_DMAMODE)
 
 //
 //! Configures the interrupts to provided coniguration - clearing all pending interrupts
@@ -164,6 +165,40 @@
 // Private Types.
 //
 //*****************************************************************************
+
+//
+//! This is the max number of pins used per module
+//
+#define IOM_RESET_NUM_LW 3
+
+//
+//! This value is used to disable pin toggle
+//
+#define IOM_RESET_DO_NOT_TOGGLE 0xFFFF
+
+//
+//! struct used for passing in i2c pin numbers for AM_HAL_IOM_REQ_RESET
+//! case in am_hal_iom_control()
+//
+typedef struct
+{
+    //
+    //! The scl or sda pin number, used in I2C and SPI mode
+    //
+    uint32_t scl_sck_pin_number;
+
+    //
+    //! The sda or mosi pin number, used in I2C and SPI mode
+    //
+    uint32_t mosi_sda_pin_number;
+
+    //
+    //! The miso pin, this is used in SPI mode
+    //
+    uint32_t miso_pin_number;
+
+}
+am_hal_iom_pin_reset_t;
 
 //
 //! Command Queue entry structure.
@@ -257,6 +292,17 @@ typedef struct
     am_hal_iom_callback_t       pfnCallback;
     void                        *pCallbackCtxt;
 } am_hal_iom_dma_entry_t;
+
+typedef struct
+{
+    bool                        bActive;
+    uint8_t                     *pui8RxBuf;
+    uint32_t                    ui32RxBytesLeft;
+    uint32_t                    ui32SavedIntCfg;
+    uint32_t                    ui32SavedDmaTrigEn;
+    am_hal_iom_callback_t       pfnCallback;
+    void                        *pCallbackCtxt;
+} am_hal_iom_fdnb_state_t;
 
 //
 //! IOM State
@@ -373,10 +419,105 @@ typedef struct
     //
     uint8_t                 dcx[AM_HAL_IOM_MAX_CS_SPI];
 
+    //
+    //! Full-duplex non-blocking SPI (TX DMA + RX FIFO/IRQ) state.
+    //
+    am_hal_iom_fdnb_state_t sFdNb;
+
     bool                    bCmdQInTCM;
 
 } am_hal_iom_state_t;
 
+//*****************************************************************************
+//
+// pin locator utilities
+//
+//*****************************************************************************
+
+typedef struct
+{
+    uint16_t pn_scl;
+    uint16_t pn_sck;
+    uint16_t pn_sda;
+    uint16_t pn_mosi;
+    uint16_t pn_miso;
+}
+am_hal_iom_pin_allocations_t;
+
+//*****************************************************************************
+//
+// This will map the IOM channel with the pins that can be assigned.
+// For apollo4p there is only one pin that can be assigned
+// for each IOM function.
+//
+//*****************************************************************************
+static const am_hal_iom_pin_allocations_t tIomPinAlloc[] =
+{
+    [0] =
+    {
+        .pn_scl  = (5 << 4) | AM_HAL_PIN_5_M0SCL,
+        .pn_sck  = (5 << 4) | AM_HAL_PIN_5_M0SCK,
+        .pn_sda  = (6 << 4) | AM_HAL_PIN_6_M0SDAWIR3,
+        .pn_mosi = (6 << 4) | AM_HAL_PIN_6_M0MOSI,
+        .pn_miso = (7 << 4) | AM_HAL_PIN_7_M0MISO,
+    },
+    [1] =
+    {
+        .pn_scl  = (8 << 4)  | AM_HAL_PIN_8_M1SCL,
+        .pn_sck  = (8 << 4)  | AM_HAL_PIN_8_M1SCK,
+        .pn_sda  = (9 << 4)  | AM_HAL_PIN_9_M1SDAWIR3,
+        .pn_mosi = (9 << 4)  | AM_HAL_PIN_9_M1MOSI,
+        .pn_miso = (10 << 4) | AM_HAL_PIN_10_M1MISO,
+    },
+    [2] =
+    {
+        .pn_scl  = (25 << 4) | AM_HAL_PIN_25_M2SCL,
+        .pn_sck  = (25 << 4) | AM_HAL_PIN_25_M2SCK,
+        .pn_sda  = (26 << 4) | AM_HAL_PIN_26_M2SDAWIR3,
+        .pn_mosi = (26 << 4) | AM_HAL_PIN_26_M2MOSI,
+        .pn_miso = (27 << 4) | AM_HAL_PIN_27_M2MISO
+    },
+    [3] =
+    {
+        .pn_scl  = (31 << 4) | AM_HAL_PIN_31_M3SCL,
+        .pn_sck  = (31 << 4) | AM_HAL_PIN_31_M3SCK,
+        .pn_sda  = (32 << 4) | AM_HAL_PIN_32_M3SDAWIR3,
+        .pn_mosi = (32 << 4) | AM_HAL_PIN_32_M3MOSI,
+        .pn_miso = (33 << 4) | AM_HAL_PIN_33_M3MISO,
+    },
+    [4] =
+    {
+        .pn_scl  = (34 << 4) | AM_HAL_PIN_34_M4SCL,
+        .pn_sck  = (34 << 4) | AM_HAL_PIN_34_M4SCK,
+        .pn_sda  = (35 << 4) | AM_HAL_PIN_35_M4SDAWIR3,
+        .pn_mosi = (35 << 4) | AM_HAL_PIN_35_M4MOSI,
+        .pn_miso = (36 << 4) | AM_HAL_PIN_36_M4MISO,
+    },
+    [5] =
+    {
+        .pn_scl  = (47 << 4) | AM_HAL_PIN_47_M5SCL,
+        .pn_sck  = (47 << 4) | AM_HAL_PIN_47_M5SCK,
+        .pn_sda  = (48 << 4) | AM_HAL_PIN_48_M5SDAWIR3,
+        .pn_mosi = (48 << 4) | AM_HAL_PIN_48_M5MOSI,
+        .pn_miso = (49 << 4) | AM_HAL_PIN_49_M5MISO,
+    },
+    [6] =
+    {
+        .pn_scl  = (61 << 4) | AM_HAL_PIN_61_M6SCL,
+        .pn_sck  = (61 << 4) | AM_HAL_PIN_61_M6SCK,
+        .pn_sda  = (62 << 4) | AM_HAL_PIN_62_M6SDAWIR3,
+        .pn_mosi = (62 << 4) | AM_HAL_PIN_62_M6MOSI,
+        .pn_miso = (63 << 4) | AM_HAL_PIN_63_M6MISO,
+    },
+    [7] =
+    {
+        .pn_scl  = (22 << 4) | AM_HAL_PIN_22_M7SCL,
+        .pn_sck  = (22 << 4) | AM_HAL_PIN_22_M7SCK,
+        .pn_sda  = (23 << 4) | AM_HAL_PIN_23_M7SDAWIR3,
+        .pn_mosi = (23 << 4) | AM_HAL_PIN_23_M7MOSI,
+        .pn_miso = (24 << 4) | AM_HAL_PIN_24_M7MISO,
+    },
+};
 
 #define FSELMAX 10  // This is used freq divider computation the highest value that can be used is 8
 #define FSEL_MAX_REGISTER_VAL 8
@@ -651,6 +792,25 @@ build_txn_cmdlist(am_hal_iom_state_t       *pIOMState,
 
 } // build_txn_cmdlist()
 
+static bool
+disable_submodule(uint32_t ui32Module, uint32_t ui32Type)
+{
+    if ( IOMn(ui32Module)->SUBMODCTRL_b.SMOD0TYPE == ui32Type )
+    {
+        IOMn(ui32Module)->SUBMODCTRL = _VAL2FLD(IOM0_SUBMODCTRL_SMOD0EN, 0);
+    }
+    else if ( IOMn(ui32Module)->SUBMODCTRL_b.SMOD1TYPE == ui32Type )
+    {
+        IOMn(ui32Module)->SUBMODCTRL = _VAL2FLD(IOM0_SUBMODCTRL_SMOD1EN, 0);
+    }
+    else
+    {
+        return false;
+    }
+
+    return true;
+} // disable_submodule()
+
 //*****************************************************************************
 //
 //! @brief Enable IOM submodule.
@@ -679,6 +839,268 @@ enable_submodule(uint32_t ui32Module, uint32_t ui32Type)
 
     return true;
 } // enable_submodule()
+
+//*****************************************************************************
+//
+//! @brief Given a pin number/assignment value
+//!
+//! @param pinVal - This will determine if a pin is allocated to the
+//!   associated IOM if a pin is not allocated as expected,
+//!   it is disabled with 0xFFFF
+//!
+//! @return pinVal - will return the pin-number or 0xFFFF (if pin is not in use)
+//
+//*****************************************************************************
+static uint32_t
+internal_iom_lookup_function(uint16_t pinVal)
+{
+    uint32_t ui32PinNumRef = pinVal >> 4;
+    uint32_t ui32FcnSel    = pinVal & 0xF;
+    volatile uint32_t *pui32Config = &GPIO->PINCFG0;
+
+    am_hal_gpio_pincfg_t sGpioCfg;
+
+    sGpioCfg.GP.cfg = pui32Config[ui32PinNumRef];
+
+    if (sGpioCfg.GP.cfg_b.uFuncSel == ui32FcnSel)
+    {
+        //
+        // found it
+        //
+        return ui32PinNumRef;
+    }
+
+    return IOM_RESET_DO_NOT_TOGGLE;
+}
+
+//*****************************************************************************
+//
+//! @brief this will find all pins associated with the given IOM
+//!
+//! @param ui32IomNumber iom number
+//! @param pIomPinMap    returns pin map here, allocate at least three
+//! @param bIsSPI        true if in SPI mode
+//
+//*****************************************************************************
+static void
+internal_iom_find_pins(uint32_t ui32IomNumber, am_hal_iom_pin_reset_t *pIomPinMap, bool bIsSPI)
+{
+    const am_hal_iom_pin_allocations_t *pPinMap = &tIomPinAlloc[ui32IomNumber];
+
+    if (bIsSPI)
+    {
+        //
+        // spi mode
+        //
+        pIomPinMap->scl_sck_pin_number  = internal_iom_lookup_function(pPinMap->pn_sck);
+        pIomPinMap->mosi_sda_pin_number = internal_iom_lookup_function(pPinMap->pn_mosi);
+        pIomPinMap->miso_pin_number     = internal_iom_lookup_function(pPinMap->pn_miso);
+    }
+    else
+    {
+        //
+        // i2c mode
+        //
+        // miso is not used, so it is disabled
+        //
+        pIomPinMap->miso_pin_number     = IOM_RESET_DO_NOT_TOGGLE;
+        pIomPinMap->scl_sck_pin_number  = internal_iom_lookup_function(pPinMap->pn_scl);
+        pIomPinMap->mosi_sda_pin_number = internal_iom_lookup_function(pPinMap->pn_sda);
+    }
+}
+
+//*****************************************************************************
+//
+//! @brief Error handling., push write
+//! @note will write remaining tx bytes (dummy bytes) into IOM tx fifo so transfer
+//!       will complete
+//!
+//! @param pIOMState pointer to handle
+//! @param i32NumBytesRemaining number of bytes remaining.
+//!                             If this is less than one nothing will happen
+//!
+//! @return AM_HAL_STATUS_SUCCESS
+//! @return AM_HAL_STATUS_TIMEOUT
+//
+//*****************************************************************************
+static void
+internal_iom_reset_iom_pins(am_hal_iom_state_t *pIOMState)
+{
+    struct sSavedPcfg
+    {
+        am_hal_gpio_pincfg_t tPinCfg;
+        bool bPinValid;
+    }
+    sSavedPinCfg[IOM_RESET_NUM_LW];
+
+    am_hal_iom_pin_reset_t tIomPinMap = { 0 };
+    uint32_t *pui32_PinNum = 0;
+    uint32_t ui32UsToWait = 6 * (pIOMState->ui32BitTimeUs ? pIOMState->ui32BitTimeUs : 1); // effectively > 6 clocks
+    uint32_t ui32Module = pIOMState->ui32Module;
+
+    //
+    // This will toggle the pins to release the hang, then reset the module
+    // if not, will only try to reset the module
+    //
+    // clear this error with a pin function toggle to and back from GPIO with pullups enabled
+    //
+
+    internal_iom_find_pins(ui32Module, &tIomPinMap, pIOMState->eInterfaceMode == AM_HAL_IOM_SPI_MODE);
+
+    //
+    // clear this error with a pin function toggle to and back from GPIO with pullups enabled
+    //
+    if (pIOMState->eInterfaceMode != AM_HAL_IOM_I2C_MODE)
+    {
+        //
+        // in i2c mode there is no miso pin, so deactivate it
+        //
+        tIomPinMap.miso_pin_number = IOM_RESET_DO_NOT_TOGGLE;
+    }
+
+    pui32_PinNum = (uint32_t *)&tIomPinMap;
+
+    for (uint32_t i = 0; i < IOM_RESET_NUM_LW; i++)
+    {
+        uint32_t ui32pn = pui32_PinNum[i];
+
+        //
+        // for Apollo4, the IOM does not use PIN 0
+        //
+        sSavedPinCfg[i].bPinValid = (ui32pn > 0) && (ui32pn < AM_HAL_GPIO_MAX_PADS);
+
+        if (sSavedPinCfg[i].bPinValid)
+        {
+            //
+            // this pin is being used, save current pin config
+            //
+            am_hal_gpio_pinconfig_get(ui32pn, &sSavedPinCfg[i].tPinCfg);
+
+            //
+            // disable pin (I2C) mode, leave pullups on
+            //
+            am_hal_gpio_pinconfig(ui32pn, am_hal_gpio_pincfg_pulledup_disabled);
+        }
+    }
+
+    //
+    // Wait for few IO clock cycles
+    //
+    am_hal_delay_us(ui32UsToWait);
+
+    //
+    // Restore pin config
+    //
+    for (uint32_t i = 0; i < IOM_RESET_NUM_LW; i++)
+    {
+        if (sSavedPinCfg[i].bPinValid)
+        {
+            am_hal_gpio_pinconfig(pui32_PinNum[i], sSavedPinCfg[i].tPinCfg);
+        }
+    }
+}
+
+//*****************************************************************************
+//
+//! @brief Compute I2C transfer delay based on bit rate and number of bytes
+//!
+//! @param pIOMState
+//! @param ui32NumBytes
+//!
+//! @return  delay time in microseconds
+//
+// *****************************************************************************
+static uint32_t
+internal_iom_compute_transfer_delay(am_hal_iom_state_t *pIOMState,
+                                    uint32_t ui32NumBytes)
+{
+    //
+    // use 10 bits per byte of transfer
+    //   and a factor of 2 for margin of safety
+    //
+    uint32_t ui32TransferTimeUs = pIOMState->ui32BitTimeUs * 2 * 10 * ui32NumBytes;
+
+    if ( ui32TransferTimeUs < 1 )
+    {
+        ui32TransferTimeUs = 1;
+    }
+
+    return ui32TransferTimeUs;
+}
+
+//*****************************************************************************
+//
+//! @brief Error handling, push write
+//! @note will write remaining tx bytes (dummy bytes) into IOM tx fifo so transfer
+//!       will complete
+//!
+//! @param pIOMState pointer to handle
+//! @param i32NumBytesRemaining number of bytes remaining. If this is less than one
+//!                 nothing will happen
+//!
+//! @return AM_HAL_STATUS_SUCCESS
+//! @return AM_HAL_STATUS_TIMEOUT
+//
+//*****************************************************************************
+static uint32_t
+internal_iom_finish_buffer_write(am_hal_iom_state_t *pIOMState,
+                                 int32_t i32NumBytesRemaining)
+{
+    uint32_t ui32RetStat = AM_HAL_STATUS_SUCCESS;
+
+    if (i32NumBytesRemaining > 0)
+    {
+        uint32_t ui32dummy      = 0xDEADBEEF;
+        uint32_t ui32Module = pIOMState->ui32Module;
+        uint32_t ui32TimeoutCount = 0;
+
+        //
+        // compute max time to wait for tx
+        //
+        uint32_t ui32WaitUs = internal_iom_compute_transfer_delay(pIOMState,
+                                                       i32NumBytesRemaining);
+
+        while (i32NumBytesRemaining > 0)
+        {
+            while (IOMn(ui32Module)->FIFOPTR_b.FIFO0REM >= 4)
+            {
+                //
+                // Write one 4-byte word to FIFO
+                //
+                IOMn(ui32Module)->FIFOPUSH = ui32dummy;
+                if (i32NumBytesRemaining <= 4)
+                {
+                    break;
+                }
+                i32NumBytesRemaining -= 4;
+            }
+            if (++ui32TimeoutCount > ui32WaitUs)
+            {
+                return AM_HAL_STATUS_TIMEOUT;
+            }
+            am_hal_delay_us(1);
+        }
+
+        //
+        // wait for fifo to empty
+        //
+        ui32WaitUs = internal_iom_compute_transfer_delay(pIOMState, AM_HAL_IOM_FIFO_SIZE_MAX);
+        ui32TimeoutCount = 0;
+
+        while (IOMn(ui32Module)->FIFOPTR_b.FIFO0SIZ)
+        {
+            am_hal_delay_us(1);
+
+            if (++ui32TimeoutCount > ui32WaitUs)
+            {
+                ui32RetStat = AM_HAL_STATUS_TIMEOUT;
+                break;
+            }
+        }
+    } // i32NumBytesRemaining
+
+    return ui32RetStat;
+}
 
 //*****************************************************************************
 //
@@ -730,20 +1152,265 @@ internal_iom_get_int_err(uint32_t ui32Module, uint32_t ui32IntStatus)
     return ui32Status;
 } // internal_iom_get_int_err()
 
+static uint32_t
+internal_iom_error_reset_disable_submodule(am_hal_iom_state_t  *pIOMState)
+{
+    struct sSavedPcfg
+    {
+        am_hal_gpio_pincfg_t tPinCfg;
+        bool bPinValid;
+    } sSavedPinCfg[IOM_RESET_NUM_LW];
+
+    uint32_t ui32Module = pIOMState->ui32Module;
+    am_hal_iom_pin_reset_t tIomPinMap = { 0 };
+    uint32_t *pui32_PinNum = 0;
+
+    //
+    // Set to minimum 6+ clocks
+    //
+    uint32_t ui32UsToWait = 6 * (pIOMState->ui32BitTimeUs ? pIOMState->ui32BitTimeUs : 1);
+
+    //
+    // Save off IOMDBG
+    //
+    uint32_t ui32IomDbg = IOMn(ui32Module)->IOMDBG;
+
+    //
+    // Check for Idle
+    //
+    (void)am_hal_delay_us_status_check(AM_HAL_IOM_MAX_BLOCKING_WAIT,
+                  (uint32_t) &IOMn(ui32Module)->STATUS,
+                  (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk),
+                  IOM0_STATUS_IDLEST_Msk,
+                  true);
+    //
+    // find pin map for this IOM channel
+    //
+    internal_iom_find_pins(ui32Module, &tIomPinMap, pIOMState->eInterfaceMode == AM_HAL_IOM_SPI_MODE);
+
+    //
+    // clear this error with a pin function toggle to and back from GPIO with pullups enabled
+    //
+    if (pIOMState->eInterfaceMode != AM_HAL_IOM_I2C_MODE)
+    {
+        //
+        // in i2c mode there is no miso pin, so deactivate it
+        //
+        tIomPinMap.miso_pin_number = IOM_RESET_DO_NOT_TOGGLE;
+    }
+
+    pui32_PinNum = (uint32_t *)&tIomPinMap;
+
+    for (uint32_t i = 0; i < IOM_RESET_NUM_LW; i++)
+    {
+        uint32_t ui32pn = pui32_PinNum[i];
+
+        //
+        // for Apollo4, the IOM does not use PIN 0
+        //
+        sSavedPinCfg[i].bPinValid = (ui32pn > 0) && (ui32pn < AM_HAL_GPIO_MAX_PADS);
+
+        if (sSavedPinCfg[i].bPinValid)
+        {
+            //
+            // this pin is being used, save current pin config
+            //
+            am_hal_gpio_pinconfig_get(ui32pn, &sSavedPinCfg[i].tPinCfg);
+
+            //
+            // disable pin (I2C) mode, leave pullups on
+            //
+            am_hal_gpio_pinconfig(ui32pn, am_hal_gpio_pincfg_pulledup_disabled);
+        }
+    }
+
+    //
+    // Reset Submodule & FIFO
+    //
+    // Disable the submodules
+    //
+    if (!disable_submodule(ui32Module, ((pIOMState->eInterfaceMode == AM_HAL_IOM_SPI_MODE) ? 0 : 1)))
+    {
+        return AM_HAL_STATUS_HW_ERR;
+    }
+
+    //
+    // Reset Fifo
+    //
+    IOMn(ui32Module)->FIFOCTRL_b.FIFORSTN = 0;
+
+    //
+    // Disable Clock gating
+    //
+    IOMn(ui32Module)->IOMDBG |= IOM0_IOMDBG_IOCLKON_Msk;
+
+    //
+    // Wait for few IO clock cycles
+    //
+    am_hal_delay_us(ui32UsToWait);
+
+    //
+    // Restore pin config
+    //
+    for (uint32_t i = 0; i < IOM_RESET_NUM_LW; i++)
+    {
+        if (sSavedPinCfg[i].bPinValid)
+        {
+            am_hal_gpio_pinconfig(pui32_PinNum[i], sSavedPinCfg[i].tPinCfg);
+        }
+    }
+
+    //
+    // Revert IOMDBG
+    //
+    IOMn(ui32Module)->IOMDBG = ui32IomDbg;
+
+    IOMn(ui32Module)->FIFOCTRL_b.FIFORSTN = 1;
+
+    if (!enable_submodule(ui32Module, ((pIOMState->eInterfaceMode == AM_HAL_IOM_SPI_MODE) ? 0 : 1)))
+    {
+        return AM_HAL_STATUS_HW_ERR;
+    }
+
+    return AM_HAL_STATUS_SUCCESS;
+}
+
+#define READ_FIFO_TIMEOUT_RST1 50000
+
+//*****************************************************************************
+//
+//! @brief Error handling., reset cmd busy error (i2c hung)
+//! @note it is assumed IOM interrupts are disabled before calling this fcn.
+//!
+//! @param pIOMState iom handle
+//!
+//! @return AM_HAL_STATUS_INVALID_ARG when invalid input
+//! @return AM_HAL_STATUS_SUCCESS when reset was successful
+//! @return AM_HAL_STATUS_HW_ERR when reset was not successful
+//
+//*****************************************************************************
+static uint32_t
+internal_iom_reset_cmd_busy(am_hal_iom_state_t *pIOMState)
+{
+    uint32_t ui32Module = pIOMState->ui32Module;
+    //
+    // now the transfer should run to completion, wait for it to end
+    // may need to help the transfer finish, by pushing tx bytes and/or
+    // reading the rx fifo
+    //
+    uint32_t ui32TimeoutCount = 0;
+    //
+    // find if transmit or rx is pending
+    //
+    uint32_t ui32CmdStatLW = IOMn(ui32Module)->CMDSTAT;
+    //
+    // find num bytes left and tx/rx mode
+    //
+    uint32_t ui32CCmd = (ui32CmdStatLW & IOM0_CMDSTAT_CCMD_Msk) >> IOM0_CMDSTAT_CCMD_Pos;
+    uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
+
+    internal_iom_reset_iom_pins(pIOMState);
+
+    if (ui32CCmd == IOM0_CMD_CMD_WRITE)
+    {
+        //
+        // need to send some tx bytes to finish operation
+        // return status is not used, if there is a problem
+        // it will be detected later in this function
+        //
+        uint32_t numBytestLeft = (ui32CmdStatLW & IOM0_CMDSTAT_CTSIZE_Msk) >> IOM0_CMDSTAT_CTSIZE_Pos;
+        ui32Status = internal_iom_finish_buffer_write(pIOMState, (int32_t) numBytestLeft);
+    }
+    else
+    {
+        //
+        // read fifo until command finished
+        // use 50 milliseconds for timeout
+        // this is about 500bytes at 100Khz clock
+        //
+        while (IOMn(ui32Module)->STATUS_b.CMDACT)
+        {
+            uint32_t ui32FifoWrites = 0;
+            while (IOMn(ui32Module)->FIFOPTR_b.FIFO1SIZ >= 4)
+            {
+                //
+                // Read one 4-byte word from FIFO
+                //
+                (void) IOMn(ui32Module)->FIFOPOP;
+
+                //
+                // ensure the IOM hardware responds properly to the writes, use factor of 2
+                //
+                if (++ui32FifoWrites > (2 * AM_HAL_IOM_FIFO_SIZE_MAX / 4))
+                {
+                    //
+                    // the fifo is not working properly,
+                    // don't want to get stuck in this loop and never timeout
+                    //
+                    ui32Status = AM_HAL_STATUS_TIMEOUT;
+                    break;
+                }
+            }
+
+            am_hal_delay_us(1);
+            if (++ui32TimeoutCount >= READ_FIFO_TIMEOUT_RST1)
+            {
+                //
+                // a timeout, this error will be caught below
+                //
+                break;
+            }
+
+            //
+            // there could be a few bytes left over: will reset fifo below
+            //
+        }
+    }
+
+    if (ui32Status == AM_HAL_STATUS_SUCCESS)
+    {
+        ui32Status = am_hal_delay_us_status_check(AM_HAL_IOM_MAX_BLOCKING_WAIT,
+                                                  (uint32_t) &IOMn(ui32Module)->STATUS,
+                                                  (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk),
+                                                  IOM0_STATUS_IDLEST_Msk,
+                                                  true);
+    }
+
+    if (ui32Status == AM_HAL_STATUS_SUCCESS)
+    {
+        //
+        // now, presumably, the transfer has finished, but the data is not trusted
+        // reset the module and clear the fifo
+        //
+        internal_iom_error_reset_disable_submodule(pIOMState);
+    }
+    else
+    {
+        //
+        // did not clear the cmd busy bit, return this error, for the application to handle
+        //
+        ui32Status = AM_HAL_STATUS_HW_ERR;
+    }
+
+    return ui32Status;
+}
+
+
 //*****************************************************************************
 //
 //! @brief Reset IOM on error.
 //!
 //! @param pIOMState - Pointer to IOM state structure.
 //! @param ui32IntMask - Interrupt mask for error handling.
-//!
+//
 //*****************************************************************************
 static void
 internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask)
 {
-    uint32_t usToWait = 6 * pIOMState->ui32BitTimeUs; // effectively > 6 clocks
     uint32_t ui32Module = pIOMState->ui32Module;
-    uint32_t curIntCfg = IOMn(ui32Module)->INTEN;
+    uint32_t ui32CurIntCfg = IOMn(ui32Module)->INTEN;
+    uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
+
     IOMn(ui32Module)->INTEN = 0;
 
     //
@@ -777,10 +1444,15 @@ internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask
                     }
                 }
             }
+
             //
             // Now wait for command to finish
             //
-            while ((IOMn(ui32Module)->STATUS & (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk)) != IOM0_STATUS_IDLEST_Msk);
+            (void)am_hal_delay_us_status_check(AM_HAL_IOM_MAX_BLOCKING_WAIT,
+                                                      (uint32_t) &IOMn(ui32Module)->STATUS,
+                                                      (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk),
+                                                      IOM0_STATUS_IDLEST_Msk,
+                                                      true);
         }
         else
         {
@@ -795,78 +1467,56 @@ internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask
                     //
                     // Read one 4-byte word from FIFO
                     //
-                    IOMn(ui32Module)->FIFOPOP;
+                    (void)IOMn(ui32Module)->FIFOPOP;
 #if MANUAL_POP
                     IOMn(ui32Module)->FIFOPOP = 0x11111111;
 #endif
                 }
             }
 
-            //
-            // Now wait for command to finish
-            //
-            while ((IOMn(ui32Module)->STATUS & (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk)) != IOM0_STATUS_IDLEST_Msk);
+            ui32Status = am_hal_delay_us_status_check(AM_HAL_IOM_MAX_BLOCKING_WAIT,
+                                                      (uint32_t) &IOMn(ui32Module)->STATUS,
+                                                      (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk),
+                                                      IOM0_STATUS_IDLEST_Msk,
+                                                      true);
 
-            //
-            // Flush any remaining data from FIFO
-            //
-            while  (IOMn(ui32Module)->FIFOPTR_b.FIFO1SIZ)
+            if (ui32Status == AM_HAL_STATUS_SUCCESS)
             {
+                //
+                // Flush any remaining data from FIFO
+                // this should work, should not need to look for timeout here
+                //
                 while (IOMn(ui32Module)->FIFOPTR_b.FIFO1SIZ >= 4)
                 {
                     //
                     // Read one 4-byte word from FIFO
                     //
-                    IOMn(ui32Module)->FIFOPOP;
+                    (void)IOMn(ui32Module)->FIFOPOP;
 #if MANUAL_POP
                     IOMn(ui32Module)->FIFOPOP = 0x11111111;
 #endif
                 }
-            }
+            } // ui32Status == AM_HAL_STATUS_SUCCESS
         }
-    }
+    } // DMA ERROR
+
     if (ui32IntMask & (AM_HAL_IOM_INT_NAK | AM_HAL_IOM_INT_ARB))
     {
-        uint32_t iomDbg = IOMn(ui32Module)->IOMDBG;
+        //
+        // Disable IOM pins prior to disabling submodules
+        // Reenable pins and then submodules
+        //
+        internal_iom_error_reset_disable_submodule(pIOMState);
+    }
 
+    if ((IOMn(ui32Module)->STATUS & IOM0_STATUS_CMDACT_Msk))
+    {
         //
-        // Wait for Idle
+        // command is still active...
+        // attempt to free the hung IOM hardware
+        // pin map is needed to reset the IOM in this state
         //
-        while ((IOMn(ui32Module)->STATUS & (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk)) != IOM0_STATUS_IDLEST_Msk);
-
-        //
-        // Reset Submodule & FIFO
-        //
-        // Disable the submodules
-        //
-        IOMn(ui32Module)->SUBMODCTRL_b.SMOD1EN = 0;
-
-        //
-        // Reset Fifo
-        //
-        IOMn(ui32Module)->FIFOCTRL_b.FIFORSTN = 0;
-
-        //
-        // Disable Clock gating
-        //
-        IOMn(ui32Module)->IOMDBG |= IOM0_IOMDBG_IOCLKON_Msk;
-
-        //
-        // Wait for few IO clock cycles
-        //
-        am_hal_delay_us(usToWait);
-
-        //
-        // Revert
-        //
-        IOMn(ui32Module)->IOMDBG = iomDbg;
-
-        IOMn(ui32Module)->FIFOCTRL_b.FIFORSTN = 1;
-
-        //
-        // Enable submodule
-        //
-        IOMn(ui32Module)->SUBMODCTRL_b.SMOD1EN = 1;
+        (void)internal_iom_reset_cmd_busy(pIOMState);
     }
 
     IOMn(ui32Module)->INTCLR = AM_HAL_IOM_INT_ALL;
@@ -874,8 +1524,9 @@ internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask
     //
     // Restore interrupts
     //
-    IOMn(ui32Module)->INTEN = curIntCfg;
+    IOMn(ui32Module)->INTEN = ui32CurIntCfg;
 }
+
 //*****************************************************************************
 //
 //! @brief Finalize computed clock settings and derive output frequency.
@@ -2320,11 +2971,6 @@ am_hal_iom_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
-    if (ui32IntMask & AM_HAL_IOM_INT_THR)
-    {
-      return AM_HAL_STATUS_INVALID_ARG;  // Threshold Interupt should not be used.
-    }
-
     ui32Module = ((am_hal_iom_state_t*)pHandle)->ui32Module;
 
     //
@@ -2442,6 +3088,50 @@ am_hal_iom_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
 
 } // am_hal_iom_interrupt_clear()
 
+static void
+iom_fdnb_drain_rx_fifo(am_hal_iom_state_t *pIOMState)
+{
+    uint32_t ui32Module = pIOMState->ui32Module;
+    uint32_t i;
+    while (pIOMState->sFdNb.ui32RxBytesLeft && (IOMn(ui32Module)->FIFOPTR_b.FIFO1SIZ >= 4))
+    {
+        uint32_t ui32Word = IOMn(ui32Module)->FIFOPOP;
+        uint32_t ui32Chunk = (pIOMState->sFdNb.ui32RxBytesLeft >= 4) ? 4 : pIOMState->sFdNb.ui32RxBytesLeft;
+        for (i = 0; i < ui32Chunk; i++)
+        {
+            *pIOMState->sFdNb.pui8RxBuf++ = (uint8_t)(ui32Word & 0xFF);
+            ui32Word >>= 8;
+        }
+        pIOMState->sFdNb.ui32RxBytesLeft -= ui32Chunk;
+    }
+}
+
+static void
+iom_fdnb_finish(am_hal_iom_state_t *pIOMState, uint32_t ui32Status)
+{
+    uint32_t ui32Module = pIOMState->ui32Module;
+    am_hal_iom_callback_t pfnCallback = pIOMState->sFdNb.pfnCallback;
+    void *pCallbackCtxt = pIOMState->sFdNb.pCallbackCtxt;
+
+    pIOMState->sFdNb.bActive = false;
+    pIOMState->sFdNb.pui8RxBuf = NULL;
+    pIOMState->sFdNb.ui32RxBytesLeft = 0;
+    pIOMState->sFdNb.pfnCallback = NULL;
+    pIOMState->sFdNb.pCallbackCtxt = NULL;
+    pIOMState->ui32NumPendTransactions = 0;
+    pIOMState->ui32TxnInt = 0;
+
+    IOMn(ui32Module)->DMACFG_b.DMAEN = 0;
+    IOMn(ui32Module)->DMATRIGEN = pIOMState->sFdNb.ui32SavedDmaTrigEn;
+    IOMn(ui32Module)->MSPICFG_b.FULLDUP = 0;
+    IOM_SET_INTEN(ui32Module, pIOMState->sFdNb.ui32SavedIntCfg);
+
+    if (pfnCallback != NULL)
+    {
+        pfnCallback(pCallbackCtxt, ui32Status);
+    }
+}
+
 //*****************************************************************************
 //
 // IOM interrupt service routine
@@ -2463,6 +3153,35 @@ am_hal_iom_interrupt_service(void *pHandle, uint32_t ui32IntMask)
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
     ui32Module = pIOMState->ui32Module;
+
+    if (pIOMState->sFdNb.bActive)
+    {
+        pIOMState->ui32TxnInt |= ui32IntMask;
+        iom_fdnb_drain_rx_fifo(pIOMState);
+
+        if (pIOMState->ui32TxnInt & AM_HAL_IOM_INT_ERR)
+        {
+            ui32Status = internal_iom_get_int_err(ui32Module, pIOMState->ui32TxnInt);
+            internal_iom_reset_on_error(pIOMState, pIOMState->ui32TxnInt & AM_HAL_IOM_INT_ERR);
+            iom_fdnb_finish(pIOMState, ui32Status);
+            return ui32Status;
+        }
+
+        if (pIOMState->ui32TxnInt & AM_HAL_IOM_INT_CMDCMP)
+        {
+            iom_fdnb_drain_rx_fifo(pIOMState);
+
+            if (pIOMState->sFdNb.ui32RxBytesLeft == 0)
+            {
+                iom_fdnb_finish(pIOMState, AM_HAL_STATUS_SUCCESS);
+            }
+            else if ((IOMn(ui32Module)->STATUS & (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk)) == IOM0_STATUS_IDLEST_Msk)
+            {
+                iom_fdnb_finish(pIOMState, AM_HAL_STATUS_FAIL);
+            }
+        }
+        return AM_HAL_STATUS_SUCCESS;
+    }
 
     if (pIOMState->bHP)
     {
@@ -3777,6 +4496,121 @@ am_hal_iom_spi_blocking_fullduplex(void *pHandle,
     //
     return ui32Status;
 
+}
+
+//*****************************************************************************
+//
+//! Perform a non-blocking full-duplex transaction to the SPI interface.
+//! TX uses DMA, RX is drained by FIFO interrupts.
+//!
+//*****************************************************************************
+uint32_t
+am_hal_iom_spi_nonblocking_fullduplex(void *pHandle,
+                                      am_hal_iom_transfer_t *psTransaction,
+                                      am_hal_iom_callback_t pfnCallback,
+                                      void *pCallbackCtxt)
+{
+    am_hal_iom_state_t *pIOMState = (am_hal_iom_state_t *)pHandle;
+    uint32_t ui32Module;
+    uint32_t ui32Cmd;
+    uint32_t ui32Critical;
+    uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    if (!AM_HAL_IOM_CHK_HANDLE(pHandle))
+    {
+        return AM_HAL_STATUS_INVALID_HANDLE;
+    }
+
+    if (!psTransaction)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    if (psTransaction->eDirection != AM_HAL_IOM_FULLDUPLEX)
+    {
+        return AM_HAL_STATUS_INVALID_OPERATION;
+    }
+
+    if (psTransaction->ui32NumBytes == 0)
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+    if (pIOMState->eInterfaceMode != AM_HAL_IOM_SPI_MODE)
+    {
+        return AM_HAL_STATUS_INVALID_OPERATION;
+    }
+
+    if (pIOMState->eSeq == AM_HAL_IOM_SEQ_RUNNING)
+    {
+        return AM_HAL_STATUS_INVALID_OPERATION;
+    }
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    ui32Status = validate_transaction(pIOMState, psTransaction, true);
+    if (ui32Status != AM_HAL_STATUS_SUCCESS)
+    {
+        return ui32Status;
+    }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+    ui32Module = pIOMState->ui32Module;
+    ui32Critical = am_hal_interrupt_master_disable();
+
+    if (pIOMState->sFdNb.bActive || pIOMState->bHP || pIOMState->ui32NumPendTransactions)
+    {
+        ui32Status = AM_HAL_STATUS_INVALID_OPERATION;
+        goto fdnb_exit;
+    }
+
+    if ((IOMn(ui32Module)->STATUS & (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk)) != IOM0_STATUS_IDLEST_Msk)
+    {
+        ui32Status = AM_HAL_STATUS_IN_USE;
+        goto fdnb_exit;
+    }
+
+    pIOMState->sFdNb.ui32SavedIntCfg = IOMn(ui32Module)->INTEN;
+    pIOMState->sFdNb.ui32SavedDmaTrigEn = IOMn(ui32Module)->DMATRIGEN;
+    pIOMState->ui32TxnInt = 0;
+    pIOMState->ui32NumPendTransactions = 1;
+
+    IOMn(ui32Module)->DMACFG_b.DMAEN = 0;
+    IOMn(ui32Module)->INTCLR = AM_HAL_IOM_INT_ALL;
+    IOMn(ui32Module)->OFFSETHI = (uint32_t)(psTransaction->ui64Instr >> 8);
+    IOMn(ui32Module)->DEVCFG = psTransaction->uPeerInfo.ui32I2CDevAddr;
+    IOMn(ui32Module)->DCXCTRL_b.DCXSEL = pIOMState->dcx[psTransaction->uPeerInfo.ui32SpiChipSelect];
+    IOMn(ui32Module)->DCXCTRL_b.DCXEN = 1;
+    IOMn(ui32Module)->MSPICFG |= _VAL2FLD(IOM0_MSPICFG_FULLDUP, 1);
+
+    pIOMState->sFdNb.bActive = true;
+    pIOMState->sFdNb.pui8RxBuf = (uint8_t *)psTransaction->pui32RxBuffer;
+    pIOMState->sFdNb.ui32RxBytesLeft = psTransaction->ui32NumBytes;
+    pIOMState->sFdNb.pfnCallback = pfnCallback;
+    pIOMState->sFdNb.pCallbackCtxt = pCallbackCtxt;
+
+    IOMn(ui32Module)->DMATRIGEN = _VAL2FLD(IOM0_DMATRIGEN_DTHREN, 1);
+    IOMn(ui32Module)->DMATOTCOUNT = psTransaction->ui32NumBytes;
+    IOMn(ui32Module)->DMATARGADDR = (uint32_t)psTransaction->pui32TxBuffer;
+    IOMn(ui32Module)->DMACFG =
+        _VAL2FLD(IOM0_DMACFG_DMAPRI, psTransaction->ui8Priority)     |
+        _VAL2FLD(IOM0_DMACFG_DMADIR, IOM0_DMACFG_DMADIR_M2P)        |
+        _VAL2FLD(IOM0_DMACFG_DMAEN, 1);
+
+    ui32Cmd = build_cmd(psTransaction->uPeerInfo.ui32SpiChipSelect,
+                        psTransaction->eDirection,
+                        psTransaction->bContinue ? 1 : 0,
+                        psTransaction->ui64Instr,
+                        psTransaction->ui32InstrLen,
+                        psTransaction->ui32NumBytes);
+
+    IOM_SET_INTEN(ui32Module, AM_HAL_IOM_INT_FDNBMODE);
+    IOMn(ui32Module)->CMD = ui32Cmd;
+
+fdnb_exit:
+    am_hal_interrupt_master_set(ui32Critical);
+    return ui32Status;
 }
 
 //*****************************************************************************

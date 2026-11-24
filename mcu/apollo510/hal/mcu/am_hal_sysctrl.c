@@ -47,7 +47,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -76,7 +76,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk5p1p0-366b80e084 of the AmbiqSuite Development Package.
+// This is part of revision v5.2.0-zephyr-685438d73f of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -664,7 +664,7 @@ am_hal_sysctrl_fpu_disable(void)
     // Disable access to the FPU in both privileged and user modes.
     // NOTE: Write 0s to all reserved fields in this register.
     //
-    SCB->CPACR |= ~(0xF << 20);
+    SCB->CPACR &= ~(0xF << 20);
     __DSB();
     __ISB();
 }
@@ -837,7 +837,7 @@ am_hal_sysctrl_clkmuxrst_low_power_init()
 
             // If XTAL is marked needed, kick start XTAL
             if (HALSTATE_b.XTAL_NEEDED ||
-                (HALSTATE_b.PLL_NEEDED && HALSTATE_b.PLL_FREFSEL == MCUCTRL_PLLCTL0_FREFSEL_XTAL32MHz))
+                (HALSTATE_b.PLL_NEEDED && HALSTATE_b.PLL_FREFSEL == MCUCTRL_PLLCTL0_FREFSEL_XTAL_HS))
             {
                 bool bFalse = false;
                 am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START, &bFalse);
@@ -936,7 +936,7 @@ am_hal_sysctrl_clkmuxrst_low_power_init()
             {
                 SYSPLLn(0)->PLLCTL0_b.SYSPLLPDB      = MCUCTRL_PLLCTL0_SYSPLLPDB_DISABLE;
                 SYSPLLn(0)->PLLCTL0_b.BYPASS         = 0;
-                SYSPLLn(0)->PLLCTL0_b.FREFSEL        = MCUCTRL_PLLCTL0_FREFSEL_XTAL32MHz;
+                SYSPLLn(0)->PLLCTL0_b.FREFSEL        = MCUCTRL_PLLCTL0_FREFSEL_XTAL_HS;
                 SYSPLLn(0)->PLLCTL0_b.FOUT4PHASEPD   = MCUCTRL_PLLCTL0_FOUT4PHASEPD_POWERDOWN;
                 SYSPLLn(0)->PLLCTL0_b.FOUTPOSTDIVPD  = MCUCTRL_PLLCTL0_FOUTPOSTDIVPD_POWERDOWN;
                 am_hal_pwrctrl_syspll_disable();
@@ -958,7 +958,7 @@ am_hal_sysctrl_clkmuxrst_low_power_init()
 
             // If XTAL was started, power XTAL off
             if (HALSTATE_b.XTAL_NEEDED ||
-                (HALSTATE_b.PLL_NEEDED && HALSTATE_b.PLL_FREFSEL == MCUCTRL_PLLCTL0_FREFSEL_XTAL32MHz))
+                (HALSTATE_b.PLL_NEEDED && HALSTATE_b.PLL_FREFSEL == MCUCTRL_PLLCTL0_FREFSEL_XTAL_HS))
             {
                 bool bFalse = false;
                 am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE, &bFalse);

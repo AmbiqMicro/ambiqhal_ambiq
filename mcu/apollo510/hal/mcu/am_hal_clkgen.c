@@ -43,11 +43,12 @@
 //! - @b Frequency @b Adjustment: Set up frequency adjustment parameters
 //! - @b Clock @b Output: Configure clock output generation
 //! - @b Interrupts: Set up interrupt sources and handlers
+//
 //*****************************************************************************
 
 // ****************************************************************************
 //
-// Copyright (c) 2025, Ambiq Micro, Inc.
+// Copyright (c) 2026, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
