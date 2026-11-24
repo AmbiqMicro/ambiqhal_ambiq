@@ -1,0 +1,16 @@
+# Code owners for AmbiqMicro/hal_ambiq_internal.
+# The last matching pattern wins.
+
+*                                   @RichardSWheatley
+
+# Bluetooth
+/components/bluetooth/              @Eddy-Hartono @RichardSWheatley
+/mcu/**/am_hal_ble*                 @Eddy-Hartono @RichardSWheatley
+/utils/am_util_ble*                 @Eddy-Hartono @RichardSWheatley
+
+# Graphics
+/components/graphics/               @ReynoWu-Ambiq @RichardSWheatley
+/mcu/**/am_hal_dsi.*                @ReynoWu-Ambiq @RichardSWheatley
+
+# MSPI
+/mcu/**/am_hal_mspi.*               @ReynoWu-Ambiq @RichardSWheatley
